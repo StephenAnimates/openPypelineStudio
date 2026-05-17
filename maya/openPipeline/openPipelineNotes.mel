@@ -6,6 +6,7 @@
 // Input: 			$inputPath - the path of the notes
 // Returns: 		A string array with each entry representing a Note in display format
 //###########################################
+
 global proc string[] openPipelineReadXML(string $inputPath)
 {
 	string $outputString[];

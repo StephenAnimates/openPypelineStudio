@@ -29,17 +29,17 @@ class window():
         self.uiName = self.name.replace(" ", "")
         self.dockControl = self.uiName
         self.window = str(self.uiName)+"_window"
-        self.m2011 = None
         
-        self.m2011 = ( cmds.about(version=1) == "2011 x64")
+        # In modern Maya (2026/2027), dockControl is natively supported
+        self.is_modern_maya = True
+        
         # check if a version of this dock/window is already open, clear it
-        if ( self.m2011 and self.dockable ): # if in Maya 2011+ and dockable,
+        if self.is_modern_maya and self.dockable:
             
-            if cmds.dockControl(self.dockControl, exists=1):
-                cmds.deleteUI(self.uiName)
-            if cmds.window(self.window, q=True, ex=True):
-                cmds.deleteUI(self.window)
-            self.window = cmds.window(self.window, title=self.prettyName, sizeable=1)
+            if cmds.workspaceControl(self.dockControl, exists=True):
+                cmds.deleteUI(self.dockControl)
+            
+            self.window = cmds.workspaceControl(self.dockControl, retain=False, floating=True, label=self.prettyName)
             
         else: # older version of Maya
             
@@ -53,9 +53,8 @@ class window():
             cmds.formLayout( element, e=1, parent = self.window )
         
         # docking (if available) and show window
-        if ( self.m2011 and self.dockable ): # if in Maya 2011+ and dockable,
-            cmds.dockControl( self.dockControl, area='left', content=self.window, floating=1, label=self.prettyName )
-            cmds.dockControl( self.dockControl, e=1, height=self.height, width=self.width)
+        if self.is_modern_maya and self.dockable:
+            cmds.workspaceControl(self.dockControl, edit=True, resizeWidth=self.width, resizeHeight=self.height)
             self.UIObjects.addDockControl(self.dockControl)
         else:
             cmds.showWindow(self.window)
@@ -63,5 +62,6 @@ class window():
             self.UIObjects.addWindow(self.window)
   
     def deleteWindow(self):
-        if ( self.m2011 and self.dockable ): cmds.deleteUI(self.dockControl)
+        if self.is_modern_maya and self.dockable:
+            if cmds.workspaceControl(self.dockControl, exists=True): cmds.deleteUI(self.dockControl)
         else: cmds.deleteUI(self.window)

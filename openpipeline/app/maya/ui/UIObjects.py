@@ -30,13 +30,12 @@ class UIObjects(singleton.singleton):
 		self.updateTextField()
 				
 	def updateTextField(self):
-		self.m2011 = ( cmds.about(version=1) == "2011 x64")
-		if ( self.m2011 and cmds.dockControl('DiagnosticUIManager', exists=1)) or cmds.window('DiagnosticUIManager', q=True, ex=True): # if in Maya 2011+ and dockable,
+		if cmds.workspaceControl('DiagnosticUIManager', exists=1) or cmds.window('DiagnosticUIManager', q=True, ex=True):
 
 			textFieldString = '---window objects---\n\n'
 			for obj in self.window:
 			    if cmds.window(obj, q=True, ex=True): textFieldString += obj + '\n'
 			textFieldString += '\n---dockable objects---\n\n'
 			for obj in self.dockControl:
-			    if cmds.dockControl(obj, q=1, exists=1): textFieldString += obj + '\n'
+			    if cmds.workspaceControl(obj, q=1, exists=1): textFieldString += obj + '\n'
 			cmds.scrollField('diagnosticUI_UIObjects_scrollField', edit=1, text=textFieldString)

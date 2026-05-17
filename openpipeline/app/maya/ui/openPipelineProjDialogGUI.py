@@ -1,9 +1,10 @@
-###########################################
-# Name: openPipelineprojDialogGUI (formerly openPipelineprojDialogWindow)
-# Description: Opens the Project Dialog Window. This is used either for creating a new project or editing an existing project.
-# Input: $mode - 0 for creating a new project, 1 for editing an existing project (int)
-# Returns: none
-############################################
+"""
+Module: openPipelineProjDialogGUI.py
+
+Description:
+    Opens the Project Dialog Window. This is used either for creating a new project 
+    or editing an existing project.
+"""
 
 import maya.cmds as cmds
 
@@ -41,27 +42,45 @@ class openPipelineProjDialogGUI(window.window):
         self.projDialogDeleted = 'deleted'
     
     def content(self):
+        """
+        Builds and returns the main form layout for the Project Dialog UI.
+        """
+        self.form1 = cmds.formLayout('openPipelineprojDialogGUI_form', numberOfDivisions=100)
         
-        self.form1 = cmds.formLayout( 'openPipelineprojDialogGUI_form', numberOfDivisions=100 )
+        self._build_project_name_section()
+        self._build_project_path_section()
+        self._build_description_section()
+        self._build_project_status_section()
+        self._build_custom_users_section()
+        self._build_dates_section()
+        self._build_master_files_section()
+        self._build_workshop_files_section()
+        self._build_sub_folder_section()
+        self._build_archive_deleted_section()
+        self._build_action_buttons()
         
-        # Project Name Section
+        self._attach_form_elements()
+        
+        return [self.form1]
+
+    def _build_project_name_section(self):
         self.projDialogProjName_txt =  cmds.text('ProjDialogProjName_txt', parent=self.form1, fn="boldLabelFont", label="Project  Name (max length: 22):", align="left", width=220)
         self.projDialogProjName_txtField = cmds.textField('projDialogProjName_txtField', parent=self.form1, h=20)
-        self.projDialogSeperator1 = cmds.separator(h=5, st="out")
+        self.projDialogSeperator1 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Project Path Section
+    def _build_project_path_section(self):
         self.projDialogProjPath_txt =  cmds.text('projDialogProjPath_txt', parent=self.form1, fn="boldLabelFont", label="Project Path:", align="left", width=90)
         self.projDialogProjPathParens_txt =  cmds.text('projDialogProjPathParens_txt', parent=self.form1, label="(folders which don't already exist will be created)", align="left", width=250)
         self.projDialogPathField_txtField = cmds.textField('projDialogPathField_txtField', parent=self.form1, h=20)
         self.projDialogPathBrowse_btn = cmds.button('projDialogPathBrowse_btn', parent=self.form1, w=60, l="Browse...", c="fileBrowser \"openPipelineSetprojDialogPath\" \"OK\" \"\" 4")
         self.projDialogSeperator2 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Description Section
+    def _build_description_section(self):
         self.projDialogDescription_txt =  cmds.text('projDialogDescription_txt', parent=self.form1, fn="boldLabelFont", label="Description:", align="left", width=80)
         self.projDialogDescription_txtField = cmds.textField('projDialogDescription_txtField', parent=self.form1, h=20)
         self.projDialogSeperator3 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Project Status Section
+    def _build_project_status_section(self):
         self.projDialogStatus_txt =  cmds.text('projDialogStatus_txt', parent=self.form1, fn="boldLabelFont", label="Project Status:", align="left", width=100)
         self.projDialogStatus_optMenu = cmds.optionMenu('projDialogStatus_optMenu', parent=self.form1)
         cmds.menuItem(label="active", parent=self.projDialogStatus_optMenu)
@@ -69,7 +88,7 @@ class openPipelineProjDialogGUI(window.window):
         self.projDialogStatusParens_txt = cmds.text('projDialogStatusParens_txt', parent=self.form1, fn="smallPlainLabelFont", label="(inactive projects won't appear in main openPipeline window)", align="left", width=340)
         self.projDialogSeperator4 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Custom Users Section
+    def _build_custom_users_section(self):
         self.projDialogueCustomUsers_checkBox = cmds.checkBox('projDialogueCustomUsers_checkBox', parent=self.form1, label="")
         self.projDialogueEnableCustomUsers_txt = cmds.text('projDialogueEnableCustomUsers_txt', parent=self.form1, fn="boldLabelFont", label="Enable Custom Users", align="left", width=320)
         self.projDialogueCustomUsers_txt = cmds.text('projDialogueCustomUsers_txt', parent=self.form1, fn="boldLabelFont", label="Users:", align="left", width=80)
@@ -77,36 +96,36 @@ class openPipelineProjDialogGUI(window.window):
         self.projDialogueCustomUsers_btn = cmds.button('projDialogueCustomUsers_btn', parent=self.form1, l="...")
         self.projDialogSeperator5 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Creation Date & Deadline Section
+    def _build_dates_section(self):
         self.projDialogueCreationDate_txt = cmds.text('projDialogueCreationDate_txt', parent=self.form1, fn="boldLabelFont", label="Creation Date:", align="left", width=100)
         self.projDialogueCreationDate_txtField = cmds.textField('projDialogueCreationDate_txtField', text=self.projDialogueCreationDate, parent=self.form1, h=20)
         self.projDialogueDeadline_txt = cmds.text('projDialogueDeadline_txt', parent=self.form1, fn="boldLabelFont", label="Deadline:", align="center", width=70)
         self.projDialogueDeadline_txtField = cmds.textField('projDialogueDeadline_txtField', text=self.projDialogueDeadline, parent=self.form1, h=20)
         self.projDialogSeperator6 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Master Files Section
+    def _build_master_files_section(self):
         self.projDialogMasterFiles_txt = cmds.text('projDialogMasterFiles_txt', parent=self.form1, fn="boldLabelFont", label="Master Files:", align="left", width=100)
         self.projDialogMasterFilesParens_txt = cmds.text('projDialogMasterFilesParens_txt', parent=self.form1, fn="smallPlainLabelFont", label="(finalized versions with flattened references)", align="left", width=240)
         self.projDialogMasterFilesName_txt = cmds.text('projDialogMasterFilesName_txt', parent=self.form1, fn="smallPlainLabelFont", label="Name:", align="left", width=50)
-        self.projDialogMasterFilesName_txtField = cmds.textField('projDialogMasterFilesName_txtField', text=self.projDialogMasterFilesName, parent=self.form1, h=20,)
+        self.projDialogMasterFilesName_txtField = cmds.textField('projDialogMasterFilesName_txtField', text=self.projDialogMasterFilesName, parent=self.form1, h=20)
         self.projDialogMasterFileFormat_txt = cmds.text('projDialogMasterFileFormat_txt', parent=self.form1, fn="smallPlainLabelFont", label="File Format:", align="center")
-        self.projDialogMasterFileFormat_optMenu = cmds.optionMenu('projDialogMasterFileFormat_optMenu', parent=self.form1,)
+        self.projDialogMasterFileFormat_optMenu = cmds.optionMenu('projDialogMasterFileFormat_optMenu', parent=self.form1)
         cmds.menuItem(label="mb", parent=self.projDialogMasterFileFormat_optMenu)
         cmds.menuItem(label="ma", parent=self.projDialogMasterFileFormat_optMenu)
         self.projDialogSeperator7 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Workshop Files Section
+    def _build_workshop_files_section(self):
         self.projDialogWorkshopFiles_txt = cmds.text('projDialogWorkshopFiles_txt', parent=self.form1, fn="boldLabelFont", label="Workshop Files:", align="left", width=100)
         self.projDialogWorkshopFilesParens_txt = cmds.text('projDialogWorkshopFilesParens_txt', parent=self.form1, fn="smallPlainLabelFont", label="(preliminary and test versions)", align="left", width=240)
         self.projDialogWorkshopFilesName_txt = cmds.text('projDialogWorkshopFilesName_txt', parent=self.form1, fn="smallPlainLabelFont", label="Name:", align="left", width=50)
-        self.projDialogWorkshopFilesName_txtField = cmds.textField('projDialogWorkshopFilesName_txtField', parent=self.form1, text=self.projDialogWorkshopFilesName, h=20,)
+        self.projDialogWorkshopFilesName_txtField = cmds.textField('projDialogWorkshopFilesName_txtField', parent=self.form1, text=self.projDialogWorkshopFilesName, h=20)
         self.projDialogWorkshopFileFormat_txt = cmds.text('projDialogWorkshopFileFormat_txt', parent=self.form1, fn="smallPlainLabelFont", label="File Format:", align="center")
-        self.projDialogWorkshopFileFormat_optMenu = cmds.optionMenu('projDialogWorkshopFileFormat_optMenu', parent=self.form1,)
+        self.projDialogWorkshopFileFormat_optMenu = cmds.optionMenu('projDialogWorkshopFileFormat_optMenu', parent=self.form1)
         cmds.menuItem(label="mb", parent=self.projDialogWorkshopFileFormat_optMenu)
         cmds.menuItem(label="ma", parent=self.projDialogWorkshopFileFormat_optMenu)
         self.projDialogSeperator8 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Sub-Folder Section
+    def _build_sub_folder_section(self):
         self.projDialogSubFolderNames_txt = cmds.text('projDialogSubFolderNames_txt', parent=self.form1, fn="boldLabelFont", label="Sub-Folder Names:", align="left", width=200)
         self.projDialogAssetLibrary_txt = cmds.text('projDialogAssetLibrary_txt', fn="smallPlainLabelFont", parent=self.form1, label="Asset Library:", align="left", width=70)
         self.projDialogAssetLibrary_txtField = cmds.textField('projDialogAssetLibrary_txtField', parent=self.form1, text=self.projDialogAssetLibrary, h=20)
@@ -123,8 +142,8 @@ class openPipelineProjDialogGUI(window.window):
         self.projDialogParticles_txt = cmds.text('projDialogParticles_txt', parent=self.form1, fn="smallPlainLabelFont", label="Particles:", align="center", width=50)
         self.projDialogParticles_txtField = cmds.textField('projDialogParticles_txtField', parent=self.form1, text=self.projDialogParticles, h=20)
         
-        # Archived and Deleted Items
-        self.projDialogArchiveDeletedItems_txt = cmds.text('projDialogArchiveDeletedItems_txt', fn="boldLabelFont", label="Archived and Deleted Items Locations:", align="left", width=70)
+    def _build_archive_deleted_section(self):
+        self.projDialogArchiveDeletedItems_txt = cmds.text('projDialogArchiveDeletedItems_txt', parent=self.form1, fn="boldLabelFont", label="Archived and Deleted Items Locations:", align="left", width=70)
         self.projDialogArchive_txt = cmds.text('projDialogArchive_txt', fn="smallPlainLabelFont", parent=self.form1, label="Archive:", align="left", width=70)
         self.projDialogArchive_txtField = cmds.textField('projDialogArchive_txtField', parent=self.form1, text=self.projDialogArchive, h=20)
         self.projDialogueArchiveBrowse_btn = cmds.button('projDialogueArchiveBrowse_btn', parent=self.form1, width=70, l="Browse...")
@@ -133,11 +152,11 @@ class openPipelineProjDialogGUI(window.window):
         self.projDialogDeletedItems_btn = cmds.button('projDialogDeletedItems_btn', parent=self.form1, width=70, l="Browse...")
         self.projDialogSeperator9 = cmds.separator(parent=self.form1, h=5, st="out")
         
-        # Accept & Cancel Buttons
+    def _build_action_buttons(self):
         self.projDialogAccept_btn = cmds.button('projDialogAccept_btn', parent=self.form1, l="Accept")
         self.projDialogCancel_btn = cmds.button('projDialogCancel_btn', parent=self.form1, l="Cancel")
         
-    #Attach elements to form
+    def _attach_form_elements(self):
         cmds.formLayout(
             self.form1,
             edit=True,
@@ -355,4 +374,3 @@ class openPipelineProjDialogGUI(window.window):
         
             ]
             )
-        return [self.form1]

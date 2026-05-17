@@ -6,8 +6,8 @@
 //						3. only invalid asset/scene list(no master file existed)
 //						4. array of boolean values that represents the vlidation of the asset or scene
 //
-// Need to improve: master file check for scene.
-//
+// TODO: master file check for scene.
+
 global proc string[] openPipelineExistedAsset(string $inputMode)
 { 
 		string $validation[];

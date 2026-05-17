@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 import sys
+import importlib
 
 class begin():
     
@@ -19,37 +20,24 @@ class begin():
         openPipeline.diagnosticUI.showWindow()
         
         '''
-        
+        self.srcDir = ""
         self.sourceFilesPath()
-        self.appendDir()
-        self.diagnostic()
-    
-    
+        if self.srcDir:
+            self.appendDir()
+            self.diagnostic()
+
     def sourceFilesPath(self):
-        
-        cmds.fileBrowserDialog( m = 4, fc = self.getSrcDir, ft = "directory", an = "Select the folder that contains the 'openpipeline' directory")
-
-
-    def getSrcDir(self, directoryPathInput, fileType):
-        
-        self.srcDir = directoryPathInput
-
+        # Use modern cmds.fileDialog2 instead of deprecated cmds.fileBrowserDialog
+        result = cmds.fileDialog2(fileMode=3, caption="Select the folder that contains the 'openpipeline' directory")
+        if result and result[0]:
+            self.srcDir = result[0]
 
     def diagnostic(self):
-        
         import openpipeline.app.maya.ui.diagnosticUI as diagnosticUI
-        reload(diagnosticUI)
+        importlib.reload(diagnosticUI)
         self.diagnosticUI = diagnosticUI.diagnosticUI(self.srcDir)
         self.diagnosticUI.showWindow()
 
-
     def appendDir(self):
-            
-        sysPath = sys.path
-        ks_appendGo = 1
-        for aPath in sysPath:
-            if (aPath == str(self.srcDir) ):
-                ks_appendGo = 0
-        
-        if ks_appendGo:
-            sys.path.insert(0,self.srcDir)
+        if self.srcDir not in sys.path:
+            sys.path.insert(0, self.srcDir)

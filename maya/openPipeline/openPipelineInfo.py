@@ -30,7 +30,7 @@ def get_project_list():
                 projects.append(match.group(1).strip())
         return projects
     except Exception as e:
-        cmds.warning("Failed to retrieve project list: {}".format(e))
+        cmds.warning(f"Failed to retrieve project list: {e}")
         return []
 
 
@@ -51,7 +51,7 @@ def get_custom_notes(tab, level1, level2, level3):
     if not notes_file or not os.path.isfile(notes_file):
         try:
             # Trigger the default MEL initialization if it doesn't exist
-            mel.eval('openPipelineSetCustomNotes {} "{}" "{}" "{}" " "'.format(tab, level1, level2, level3))
+            mel.eval(f'openPipelineSetCustomNotes {tab} "{level1}" "{level2}" "{level3}" " "')
         except Exception:
             pass
         return ""
@@ -67,7 +67,7 @@ def get_custom_notes(tab, level1, level2, level3):
                 return text.strip()
         return ""
     except Exception as e:
-        cmds.warning("Failed to read notes file {}: {}".format(notes_file, e))
+        cmds.warning(f"Failed to read notes file {notes_file}: {e}")
         return ""
 
 
@@ -246,69 +246,69 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
     # --- Handle File Modes ---
     elif mode == "playblastFile":
         ext = "mov" if cmds.about(os=True) == "mac" else ("avi" if cmds.about(os=True) in ["nt", "win64"] else "mv")
-        return os.path.join(current_dir, "playblast.{}".format(ext)).replace("\\", "/")
+        return os.path.join(current_dir, f"playblast.{ext}").replace("\\", "/")
     elif mode == "previewFile":
-        return os.path.join(current_dir, "preview.jpg").replace("\\", "/")
+        return os.path.join(current_dir, "preview.png").replace("\\", "/")
     elif mode == "notesFile":
         return os.path.join(current_dir, "notes", "info.xml").replace("\\", "/")
     
     # --- Handle Workshop/Version Discovery Modes ---
     elif mode == "workshop":
-        search_path = os.path.join(current_dir, w_name, "*{}*.{}".format(w_name, w_ext))
+        search_path = os.path.join(current_dir, w_name, f"*{w_name}*.{w_ext}")
         files = sorted(glob.glob(search_path))
         if files and len(files) > offset:
             return files[-(1 + offset)].replace("\\", "/")
         return ""
         
     elif mode == "nextWorkshop":
-        search_path = os.path.join(current_dir, w_name, "*{}*.{}".format(w_name, w_ext))
+        search_path = os.path.join(current_dir, w_name, f"*{w_name}*.{w_ext}")
         files = sorted(glob.glob(search_path))
         latest_version = get_version_from_file(files[-1]) if files else 0
         suffix = str(latest_version + 1).zfill(4)
-        prefix = "{}_{}".format(parent_name, item_name) if level3 else item_name
-        filename = "{}_{}_{}.{}".format(prefix, w_name, suffix, w_ext)
+        prefix = f"{parent_name}_{item_name}" if level3 else item_name
+        filename = f"{prefix}_{w_name}_{suffix}.{w_ext}"
         return os.path.join(current_dir, w_name, filename).replace("\\", "/")
 
     elif mode == "version":
-        search_path = os.path.join(current_dir, "version", "*version_*.{}".format(m_ext))
+        search_path = os.path.join(current_dir, "version", f"*version_*.{m_ext}")
         files = sorted(glob.glob(search_path))
         if files and len(files) > offset:
             return files[-(1 + offset)].replace("\\", "/")
         return ""
 
     elif mode == "nextVersion":
-        search_path = os.path.join(current_dir, "version", "*{}*version_*.{}".format(item_name, m_ext))
+        search_path = os.path.join(current_dir, "version", f"*{item_name}*version_*.{m_ext}")
         files = sorted(glob.glob(search_path))
         latest_version = get_version_from_file(files[-1]) if files else 0
         suffix = str(latest_version + 1).zfill(4)
-        prefix = "{}_{}".format(parent_name, item_name) if level3 else item_name
-        filename = "{}_version_{}.{}".format(prefix, suffix, m_ext)
+        prefix = f"{parent_name}_{item_name}" if level3 else item_name
+        filename = f"{prefix}_version_{suffix}.{m_ext}"
         return os.path.join(current_dir, "version", filename).replace("\\", "/")
 
     elif mode == "master":
         if level3:
-            filename = "{}_{}.{}".format(parent_name, item_name, m_ext)
+            filename = f"{parent_name}_{item_name}.{m_ext}"
         elif tab == 2:
-            filename = "{}_asset.{}".format(item_name, m_ext)
+            filename = f"{item_name}_asset.{m_ext}"
         elif tab == 3:
-            filename = "{}_shot.{}".format(item_name, m_ext)
+            filename = f"{item_name}_shot.{m_ext}"
         else:
-            filename = "{}.{}".format(item_name, m_ext)
+            filename = f"{item_name}.{m_ext}"
         return os.path.join(current_dir, filename).replace("\\", "/")
 
     elif mode == "historyFile":
         if level3:
-            filename = "{}_{}_ComponentNote.xml".format(parent_name, item_name)
+            filename = f"{parent_name}_{item_name}_ComponentNote.xml"
         elif tab == 2:
-            filename = "{}_AssetNote.xml".format(item_name)
+            filename = f"{item_name}_AssetNote.xml"
         elif tab == 3:
-            filename = "{}_SceneNote.xml".format(item_name)
+            filename = f"{item_name}_SceneNote.xml"
         else:
             filename = "Note.xml"
         return os.path.join(current_dir, "notes", filename).replace("\\", "/")
 
     else:
-        cmds.warning("openPipelineInfo: unrecognized file mode '{}'".format(mode))
+        cmds.warning(f"openPipelineInfo: unrecognized file mode '{mode}'")
         return ""
 
 
@@ -360,7 +360,7 @@ def get_event_notes(tab, level1, level2, level3):
             with open(history_file, 'r') as f:
                 return f.read()
         except Exception as e:
-            cmds.warning("Could not read history file {}: {}".format(history_file, e))
+            cmds.warning(f"Could not read history file {history_file}: {e}")
     return ""
 
 

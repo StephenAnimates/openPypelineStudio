@@ -1,11 +1,18 @@
-###########################################
-# Name: openPipelineProjectManagerGUI
-# Description: creates oP Project UI
-# Input: none
-# Returns: none
-############################################
+"""
+Module: openPipelineMainUI.py
+
+Description: 
+    Creates and manages the main openPipeline UI in Maya.
+    This module defines the `openPipelineMainUI` class, which inherits from 
+    the base `window` class. It constructs the primary user interface containing 
+    the Asset Browser, Shot Browser, and "Currently Open" working area tabs.
+    
+    This UI serves as the central hub for artists to interact with the 
+    openPipeline framework, manage their files, and navigate the project hierarchy.
+"""
 
 import maya.cmds as cmds
+import os
 
 import window as window
 reload(window)
@@ -23,14 +30,15 @@ class openPipelineMainUI(window.window):
         self.prettyName = "OpenPipeline 2.0"
         self.name = "openPipelineUI"
         self.dockable=1
-        self.scriptLocation = "userName/Documents/OpenPipeline"
+        self.scriptLocation = cmds.optionVar(query="openPipeline_scriptPath") if cmds.optionVar(exists="openPipeline_scriptPath") else "Not Set"
         
         self.lfMargin = 5
         self.rtMargin = 5
         
-        self.op_icon_filePath='\\\\venkman\KICKSTAND\DEV\openPipeline\openPipeline\\app\maya\ui\openPipelineIcon.jpg'
-        self.op_currOpenPreview_filePath='\\\\venkman\KICKSTAND\DEV\openPipeline\openPipeline\\app\maya\ui\\noPreview.jpg'
-        self.op_defaultPreview_filePath='\\\\venkman\KICKSTAND\DEV\openPipeline\openPipeline\\app\maya\ui\\defaultPreview.jpg'
+        ui_dir = os.path.dirname(__file__)
+        self.op_icon_filePath = os.path.join(ui_dir, 'openPipelineIcon.png').replace("\\", "/")
+        self.op_currOpenPreview_filePath = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
+        self.op_defaultPreview_filePath = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
         
         
         self.anno_projectList="Select from the available Projects."
@@ -84,154 +92,61 @@ class openPipelineMainUI(window.window):
         self.anno_removeShotComponent="Remove the selected Component from the inventory."
     
     def content(self):
+        """
+        Builds and returns the main form layout for the UI.
+        """
+        self.op_form1 = cmds.formLayout(numberOfDivisions=100)
         
-        #--------------------------------------------
-        #   START Main Form
-        #--------------------------------------------
+        self._build_top_menu()
+        self._build_basic_info()
+        self._build_project_image()
         
-        self.op_form1 = cmds.formLayout( numberOfDivisions=100 )
+        self.op_mainTabs_tabLayout = cmds.tabLayout('op_mainTabs_tabLayout', parent=self.op_form1, scr=0, innerMarginWidth=0, innerMarginHeight=0)
         
-        #--------------------------------------------
-        #   START Drop Down Menu at the Top of the Window
-        #--------------------------------------------
+        self._build_currently_open_tab()
+        self._build_asset_browser_tab()
+        self._build_shot_browser_tab()
         
+        cmds.tabLayout(self.op_mainTabs_tabLayout, edit=True, tabLabel=[
+            (self.op_assetBrowser_formLayout, "Asset Browser"), 
+            (self.op_shotFormLayout, "Shot Browser"), 
+            (self.op_currOpen_formLayout, "Currently Open")
+        ])
+        
+        self._build_bottom_buttons()
+        self._attach_main_form_elements()
+        
+        return [self.op_form1]
+
+    def _build_top_menu(self):
         self.op_topDropDown_menuBarLayout = cmds.menuBarLayout('op_topDropDown_menuBarLayout', parent=self.op_form1)
-        
-        # menus (more can go here)
         
         self.op_topDropDownMayaTools_menu = cmds.menu('op_topDropDownMayaTools_menu', parent=self.op_topDropDown_menuBarLayout, label="Maya Tools")
         self.op_topDropDownMayaTools_menuItem1 = cmds.menuItem('op_topDropDownMayaTools_menuItem1', parent=self.op_topDropDownMayaTools_menu, label="Maya Reference Editor", command="ReferenceEditor")
         self.op_topDropDownMayaTools_menuItem2 = cmds.menuItem('op_topDropDownMayaTools_menuItem2', parent=self.op_topDropDownMayaTools_menu, label="Maya Project Manager", command="projectSetup 2")
         
         self.op_topDropDownAddOns_menu = cmds.menu(label="Add-ons", parent=self.op_topDropDown_menuBarLayout)
-        
-        #--------------------------------------------
-        #   START old MEL from openPipeline0.9.1
-        #--------------------------------------------
-        
-        #        for (self.item in self.addons)
-        #        {
-        #                int self.length = size(self.item);
-        #                self.length-=4;
-        #                string self.command = `startString self.item self.length`;
-        #                menuItem -label self.command -command self.command;
-        #        }
-        #        
-        #        for (self.item in self.pyAddons)
-        #        {
-        #                int self.length = size(self.item);
-        #                self.length-=3;
-        #                string self.pyModule = `startString self.item self.length`;
-        #                string self.pyCommand = self.pyModule + "." + self.pyModule + "()";
-        #                string self.command = "eval(python(\"" + self.pyCommand + "\"))";
-        #                menuItem -label self.pyModule -command self.command;
-        #        }
-        
-        #--------------------------------------------
-        #   END old MEL from openPipeline0.9.1
-        #--------------------------------------------
-        
         self.op_topDropDownAddOns_menuItem2 = cmds.menuItem('op_topDropDownAddOns_menuItem2', parent=self.op_topDropDownAddOns_menu, label="How to add to this menu...", c='openPipelineAddonsDialog')
         
         self.op_topDropDownHelp_menu = cmds.menu(label="Help", parent=self.op_topDropDown_menuBarLayout, helpMenu=1)
         self.op_topDropDown_menuItem1 = cmds.menuItem('op_topDropDown_menuItem1', parent=self.op_topDropDownHelp_menu, label="About openPipeline...", command="openPipelineAboutDialog")
         self.op_topDropDown_menuItem2 = cmds.menuItem('op_topDropDown_menuItem2', parent=self.op_topDropDownHelp_menu, label="Help...", command="openPipelineHelpLaunch")
-      
-        
-        #--------------------------------------------
-        #   END Drop Down Menu at the Top of the Window
-        #
-        #   START Section 1.00 - Basic Info
-        #   Below the Drop Down Menu on the top of UI
-        #   includes Login User, Proj Name, Proj Path
-        #
-        #   START Section 1.01 - Login User
-        #--------------------------------------------
-        
+
+    def _build_basic_info(self):
         self.op_userName_txt = cmds.text('op_userName_txt', parent=self.op_form1, al="right", label="User Name : ", w=150)
-        
-        #--------------------------------------------
-        #   START old MEL from openPipeline0.9.1
-        #--------------------------------------------
-        
-        #self.op_userName_txt = string self.currProjName = `optionVar -q "op_currProjectName"`;
-        #string self.currProjXml = openPipelineGetSingleProjectXml(self.currProjName);
-        #int self.currUserNameMode = openPipelineGetXmlData(self.currProjXml,"userMode");
-        
-        #--------------------------------------------
-        #   END old MEL from openPipeline0.9.1
-        #--------------------------------------------
-        
         self.op_userName_optionMenu = cmds.optionMenu('op_userName_optionMenu', parent=self.op_form1, cc="openPipelineUpdateUser", enable=0)
         
-        #--------------------------------------------
-        #   END Section 1.01 - Login User
-        #
-        #   START Section 1.02 - Proj Name
-        #--------------------------------------------
-        
         self.op_projName_txt = cmds.text('op_projName_txt', parent=self.op_form1, al="right", label="Project Name : ", w=150)
-        
         self.op_projManager_btn = cmds.button('op_projManager_btn', parent=self.op_form1, label="Project Manager...", c="openPipelineProjectUI", ann=self.anno_projectManager, h=30)
-        
         self.op_projName_optionMenu = cmds.optionMenu('op_projName_optionMenu', parent=self.op_form1, cc="openPipelineProjSelected 1", ann=self.anno_projectList)
-
-        #--------------------------------------------
-        #   START old MEL from openPipeline0.9.1
-        #--------------------------------------------
-        
-        #int self.numProjects = size(self.validProjList);
-        #string self.currProjName = `optionVar -q "op_currProjectName"`;
-        #for(self.i=0; self.i<self.numProjects; self.i++)
-        #{
-        #        string self.temp_projName = openPipelineGetXmlData(self.validProjList[self.i],"name");
-        #        string self.temp_projPath = openPipelineGetXmlData(self.validProjList[self.i],"path");
-        #        if (`filetest -d self.temp_projPath`)
-        #        {
-        #                menuItem -label self.temp_projName;
-        #                if (self.currProjName==self.temp_projName)
-        #                                optionMenu -e -v self.temp_projName op_projNameMenu;
-        #        }
-        #}
-        
-        #--------------------------------------------
-        #   END from openPipeline0.9.1
-        #
-        #   END Section 1.02 - Proj Name
-        #
-        #   START Section 1.03 - Proj Path
-        #--------------------------------------------
         
         self.op_projPath_txt = cmds.text('op_projPath_txt', parent=self.op_form1, al="right", label="Project Path : ", w=150)
         self.op_projPath_txtField = cmds.textField('op_projPath_txtField', parent=self.op_form1, editable=0)
-        
-        #--------------------------------------------
-        #   END Section 1.03 - Proj Path
-        #
-        #   START Section 1.04 - Project Image
-        #--------------------------------------------
-        
-        self.op_icon_image = cmds.image('op_icon_image', parent=self.op_form1, i=self.op_icon_filePath, h=50, w=415, bgc=(0, 0, 0))
-        
-        #--------------------------------------------
-        #   END Section 1.04 - Project Image
-        #
-        #   END Section 1.00 - Basic Info
-        #
-        #   START - Main Tab Layout
-        #   Tab layout for switching between
-        #   Currently Open, Asset and Shots Inventory
-        #--------------------------------------------
-        
-        #self.op_mainTabs_tabLayout = cmds.tabLayout('op_mainTabs_tabLayout', parent=self.op_form1, scr=0, innerMarginWidth=0, innerMarginHeight=0, sc="openPipelineUpdateWorkingTab")
 
-        self.op_mainTabs_tabLayout = cmds.tabLayout('op_mainTabs_tabLayout', parent=self.op_form1, scr=0, innerMarginWidth=0, innerMarginHeight=0)
-        
-        #--------------------------------------------
-        #   START Section 2.00 - "Currently Open" Tab
-        #   This is the first section that will be attached to the tab layout
-        #--------------------------------------------
-        
+    def _build_project_image(self):
+        self.op_icon_image = cmds.image('op_icon_image', parent=self.op_form1, i=self.op_icon_filePath, h=50, w=415, bgc=(0, 0, 0))
+
+    def _build_currently_open_tab(self):
         self.op_currOpen_formLayout = cmds.formLayout('op_currOpen_formLayout', parent=self.op_mainTabs_tabLayout, width=410, numberOfDivisions=100)
         
         self.op_currOpenSeperator01 = cmds.separator('op_currOpenSeperator01', parent=self.op_currOpen_formLayout, style="double", w=410)
@@ -252,16 +167,6 @@ class openPipelineMainUI(window.window):
         self.op_currOpenAssetNote_scrollField = cmds.scrollField('op_currOpenAssetNote_scrollField', parent=self.op_currOpen_formLayout, w=220, h=103, enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="")
         
         self.op_currOpenPreview_txt = cmds.text('op_currOpenPreview_txt', parent=self.op_currOpen_formLayout, fn="smallBoldLabelFont", l="Preview", w=164, al="left")
-        
-        #--------------------------------------------
-        #   START from openPipeline0.9.1
-        #--------------------------------------------
-        
-        #self.op_currOpenPreview_img = `image -h 105 -w 164 -i (self.openPipeline_scriptPath+"openPipeline/"+self.openPipeline_defaultPreviewFilename) -bgc 0 0 0 op_currPreviewImage`;
-        
-        #--------------------------------------------
-        #   END from openPipeline0.9.1
-        #--------------------------------------------
 
         self.op_currOpenPreview_img = cmds.image('op_currOpenPreview_img', parent=self.op_currOpen_formLayout, i=self.op_currOpenPreview_filePath, h=105, w=164, bgc=(0, 0, 0))
         self.op_currOpenSnapshot_btn = cmds.button('op_currOpenSnapshot_btn', parent=self.op_currOpen_formLayout, l="Take Snapshot", w=164, c="openPipelineTakeSnapshot")
@@ -271,10 +176,6 @@ class openPipelineMainUI(window.window):
         
         self.op_currOpenNotes_txt = cmds.text('op_currOpenNotes_txt', parent=self.op_currOpen_formLayout, fn="smallBoldLabelFont", l="Notes", w=220, al="left")
         self.op_currOpen_scrollField = cmds.scrollField('op_currOpen_scrollField', parent=self.op_currOpen_formLayout, w=220, h=125, enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="", kpc="button -e -en 1 op_saveNoteButton")
-        
-        #--------------------------------------------
-        #   START Section 2.01 - Subform01
-        #--------------------------------------------
         
         self.op_currOpenSubRegion1_formLayout = cmds.formLayout('op_currOpenSubRegion1_formLayout', parent=self.op_currOpen_formLayout, numberOfDivisions=100)
         
@@ -291,17 +192,9 @@ class openPipelineMainUI(window.window):
             ]
             )
         
-        #--------------------------------------------
-        #   END Section 2.01 - Subform01
-        #--------------------------------------------
-        
         self.op_currOpenLocation_txt = cmds.text('op_currOpenLocation_txt', parent=self.op_currOpen_formLayout, fn="smallBoldLabelFont", l="Location", w=395, al="center")
         self.op_currOpenLocation_txtField = cmds.textField('op_currOpenLocation_txtField', parent=self.op_currOpen_formLayout, editable=0, w=345)
         self.op_currOpenExplore_btn = cmds.button('op_currOpenExplore_btn', parent=self.op_currOpen_formLayout, w=50, align="center", label="explore...", c="openPipelineExploreCurrent")
-        
-        #--------------------------------------------
-        #   START Attach elements to op_currOpen_formLayout
-        #--------------------------------------------
         
         cmds.formLayout(self.op_currOpen_formLayout,
             edit=1,
@@ -379,26 +272,14 @@ class openPipelineMainUI(window.window):
                 
             ],
             )
-        
-        #--------------------------------------------
-        #   END Attach elements to op_currOpen_formLayout
-        #
-        #   END Section 2.00 - "Currently Open" Tab
-        #
-        #   START Section 3.00 - "Asset Inventory" Tab
-        #   this is the second section that will be attached to the tab layout
-        #--------------------------------------------
-        
+
+    def _build_asset_browser_tab(self):
         self.op_assetBrowser_formLayout = cmds.formLayout('op_assetBrowser_formLayout', parent=self.op_mainTabs_tabLayout, width=410, numberOfDivisions=100)
         
         self.op_assetSeperator01 = cmds.separator('op_assetSeperator01', parent=self.op_assetBrowser_formLayout, style="double", w=410)
         self.op_assetAssetBrowser_txt = cmds.text('op_assetAssetBrowser_txt', parent=self.op_assetBrowser_formLayout, fn="boldLabelFont", label="ASSET BROWSER", w=410, al="left")
         self.op_assetSeperator02 = cmds.separator('op_assetSeperator02', parent=self.op_assetBrowser_formLayout, style="double", w=410)
-        
-        #--------------------------------------------
-        #   START Section 3.01 - "Asset Types"
-        #   Left Column in the "Assets" Tab
-        #--------------------------------------------
+
         self.op_shotSequence_formLayout = cmds.formLayout('op_shotSequence_formLayout', parent=self.op_assetBrowser_formLayout, numberOfDivisions=100)
 
         self.op_assetAssetTypes_txt = cmds.text('op_assetAssetTypes_txt', parent=self.op_shotSequence_formLayout, l="Asset Types", w=125, fn="smallBoldLabelFont", al="left")
@@ -425,14 +306,6 @@ class openPipelineMainUI(window.window):
                 (self.op_assetTypeRemove_btn, "top", 5, self.op_assetType_txtScrollList),
             ],
             )
-        
-        
-        #--------------------------------------------
-        #   END Section 3.01 - "Asset Types"
-        #
-        #   START Section 3.02 - "Assets"
-        #   Center Column in the "Assets" Tab
-        #--------------------------------------------
         
         self.op_assetAssets_formLayout = cmds.formLayout('op_assetAssets_formLayout', parent=self.op_assetBrowser_formLayout, numberOfDivisions=100)
 
@@ -517,13 +390,6 @@ class openPipelineMainUI(window.window):
             ],
         )
 
-        #--------------------------------------------
-        #   END Section 3.02 - "Assets"
-        #
-        #   START Section 3.03 - "Components"
-        #   Right Column in the "Assets" Tab
-        #--------------------------------------------
-        
         self.op_assetsComponents_formLayout = cmds.formLayout(parent=self.op_assetBrowser_formLayout, numberOfDivisions=100)
         
         self.op_assetsComponents_txt = cmds.text(parent=self.op_assetsComponents_formLayout, fn="smallBoldLabelFont", l="Components", w=125, al="left")
@@ -600,14 +466,7 @@ class openPipelineMainUI(window.window):
                 (self.op_assets_components_menuBarLayout, "left", 0, 0),
             ]
         )
-        
-        #--------------------------------------------
-        #   END Section 3.03 - "Components"
-        #
-        #   START Section 3.04 - Lower Contents of "Asset Inventory" Tab
-        #   this includes view playblast, notes, and the explore location 
-        #--------------------------------------------       
-     
+
         self.op_assetPreviewTxt = cmds.text(parent=self.op_assetBrowser_formLayout, fn="smallBoldLabelFont", l="Preview", w=164, al="center")
         self.op_assetPreviewImage = cmds.image(parent=self.op_assetBrowser_formLayout, h=105, w=164, i=self.op_currOpenPreview_filePath, bgc=(0, 0, 0))
         self.op_assetViewPlayblastAssetButton = cmds.button(parent=self.op_assetBrowser_formLayout, l="View Playblast", h=30, en=0, w=164, c="openPipelineViewPlayblastSelected 2")
@@ -618,13 +477,6 @@ class openPipelineMainUI(window.window):
         self.op_assetLocationTxt = cmds.text(parent=self.op_assetBrowser_formLayout, fn="smallBoldLabelFont", l="Location", w=395, al="center")
         self.op_assetLocationField = cmds.textField(parent=self.op_assetBrowser_formLayout, editable=0, w=345)
         self.op_exploreAssetsButton = cmds.button(parent=self.op_assetBrowser_formLayout, w=50, align="center", label="explore...", c="openPipelineExploreSelected 2")
-        
-        #--------------------------------------------
-        #   END Section 3.04 - Lower Contents of "Asset Inventory" Tab
-        #
-        #   START Attach elements to op_assetBrowser_formLayout
-        #--------------------------------------------
-        
         
         cmds.formLayout(
             self.op_assetBrowser_formLayout,
@@ -688,27 +540,12 @@ class openPipelineMainUI(window.window):
                 (self.op_exploreAssetsButton, "top", 5, self.op_assetLocationTxt),
             ],
             )
-        
-        #--------------------------------------------
-        #   END Attach elements to op_assetBrowser_formLayout
-        #
-        #   END Section 3.00 - "Asset Inventory" Tab
-        #
-        #   START Section 4.00 - "Shot Inventory" Tab
-        #   this is the third section that will be attached to the tab layout
-        #--------------------------------------------
-        
+
+    def _build_shot_browser_tab(self):
         self.op_shotFormLayout = cmds.formLayout('op_shotFormLayout', parent=self.op_mainTabs_tabLayout, width=410, numberOfDivisions=100)
         self.op_shotSeperator01 = cmds.separator(parent=self.op_shotFormLayout, style="double", w=410)
         self.op_shotTabShotBrowserTxt = cmds.text(parent=self.op_shotFormLayout, fn="boldLabelFont", label="SHOT BROWSER", w=410, al="left")
         self.op_shotSeperator02 = cmds.separator(parent=self.op_shotFormLayout, style="double", w=410)
-        
-
-        #--------------------------------------------
-        #   START Section 4.01 - "Sequence"
-        #   Left Column in the "Shot Inventory" Tab
-        #--------------------------------------------
-        
         
         self.op_shotSequenceFormLayout = cmds.formLayout(parent=self.op_shotFormLayout, numberOfDivisions=100)
         
@@ -741,21 +578,11 @@ class openPipelineMainUI(window.window):
                 (self.op_sequenceRemoveButton, "top", 5, self.op_sequenceScrollList),
             ],
             )
-            
-        #--------------------------------------------
-        #   END Section 4.01 - "Sequence"
-        #
-        #   START Section 4.02 - "Shot"
-        #   Center Column in the "Shot Inventory" Tab
-        #--------------------------------------------
-    
+
         self.op_shotShotFormLayout = cmds.formLayout(parent=self.op_shotFormLayout, numberOfDivisions=100)
         self.op_shotShotTxt = cmds.text(parent=self.op_shotShotFormLayout, fn="smallBoldLabelFont", l="Shot", w=120, al="left")
         self.op_shotMenuBarLayout01 = cmds.menuBarLayout(parent=self.op_shotShotFormLayout, w=125, h=175)
-        
-        #--------------------------------------------
-        #   START Section 4.02.1 - "Actions" dropdown
-        #--------------------------------------------
+
         self.op_shotMenu = cmds.menu(parent=self.op_shotMenuBarLayout01, label="ACTIONS...")
         
         self.op_shotMenuEdit = cmds.menuItem(parent=self.op_shotMenu, label="Edit Shot", subMenu=0, command="openPipelineOpenCurrentlySelected 3 2 workshop 0", ann=self.anno_editShot)
@@ -775,16 +602,8 @@ class openPipelineMainUI(window.window):
         
         self.op_shotMenuArchive = cmds.menuItem(parent=self.op_shotMenu, label="Archive...", command="openPipelineArchiveDialog 3 2")
         
-        #--------------------------------------------
-        #   END Section 4.02.1 - "Actions" dropdown
-        #--------------------------------------------
-        
         self.op_shotColumnLayout01 = cmds.columnLayout(parent=self.op_shotMenuBarLayout01, adj=1)
         self.op_shotScrollList = cmds.textScrollList(parent=self.op_shotColumnLayout01, w=125, h=100, dcc="openPipelineOpenCurrentlySelected 3 2 workshop 0", sc="openPipelineShotSelected 0", fn="smallPlainLabelFont", ann=self.anno_shotList)
-        
-        #--------------------------------------------
-        #   START Section 4.02.2 - Popup dropdown
-        #--------------------------------------------
         
         self.op_shotPopupMenu01 = cmds.popupMenu(p=self.op_shotScrollList, b=3, mm=1, pmc="openPipelineShotSelected 0")
         
@@ -804,10 +623,6 @@ class openPipelineMainUI(window.window):
         self.op_shotMenuReferenceMasterOpBox2 = cmds.menuItem(ob=1, c="openPipelineReferenceUI 1 shot master")
         
         self.op_shotMenuArchive2 = cmds.menuItem(parent=self.op_shotPopupMenu01, label="Archive...", command="openPipelineArchiveDialog 3 2")
-        
-        #--------------------------------------------
-        #   END Section 4.02.2 - Popup dropdown
-        #--------------------------------------------
         
         self.op_shotSubFormLayout01 = cmds.formLayout(parent=self.op_shotColumnLayout01, numberOfDivisions=100)
         self.op_shotNewButton = cmds.button(parent=self.op_shotSubFormLayout01, l="New...", bgc=(.6, .8, .5), w=65, c="openPipelineNewShotUI", ann=self.anno_newShot)
@@ -839,21 +654,11 @@ class openPipelineMainUI(window.window):
                 (self.op_shotMenuBarLayout01, "right", 0, 100),
             ]
         )
-        
-        #--------------------------------------------
-        #   END Section 4.02 - "Shot"
-        #
-        #   START Section 4.03 - "Components"
-        #   Right Column in the "Shot Inventory" Tab
-        #--------------------------------------------
+
         self.op_shotComponentsFormLayout = cmds.formLayout(parent=self.op_shotFormLayout, numberOfDivisions=100)
         
         self.op_shotComponentsTxt = cmds.text(parent=self.op_shotComponentsFormLayout, fn="smallBoldLabelFont", l="Components", w=125, al="left")
         self.op_shotMenuBarLayout02 = cmds.menuBarLayout(parent=self.op_shotComponentsFormLayout, w=125, h=175)
-        
-        #--------------------------------------------
-        #   START Section 4.03.1 - "Actions" dropdown
-        #--------------------------------------------
         
         self.op_shotComponentMenu = cmds.menu(parent=self.op_shotMenuBarLayout02, label="ACTIONS...")
         
@@ -872,19 +677,11 @@ class openPipelineMainUI(window.window):
         self.op_shotcompMenuReferenceMaster = cmds.menuItem(parent=self.op_shotcompMenuReference, label="Master", command="openPipelineReferenceUI 0 shotComponent master", ann=self.anno_referenceShotComponentMaster)
         self.op_shotcompMenuReferenceMasterOpBox = cmds.menuItem(ob=1, c="openPipelineReferenceUI 1 shotComponent master")
         
-        #--------------------------------------------
-        #   END Section 4.03.1 - "Actions" dropdown
-        #--------------------------------------------
-        
         self.op_shotcompMenuArchive = cmds.menuItem(parent=self.op_shotComponentMenu, label="Archive...", command="openPipelineArchiveDialog 3 3")
         
         self.op_shotColumnLayout02 = cmds.columnLayout(parent=self.op_shotMenuBarLayout02, adj=1)
         self.op_shotComponentScrollList = cmds.textScrollList(parent=self.op_shotColumnLayout02, w=125, h=100, en=0, dcc="openPipelineOpenCurrentlySelected 3 3 workshop 0", sc="openPipelineShotComponentSelected", fn="smallPlainLabelFont", ann=self.anno_shotComponentList)
-        
-        
-        #--------------------------------------------
-        #   START Section 4.03.2 - Popup dropdown
-        #--------------------------------------------
+
         self.op_shotPopupMenu02 = cmds.popupMenu(p=self.op_shotComponentScrollList, b=3, mm=1, pmc="openPipelineShotComponentSelected")
         
         self.op_shotcompMenuEdit2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="Edit Shot Component", subMenu=0, command="openPipelineOpenCurrentlySelected 3 3 workshop 0", ann=self.anno_editShotComponent)
@@ -903,10 +700,6 @@ class openPipelineMainUI(window.window):
         self.op_shotcompMenuReferenceMasterOpBox2 = cmds.menuItem(ob=1, c="openPipelineReferenceUI 1 shotComponent master")
         
         self.op_shotcompMenuArchive2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="Archive...", command="openPipelineArchiveDialog 3 3")
-        
-        #--------------------------------------------
-        #   END Section 4.03.2 - Popup dropdown
-        #--------------------------------------------
         
         self.op_shotSubFormLayout02 = cmds.formLayout(parent=self.op_shotColumnLayout02, numberOfDivisions=100)
         self.op_shotComponentNewButton = cmds.button(parent=self.op_shotSubFormLayout02, l="New...", bgc=(.6, .8, .5), w=65, c="openPipelineNewShotComponentUI", ann=self.anno_newShotComponent)
@@ -939,14 +732,7 @@ class openPipelineMainUI(window.window):
                 (self.op_shotMenuBarLayout02, "right", 0, 100),
             ],
         )	
-        
-        #--------------------------------------------
-        #   END Section 4.03 - "Components"
-        #
-        #   START Section 4.04 - Lower Contents of "Shot" Tab
-        #   this includes view playblast, notes, and the explore location
-        #--------------------------------------------
-        
+
         self.op_shotPreviewTxt = cmds.text(parent=self.op_shotFormLayout, fn="smallBoldLabelFont", w=164, l="Preview", al="center")
         self.op_shotPreviewImage = cmds.image(parent=self.op_shotFormLayout, h=105, w=164, i=self.op_defaultPreview_filePath, bgc=(0, 0, 0))
         self.op_shotViewPlayblastButton = cmds.button(parent=self.op_shotFormLayout, l="View Playblast", h=30, w=164, c="openPipelineViewPlayblastSelected 3")
@@ -957,13 +743,6 @@ class openPipelineMainUI(window.window):
         self.op_shotLocationTxt = cmds.text(parent=self.op_shotFormLayout, fn="smallBoldLabelFont", l="Location", al="center")
         self.op_shotLocationField = cmds.textField(parent=self.op_shotFormLayout, editable=0, w=345)
         self.op_exploreShotsButton = cmds.button(parent=self.op_shotFormLayout, w=50, align="center", label="explore...", c="openPipelineExploreSelected 3")
-        
-        #--------------------------------------------
-        #   END Section 4.03 - Lower Contents of "Shot" Tab
-        #
-        #   START Attach elements to op_shotFormLayout
-        #--------------------------------------------
-        
         cmds.formLayout(
             self.op_shotFormLayout,
             e=1,
@@ -1036,20 +815,8 @@ class openPipelineMainUI(window.window):
                 
             ]
             )
-        
-        #--------------------------------------------
-        #   END Attach elements to op_shotFormLayout
-        #
-        #   END Section 4.00 - "Shot Inventory" Tab
-        #--------------------------------------------
-        
-        #   tabLayout editing, giving tabs diff names
-        
-        cmds.tabLayout(self.op_mainTabs_tabLayout, edit=1, tabLabel=[(self.op_assetBrowser_formLayout, "Asset Browser"), (self.op_shotFormLayout, "Shot Browser"), (self.op_currOpen_formLayout, "Currently Open")])
-        
-        
-        #   columnLayout : Refresh UI
-        
+
+    def _build_bottom_buttons(self):
         self.op_refreshUI_formLayout = cmds.formLayout(parent=self.op_form1, width=410, numberOfDivisions=100)
         
         self.op_refreshUIButton = cmds.button(h=30, label="Refresh UI", command="openPipelineUI")
@@ -1067,24 +834,16 @@ class openPipelineMainUI(window.window):
             ],
         )
         
-        
-        #--------------------------------------------
-        #   START Attach elements to Main Form
-        #--------------------------------------------
-        
+    def _attach_main_form_elements(self):
         cmds.formLayout(
             self.op_form1,
             edit=True,
             attachPosition=[
                 
-                #   Top Drop Down Menu
                 (self.op_topDropDown_menuBarLayout, 'top', 0, 0),
                 (self.op_topDropDown_menuBarLayout, 'right', self.rtMargin, 100),
                 (self.op_topDropDown_menuBarLayout, 'left', self.lfMargin, 0),
                 
-                #   Section 1.01
-                #(self.op_userName_optionMenu, 'left', 100, 0),
-                #(self.op_projName_optionMenu, 'right', 100, 100),
                 (self.op_projPath_txtField, 'right', self.rtMargin, 100),
                 (self.op_projPath_txt, 'left', self.lfMargin, 0),
                 (self.op_projName_txt, 'left', self.lfMargin, 0),
@@ -1101,7 +860,6 @@ class openPipelineMainUI(window.window):
             ],
             attachControl=[
                 
-                #   Section 1.01
                 (self.op_userName_txt, 'top', 8, self.op_topDropDown_menuBarLayout),
                 (self.op_userName_optionMenu, 'top', 8, self.op_topDropDown_menuBarLayout),
                 (self.op_userName_optionMenu, 'left', 2, self.op_userName_txt),
@@ -1118,13 +876,3 @@ class openPipelineMainUI(window.window):
                 (self.op_mainTabs_tabLayout, 'bottom', 10, self.op_refreshUI_formLayout),
             ]
             )
-        
-        #--------------------------------------------
-        #   END Attach elements to Main Form
-        #--------------------------------------------
-        
-        #--------------------------------------------
-        #   END Main Form
-        #--------------------------------------------
-        
-        return [self.op_form1]

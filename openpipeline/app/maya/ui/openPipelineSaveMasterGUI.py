@@ -1,14 +1,12 @@
-###########################################
-# Name: openPipelineSaveMasterGUI
-# Description: Launches the UI for Mastering
-# Input: none
-# Returns: none
-############################################
+"""
+Module: openPipelineSaveMasterGUI.py
+
+Description:
+    Launches the UI for Mastering
+"""
 
 import maya.cmds as cmds
-
 import window as window
-
 import UIObjects as UIObjects
 
 class openPipelineSaveMasterGUI(window.window):
@@ -23,17 +21,23 @@ class openPipelineSaveMasterGUI(window.window):
         self.dockable=0
     
     def content(self):
-     
-        # vvvvvvvvvvvvvv from the mel version vvvvvvvvvvvvvvvvvvvvv
-        #string $mName = capitalizeString(`optionVar -q "op_masterName"`);
+        """
+        Builds and returns the main form layout for the Save Master UI.
+        """
         self.mName = "Master"
+        self.form1 = cmds.formLayout('openPipelineSaveMasterGUI_form', numberOfDivisions=100)
         
-        self.form1 = cmds.formLayout( 'openPipelineSaveMasterGUI_form', numberOfDivisions=100 )
+        self._build_options_section()
+        self._build_command_section()
+        self._build_comment_section()
+        self._build_action_buttons()
+        self._attach_form_elements()
         
-        # flatten reference...
-        self.masterImportReferencesBox_checkBox = cmds.checkBox('masterImportReferencesBox_checkBox', label="Import References", v=1, parent = self.form1)
-        # delete layers...
-        self.masterDeleteLayersBox_checkBox = cmds.checkBox('masterDeleteLayersBox_checkBox', label="Delete Display Layers", v=1, parent = self.form1)
+        return [self.form1]
+
+    def _build_options_section(self):
+        self.masterImportReferencesBox_checkBox = cmds.checkBox('masterImportReferencesBox_checkBox', label="Import References", v=1, parent=self.form1)
+        self.masterDeleteLayersBox_checkBox = cmds.checkBox('masterDeleteLayersBox_checkBox', label="Delete Display Layers", v=1, parent=self.form1)
         
         self.op_afterMasterField_radioBtnGrp = cmds.radioButtonGrp(
             'op_afterMasterField_radioBtnGrp',
@@ -43,29 +47,33 @@ class openPipelineSaveMasterGUI(window.window):
             columnWidth4=(100, 70, 60, 60),
             columnAlign4=("left", "left", "left", "left"),
             sl=1,
-            parent = self.form1,
-            )
-        
-        self.op_masterCommandField_txt = cmds.text('op_masterCommandField_txt', label="Custom " + str(self.mName) + " Command:", parent = self.form1)
-        self.op_masterCommandField_txtField = cmds.textField('op_masterCommandField_txtField', parent = self.form1)
-        
-        # notes...
-        self.op_masterCommentField_txt = cmds.text('op_masterCommentField_txt', label="comment: ", w=60, h=20, parent = self.form1)
-        self.op_masterCommentField_scrollField = cmds.scrollField('op_masterCommentField_scrollField', h=40, ww=1, parent = self.form1)
-        
-        self.openPipelineMasterCallback_btn = cmds.button('openPipelineMasterCallback_btn',
+            parent=self.form1
+        )
+
+    def _build_command_section(self):
+        self.op_masterCommandField_txt = cmds.text('op_masterCommandField_txt', label="Custom " + str(self.mName) + " Command:", parent=self.form1)
+        self.op_masterCommandField_txtField = cmds.textField('op_masterCommandField_txtField', parent=self.form1)
+
+    def _build_comment_section(self):
+        self.op_masterCommentField_txt = cmds.text('op_masterCommentField_txt', label="comment: ", w=60, h=20, parent=self.form1)
+        self.op_masterCommentField_scrollField = cmds.scrollField('op_masterCommentField_scrollField', h=40, ww=1, parent=self.form1)
+
+    def _build_action_buttons(self):
+        self.openPipelineMasterCallback_btn = cmds.button(
+            'openPipelineMasterCallback_btn',
             label = self.mName,
             backgroundColor = (0.9, 0.7, 0.4),
-            parent = self.form1,
-            )
+            parent=self.form1
+        )
         
-        self.cancel_btn = cmds.button('cancel_btn',
+        self.cancel_btn = cmds.button(
+            'cancel_btn',
             label = "cancel",
             backgroundColor = ( 0.8, 0.4, 0.4),
-            parent = self.form1,
-            )
-        
-        #Attach elements to form
+            parent=self.form1
+        )
+
+    def _attach_form_elements(self):
         cmds.formLayout(
             self.form1,
             edit=True,
@@ -98,5 +106,4 @@ class openPipelineSaveMasterGUI(window.window):
                 (self.cancel_btn, 'top', 2, self.op_masterCommentField_scrollField),
                 (self.cancel_btn, 'left', 2, self.openPipelineMasterCallback_btn),
             ]
-            )
-        return [self.form1]
+        )

@@ -30,16 +30,24 @@ class xmlfile(object):
 		Returns None if the module or class isn't found
 		'''
 		import __main__
+		import sys
 		# separate the module from the class [module1.module2].[cls]
-		print "Class: %s" % cls
+		print(f"Class: {cls}")
 		mod = cls[0:cls.rindex('.')]
 		className = cls[cls.rindex('.')+1:]
 	
+		# Check sys.modules first for a safer and more direct lookup
+		if mod in sys.modules:
+			class_obj = getattr(sys.modules[mod], className, None)
+			if class_obj:
+				return class_obj()
+
 		for d in dir(__main__):
 			try:
-				m = eval('__main__.%s.__name__' % d)
-				if cls == (m + "." + className):
-					return eval('__main__.%s.%s()' % (d,className ))
+				module_obj = getattr(__main__, d)
+				if getattr(module_obj, '__name__', None) + "." + className == cls:
+					class_obj = getattr(module_obj, className)
+					return class_obj()
 			except:
 				pass # Ignore if no attribute __name__
 		
@@ -111,8 +119,8 @@ class xmlfile(object):
 			if self._isCallable(obj): continue
 		
 			# is there some special encoding method ??
-			if hasattr(root, "_xml_encode_%s" % name):
-				value = getattr(root, "_xml_encode_%s" % name)()
+			if hasattr(root, f"_xml_encode_{name}"):
+				value = getattr(root, f"_xml_encode_{name}")()
 				element = fabric.createElement(name)
 				element.attributes["type"]='custom'
 				element.appendChild(fabric.createTextNode(value))
@@ -148,7 +156,8 @@ class xmlfile(object):
 		
 		if typeName in self._easyToPickle: 
 			initValue = self._getText(node.childNodes)
-			return eval("%s(%r)" % (typeName, initValue))
+			types = {'int': int, 'float': float, 'str': str}
+			return types[typeName](initValue)
 		elif typeName=="tuple":
 			return self._unpickleTuple(node)
 		elif typeName=="list":
@@ -156,12 +165,13 @@ class xmlfile(object):
 		elif typeName=="dict":
 			return self._unpickleDict(node)
 		elif typeName=="custom":
-			fun = "_xml_decode_%s" % node.tagName
-			if not obj or not fun in dir(obj) : return ''
-			return eval("__main__.%s.%s('%s')" % (self.getType(obj), fun, self._getText(node.childNodes)))
+			fun = f"_xml_decode_{node.tagName}"
+			if not obj or not hasattr(obj, fun): return ''
+			return getattr(obj, fun)(self._getText(node.childNodes))
 		else:
 			try:
-				obj = eval("__main__.%s()" % typeName)
+				import __main__
+				obj = getattr(__main__, typeName)()
 			except:
 				obj = self.getMod(typeName)
 			
