@@ -1,8 +1,8 @@
-# OpenPipeline 2.0 for Maya
+# openPypeline Studio for Maya
 
-OpenPipeline is an open-source framework for managing animation production data and workflows. 
+openPypeline Studio is an open-source framework for managing animation production data and workflows. 
 
-Originally developed as a MEL-based plug-in by Kickstand, **OpenPipeline 2.0** has been completely modernized and refactored into **Python 3** to natively support modern Autodesk Maya environments (Maya 2026+). It handles specific, critical aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows seamless.
+Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio** has been completely modernized and refactored into **Python 3** to natively support modern Autodesk Maya environments (Maya 2026+). It handles specific, critical aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows seamless.
 
 ## ✨ Features
 * **Automated Directory Structures:** Ensures all project files are strictly organized and standardized across your team.
@@ -25,25 +25,27 @@ Originally developed as a MEL-based plug-in by Kickstand, **OpenPipeline 2.0** h
 ```python
 import sys
 
-# Path to the directory containing the 'openpipeline' folder
-repo_path = "/path/to/OpenPipeline/maya"
+# Path to the directory containing the 'openpypeline' folder
+repo_path = "/path/to/openPypeline/maya"
 
 if repo_path not in sys.path:
     sys.path.insert(0, repo_path)
     
-import openPipeline_loader
-openPipeline_loader.openPipelineSetup()
+import opsLoader
+opsLoader.openPypelineSetup()
 ```
 5. Follow the on-screen prompts to define your Script Path and Project Path.
 
 ## 📖 Usage
 Once installed and configured, you can launch the main UI at any time using:
 ```python
-import openPipeline_loader
-openPipeline_loader.openPipeline()
+import opsLoader
+opsLoader.openPypeline()
 ```
 *(Tip: Highlight the snippet above and drag it to a Maya shelf to create a quick-launch button!)*
 
 ## ⚖️ License & Attribution
 **Original Framework:** openPipeline by Kickstand  
-**License:** MIT License (See `LICENSE` file for details)  
+**Original Summary:** openPipeline is a framework for animation production. The initial iteration is a plugin for Autodesk Maya. This framework handles file naming, revision control, collaborative notation and scene referencing.  
+**Last Update:** 2013-04-22  
+**License:** Common Public License 1.0 (See `LICENSE.md` file for details)  
