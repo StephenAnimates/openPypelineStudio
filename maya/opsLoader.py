@@ -7,7 +7,7 @@ Description: Main initialization and setup script for openPypeline Studio in May
              
 Original Framework: OpenPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
-Source: 
+
 """
 
 import maya.cmds as cmds
@@ -53,13 +53,13 @@ def source_python_module(path):
     # Add path to sys.path if it's not already there
     if path not in sys.path:
         sys.path.append(path)
-        print(f"Appending {path} to sys.path")
+        logger.info(f"Appending {path} to sys.path")
 
-    print(f"----- Sourcing Python from {path} ------")
+    logger.info(f"----- Sourcing Python from {path} ------")
     for file_name in os.listdir(path):
         if file_name.endswith(".py") and not file_name.startswith("__"):
             module_name = os.path.splitext(file_name)[0]
-            print(f"//// Python Source: {module_name}")
+            logger.info(f"//// Python Source: {module_name}")
             try:
                 # Import the module if it's the first time
                 module = importlib.import_module(module_name)
@@ -234,33 +234,37 @@ def openPypelineSetup():
 
     cmds.window(SETUP_WINDOW, title="openPypeline Studio Setup", widthHeight=(405, 350), sizeable=False)
 
-    with cmds.columnLayout(adjustableColumn=True, rowSpacing=5, co=("both", 10)):
-        cmds.text(label="Script Path Setup:", font="boldLabelFont", align="left")
-        cmds.text(label='Please specify the folder in which the "openpypeline" folder and loader scripts are located.', align="left")
+    cmds.columnLayout(adjustableColumn=True, rowSpacing=5, co=("both", 10))
+    cmds.text(label="Script Path Setup:", font="boldLabelFont", align="left")
+    cmds.text(label='Please specify the folder in which the "openpypeline" folder and loader scripts are located.', align="left")
 
-        cmds.textField(MAIN_PATH_TEXT_FIELD, text=script_path, height=20)
-        with cmds.rowLayout(numberOfColumns=2, columnWidth2=(325, 60)):
-            cmds.text(label="")
-            browse_cmd = partial(browse_for_path, partial(set_text_field_path, MAIN_PATH_TEXT_FIELD))
-            cmds.button(label="Browse...", width=60, command=browse_cmd)
+    cmds.textField(MAIN_PATH_TEXT_FIELD, text=script_path, height=20)
+    cmds.rowLayout(numberOfColumns=2, columnWidth2=(325, 60))
+    cmds.text(label="")
+    browse_cmd = partial(browse_for_path, partial(set_text_field_path, MAIN_PATH_TEXT_FIELD))
+    cmds.button(label="Browse...", width=60, command=browse_cmd)
+    cmds.setParent("..")
 
-        cmds.separator(style="none", height=10)
+    cmds.separator(style="none", height=10)
 
-        cmds.text(label="Project File Setup:", font="boldLabelFont", align="left")
-        cmds.text(label='By default, the Project File will be located in the "openpypeline" folder.\nYou may set a different location for the Project File here.', align="left")
+    cmds.text(label="Project File Setup:", font="boldLabelFont", align="left")
+    cmds.text(label='By default, the Project File will be located in the "openpypeline" folder.\nYou may set a different location for the Project File here.', align="left")
 
-        cmds.textField(PROJ_PATH_TEXT_FIELD, editable=False, text="[Default]", height=20)
-        with cmds.rowLayout(numberOfColumns=3, columnWidth3=(265, 60, 60)):
-            cmds.text(label="")
-            cmds.button(PROJ_PATH_TOGGLE_BUTTON, label="Edit", width=60, command=toggle_project_path_field)
-            browse_cmd = partial(browse_for_path, partial(set_text_field_path, PROJ_PATH_TEXT_FIELD))
-            cmds.button(PROJ_PATH_BROWSE_BUTTON, label="Browse...", width=60, enable=False, command=browse_cmd)
+    cmds.textField(PROJ_PATH_TEXT_FIELD, editable=False, text="[Default]", height=20)
+    cmds.rowLayout(numberOfColumns=3, columnWidth3=(265, 60, 60))
+    cmds.text(label="")
+    cmds.button(PROJ_PATH_TOGGLE_BUTTON, label="Edit", width=60, command=toggle_project_path_field)
+    browse_cmd = partial(browse_for_path, partial(set_text_field_path, PROJ_PATH_TEXT_FIELD))
+    cmds.button(PROJ_PATH_BROWSE_BUTTON, label="Browse...", width=60, enable=False, command=browse_cmd)
+    cmds.setParent("..")
 
-        cmds.separator(style="none", height=10)
+    cmds.separator(style="none", height=10)
 
-        with cmds.rowLayout(numberOfColumns=2, columnWidth2=(190, 190), columnAttach=[(1, 'both', 5), (2, 'both', 5)]):
-            cmds.button(label="Accept", width=190, command=setup_exec)
-            cmds.button(label="Cancel", width=190, command=lambda *args: cmds.deleteUI(SETUP_WINDOW))
+    cmds.rowLayout(numberOfColumns=2, columnWidth2=(190, 190), columnAttach=[(1, 'both', 5), (2, 'both', 5)])
+    cmds.button(label="Accept", width=190, command=setup_exec)
+    cmds.button(label="Cancel", width=190, command=lambda *args: cmds.deleteUI(SETUP_WINDOW))
+    cmds.setParent("..")
+    cmds.setParent("..")
 
     root_folder = os.path.dirname(script_path.rstrip("/\\"))
     if project_path and project_path != os.path.join(root_folder, "openpypeline/").replace("\\", "/"):

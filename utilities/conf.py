@@ -1,3 +1,10 @@
+"""
+File: conf.py
+Description: Sphinx documentation builder configuration file for openPypeline Studio.
+             
+License: Common Public License 1.0 (CPL-1.0)
+"""
+
 import os
 import sys
 
@@ -6,8 +13,8 @@ sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 project = 'openPypeline Studio'
-copyright = '2026, open-source community'
-author = 'open-source community'
+copyright = '2026, openPypeline Contributors'
+author = 'openPypeline Contributors'
 release = '2.0.0-alpha'
 
 # -- General configuration ---------------------------------------------------
