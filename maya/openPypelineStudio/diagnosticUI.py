@@ -4,29 +4,33 @@ Module: diagnosticUI.py
 Description:
     This script is an example of how a single class can manage and store the data for all Maya openPypeline Studio GUIs.
     With its loadPrefs() and savePrefs() procedures, it also demonstrates its potential ability to save out both session independent & application independent information.
+    
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import maya.cmds as cmds
 import os
+import importlib
 
 import window as window
 
 import UIObjects as UIObjects
 
 import openpypeline.core.util.XML as XML
-reload(XML)
+importlib.reload(XML)
 
 import opsSaveMasterGUI
-reload(opsSaveMasterGUI)
+importlib.reload(opsSaveMasterGUI)
 
 import opsProjectManagerGUI
-reload(opsProjectManagerGUI)
+importlib.reload(opsProjectManagerGUI)
 
 import opsProjDialogGUI
-reload(opsProjDialogGUI)
+importlib.reload(opsProjDialogGUI)
 
 import opsMainUI
-reload(opsMainUI)
+importlib.reload(opsMainUI)
 
 class diagnosticUI(window.window):
 

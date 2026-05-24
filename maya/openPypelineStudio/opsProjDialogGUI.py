@@ -4,6 +4,9 @@ Module: opsProjDialogGUI.py
 Description:
     Opens the Project Dialog Window. This is used either for creating a new project 
     or editing an existing project.
+
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import maya.cmds as cmds

@@ -3,21 +3,27 @@ File: opsActions.py
 Description: Core actions and functional operations for openPypeline Studio.
              Handles creation, file operations, referencing, importing, and history.
              Refactored from openPipelineActions.mel to use modern Python libraries.
+             
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import maya.cmds as cmds
-import maya.mel as mel
 import os
 import re
+import logging
+
+logger = logging.getLogger("openPypeline.actions")
 
 import opsInfo
 import opsLoader
 import opsUtils
+import opsProject
 
 
 def activate_project(proj_name):
     """Selects a project to work in and updates all associated optionVars and workspaces."""
-    proj_xml = mel.eval(f'openPipelineGetSingleProjectXml("{proj_name}")')
+    proj_xml = opsProject.get_single_project_xml(proj_name)
     proj_path = opsUtils.get_xml_data(proj_xml, "path")
     
     if proj_path and not proj_path.endswith('/'):
@@ -51,21 +57,21 @@ def activate_project(proj_name):
         delete_path = proj_deleted if os.path.isdir(proj_deleted) else os.path.join(proj_path, proj_deleted)
         delete_path = os.path.join(delete_path, "").replace("\\", "/")
 
-        cmds.optionVar(stringValue=("op_currProjectName", proj_name))
-        cmds.optionVar(stringValue=("op_currProjectPath", proj_path))
-        cmds.optionVar(stringValue=("op_libPath", lib_path))
-        cmds.optionVar(stringValue=("op_shotPath", shot_path))
-        cmds.optionVar(stringValue=("op_scriptsPath", scripts_path))
-        cmds.optionVar(stringValue=("op_rendersPath", renders_path))
-        cmds.optionVar(stringValue=("op_particlesPath", particles_path))
-        cmds.optionVar(stringValue=("op_texturesPath", textures_path))
-        cmds.optionVar(stringValue=("op_masterFormat", proj_m_format))
-        cmds.optionVar(stringValue=("op_workshopFormat", proj_w_format))
-        cmds.optionVar(stringValue=("op_masterName", proj_m_name))
-        cmds.optionVar(stringValue=("op_workshopName", proj_w_name))
-        cmds.optionVar(stringValue=("op_deletePath", delete_path))
-        cmds.optionVar(stringValue=("op_archivePath", archive_path))
-        cmds.optionVar(stringValue=("op_users", proj_users))
+        cmds.optionVar(stringValue=("ops_currProjectName", proj_name))
+        cmds.optionVar(stringValue=("ops_currProjectPath", proj_path))
+        cmds.optionVar(stringValue=("ops_libPath", lib_path))
+        cmds.optionVar(stringValue=("ops_shotPath", shot_path))
+        cmds.optionVar(stringValue=("ops_scriptsPath", scripts_path))
+        cmds.optionVar(stringValue=("ops_rendersPath", renders_path))
+        cmds.optionVar(stringValue=("ops_particlesPath", particles_path))
+        cmds.optionVar(stringValue=("ops_texturesPath", textures_path))
+        cmds.optionVar(stringValue=("ops_masterFormat", proj_m_format))
+        cmds.optionVar(stringValue=("ops_workshopFormat", proj_w_format))
+        cmds.optionVar(stringValue=("ops_masterName", proj_m_name))
+        cmds.optionVar(stringValue=("ops_workshopName", proj_w_name))
+        cmds.optionVar(stringValue=("ops_deletePath", delete_path))
+        cmds.optionVar(stringValue=("ops_archivePath", archive_path))
+        cmds.optionVar(stringValue=("ops_users", proj_users))
 
         if proj_scripts:
             opsLoader.source_mel_module(scripts_path)
@@ -83,15 +89,15 @@ def activate_project(proj_name):
         cmds.workspace(proj_path, openWorkspace=True)
         return 1
     else:
-        cmds.warning(f"openPypeline Studio: Couldn't select project {proj_name}. Path {proj_path} couldn't be found.")
+        logger.warning(f"Couldn't select project '{proj_name}'. Path '{proj_path}' couldn't be found.")
         return 0
 
 
 def create_or_edit_project(mode, old_name, new_name, new_path, new_description, new_status, new_date, new_deadline, new_master_name, new_master_format, new_workshop_name, new_workshop_format, new_lib_loc, new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc, new_archive_loc, new_deleted_loc, new_users, user_mode):
     """Creates a new project or edits the properties of an existing project."""
     mode_names = ["created", "edited"]
-    active_project_name = cmds.optionVar(query="op_currProjectName") if cmds.optionVar(exists="op_currProjectName") else ""
-    proj_data = mel.eval('openPipelineGetProjectsData()') or []
+    active_project_name = cmds.optionVar(query="ops_currProjectName") if cmds.optionVar(exists="ops_currProjectName") else ""
+    proj_data = opsProject.get_projects_data() or []
     error = ""
     
     # Input validations
@@ -173,27 +179,27 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
                     index = i
                     break
             if index == -1:
-                cmds.error(f"openPypeline Studio: Couldn't edit Project. Can't find Project with name '{old_name}'.")
+            logger.error(f"Couldn't edit Project. Can't find Project with name '{old_name}'.")
                 return 0
             proj_data[index] = new_line
             
-        mel.eval(f'string $data[] = {{"{str("&#34;, &#34;".join(proj_data))}"}}; openPipelineRewriteProjFile($data);')
+        opsProject.rewrite_proj_file(proj_data)
         
         if active_project_name == old_name:
-            cmds.optionVar(stringValue=("op_currProjectName", new_name))
+            cmds.optionVar(stringValue=("ops_currProjectName", new_name))
             activate_project(new_name)
             
-        print(f"openPypeline Studio: Project {mode_names[mode]}.\n")
+        logger.info(f"Project {mode_names[mode]}.")
         return 1
     else:
-        cmds.error(f"openPypeline Studio error - Project could not be {mode_names[mode]} because:\n{error}")
+        logger.error(f"Project could not be {mode_names[mode]} because:\n{error}")
         return 0
 
 
 def remove_project(proj_name):
     """Removes a project from the openPypeline list (files remain intact)."""
-    curr_project_name = cmds.optionVar(query="op_currProjectName") if cmds.optionVar(exists="op_currProjectName") else ""
-    projects_data = mel.eval('openPipelineGetProjectsData()') or []
+    curr_project_name = cmds.optionVar(query="ops_currProjectName") if cmds.optionVar(exists="ops_currProjectName") else ""
+    projects_data = opsProject.get_projects_data() or []
     new_projects_data = []
     removed = False
     
@@ -205,11 +211,11 @@ def remove_project(proj_name):
             
     if removed:
         if curr_project_name == proj_name:
-            cmds.optionVar(stringValue=("op_currProjectName", ""))
-            cmds.optionVar(stringValue=("op_currProjectPath", ""))
-        mel.eval(f'string $data[] = {{"{str("&#34;, &#34;".join(new_projects_data))}"}}; openPipelineRewriteProjFile($data);')
+            cmds.optionVar(stringValue=("ops_currProjectName", ""))
+            cmds.optionVar(stringValue=("ops_currProjectPath", ""))
+        opsProject.rewrite_proj_file(new_projects_data)
     else:
-        cmds.warning(f"openPypeline Studio: Couldn't remove project {proj_name}. Project not found.")
+        logger.warning(f"Couldn't remove project '{proj_name}'. Project not found.")
         
     return int(removed)
 
@@ -227,7 +233,7 @@ def create_new_item(tab, level1, level2, level3, mode):
     workshop_folder = opsInfo.get_file_name(tab, level1, level2, level3, "workshopFolder")
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
     category = opsInfo.get_category(tab, level1, level2, level3)
-    w_name = cmds.optionVar(query="op_workshopName")
+    w_name = cmds.optionVar(query="ops_workshopName")
 
     if depth and item_path:
         if not re.match(r"^[a-zA-Z0-9_]*$", item_name):
@@ -240,7 +246,7 @@ def create_new_item(tab, level1, level2, level3, mode):
             else: error += f"Item '{parent_path}' doesn't exist. Can't create new {category} under it.\n"
         
         if error:
-            cmds.warning(f"openPypeline Studio: {error}")
+            logger.warning(error.strip())
             return ""
             
         os.makedirs(item_path, exist_ok=True)
@@ -250,25 +256,30 @@ def create_new_item(tab, level1, level2, level3, mode):
             os.makedirs(version_folder, exist_ok=True)
             os.makedirs(note_folder, exist_ok=True)
 
-            cmds.optionVar(stringValue=("op_creationPath", f"{item_path}/"))
-            cmds.optionVar(stringValue=("op_creationType", category))
+            cmds.optionVar(stringValue=("ops_creationPath", f"{item_path}/"))
+            cmds.optionVar(stringValue=("ops_creationType", category))
             
             add_event_note(tab, level1, level2, level3, "created", 0, "")
             
-            ext = cmds.optionVar(query="op_workshopFormat")
+            ext = cmds.optionVar(query="ops_workshopFormat")
             file_type = "mayaBinary" if ext == "mb" else "mayaAscii"
+            
+            import opsEngine
+            engine = opsEngine.OpsEngine()
 
             if mode == 2:
-                cmds.file(destination_file, exportSelected=True, type=file_type)
+                if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
+                    engine.file_handler.export_file(destination_file, file_type, selected=True)
                 add_event_note(tab, level1, level2, level3, w_name, 1, f"Selection exported as first {w_name} file.")
             elif mode == 3:
-                cmds.file(destination_file, exportAll=True, preserveReferences=True, type=file_type, constructionHistory=True, channels=True, constraints=True, expressions=True, shader=True)
+                if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
+                    engine.file_handler.export_file(destination_file, file_type, selected=False)
                 add_event_note(tab, level1, level2, level3, w_name, 1, f"Scene exported as first {w_name} file.")
             
             set_custom_notes(tab, level1, level2, level3, " ")
         return item_path
     else:
-        cmds.warning("openPypeline Studio: Parameters incorrect, no new item created.")
+        logger.warning("Parameters incorrect, no new item created.")
         return ""
 
 
@@ -279,10 +290,10 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
     
     if depth > 1 and os.path.isdir(folder) and item_type in ["workshop", "master"]:
         version = 0
-        curr_level1 = cmds.optionVar(query="op_currOpenLevel1") if cmds.optionVar(exists="op_currOpenLevel1") else ""
+        curr_level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
         
         if cmds.file(query=True, modified=True) and curr_level1:
-            w_name = cmds.optionVar(query="op_workshopName")
+            w_name = cmds.optionVar(query="ops_workshopName")
             confirm = cmds.confirmDialog(
                 title="openPypeline Studio",
                 message=f"Would you like to Save {w_name} before editing Asset?",
@@ -300,7 +311,12 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
         
         if os.path.isfile(file_to_open):
             version = opsInfo.get_version_from_file(file_to_open)
-            cmds.file(file_to_open, force=True, open=True)
+            import opsEngine
+            engine = opsEngine.OpsEngine()
+            if engine.file_handler and hasattr(engine.file_handler, 'open'):
+                engine.file_handler.open(file_to_open)
+            else:
+                logger.warning("No DCC file handler available to open files.")
         elif item_type == "workshop" and not os.path.isfile(latest_workshop):
             choice = cmds.confirmDialog(
                 title="Edit Asset",
@@ -310,22 +326,25 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
                 defaultButton="Current Scene"
             )
             if choice == "New Scene":
-                cmds.file(force=True, newFile=True)
+                import opsEngine
+                engine = opsEngine.OpsEngine()
+                if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
+                    engine.file_handler.new_file()
             elif choice == "Cancel":
                 return 0
         else:
-            cmds.warning("openPypeline Studio: File Not Found")
+            logger.warning("File Not Found")
             return 0
             
-        cmds.optionVar(stringValue=("op_currOpenType", item_type))
-        cmds.optionVar(intValue=("op_currOpenVersion", version))
-        cmds.optionVar(stringValue=("op_currOpenCategory", category))
-        cmds.optionVar(stringValue=("op_currOpenLevel1", level1))
-        cmds.optionVar(stringValue=("op_currOpenLevel2", level2))
-        cmds.optionVar(stringValue=("op_currOpenLevel3", level3))
-        cmds.optionVar(intValue=("op_currOpenTab", tab))
+        cmds.optionVar(stringValue=("ops_currOpenType", item_type))
+        cmds.optionVar(intValue=("ops_currOpenVersion", version))
+        cmds.optionVar(stringValue=("ops_currOpenCategory", category))
+        cmds.optionVar(stringValue=("ops_currOpenLevel1", level1))
+        cmds.optionVar(stringValue=("ops_currOpenLevel2", level2))
+        cmds.optionVar(stringValue=("ops_currOpenLevel3", level3))
+        cmds.optionVar(intValue=("ops_currOpenTab", tab))
     else:
-        cmds.warning("openPypeline Studio: Invalid command or Item doesn't exist.")
+        logger.warning("Invalid command or Item doesn't exist.")
         return 0
     return 1
 
@@ -334,14 +353,15 @@ def import_item(item_type, tab, level1, level2, level3, flags=""):
     """Imports an item into the current scene."""
     file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
     if os.path.isfile(file_path):
-        try:
-            mel.eval(f'file -import {flags} "{file_path}"')
-            return 1
-        except Exception as e:
-            cmds.warning(f"openPypeline Studio: Failed to import: {e}")
+        import opsEngine
+        engine = opsEngine.OpsEngine()
+        if engine.file_handler and hasattr(engine.file_handler, 'import_file'):
+            return int(engine.file_handler.import_file(file_path))
+        else:
+            logger.warning("No DCC file handler available for import.")
             return 0
     else:
-        cmds.warning(f"openPypeline Studio: Could not find file to import: {file_path}")
+        logger.warning(f"Could not find file to import: {file_path}")
         return 0
 
 
@@ -349,77 +369,57 @@ def reference_item(item_type, tab, level1, level2, level3, flags=""):
     """References an item into the current scene."""
     file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
     if os.path.isfile(file_path):
-        try:
-            mel.eval(f'file -reference {flags} "{file_path}"')
-            return 1
-        except Exception as e:
-            cmds.warning(f"openPypeline Studio: Failed to reference: {e}")
+        import opsEngine
+        engine = opsEngine.OpsEngine()
+        if engine.file_handler and hasattr(engine.file_handler, 'reference_file'):
+            return int(engine.file_handler.reference_file(file_path))
+        else:
+            logger.warning("No DCC file handler available for reference.")
             return 0
     else:
-        cmds.warning(f"openPypeline Studio: Could not find file to reference: {file_path}")
+        logger.warning(f"Could not find file to reference: {file_path}")
         return 0
 
 
-def import_refs():
-    """Flattens the scene by importing all referenced files."""
-    referenced_files = cmds.file(query=True, reference=True) or []
-    w_name = cmds.optionVar(query="op_workshopName") if cmds.optionVar(exists="op_workshopName") else "workshop"
-    m_name = cmds.optionVar(query="op_masterName") if cmds.optionVar(exists="op_masterName") else "master"
-    
-    if not referenced_files:
-        cmds.warning("openPypeline Studio: no references to import")
-        return
-        
-    for ref in referenced_files:
-        if cmds.file(ref, query=True, deferReference=True):
-            msg = (f"Referenced file '{ref}' is currently unloaded and cannot be imported.\n"
-                   f"Would you like to keep or remove this reference in the {m_name} file (it will remain in the {w_name} file)?")
-            result = cmds.confirmDialog(
-                title="openPypeline Studio",
-                message=msg,
-                button=["Keep", "Remove"],
-                defaultButton="Keep"
-            )
-            if result == "Remove":
-                cmds.file(ref, removeReference=True)
-        else:
-            cmds.file(ref, importReference=True)
-            print(f"openPypeline Studio: {ref} imported into current file")
 
 
 def save_workshop(note=""):
     """Saves a workshop for the currently open item."""
-    ext = cmds.optionVar(query="op_workshopFormat")
-    w_name = cmds.optionVar(query="op_workshopName")
-    level1 = cmds.optionVar(query="op_currOpenLevel1")
-    level2 = cmds.optionVar(query="op_currOpenLevel2")
-    level3 = cmds.optionVar(query="op_currOpenLevel3")
-    tab = cmds.optionVar(query="op_currOpenTab")
+    ext = cmds.optionVar(query="ops_workshopFormat")
+    w_name = cmds.optionVar(query="ops_workshopName")
+    level1 = cmds.optionVar(query="ops_currOpenLevel1")
+    level2 = cmds.optionVar(query="ops_currOpenLevel2")
+    level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    tab = cmds.optionVar(query="ops_currOpenTab")
     
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
-    cmds.file(rename=destination_file)
     
     if ext == "ma": file_type = "mayaAscii"
     elif ext == "mb": file_type = "mayaBinary"
     else:
         file_type = "mayaBinary"
-        cmds.warning(f"openPypeline Studio: Invalid file format ({ext}) specified: saving to Maya Binary")
+        logger.warning(f"Invalid file format ({ext}) specified: saving to Maya Binary")
         
-    cmds.file(save=True, type=file_type)
+    import opsEngine
+    engine = opsEngine.OpsEngine()
+    if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
+        engine.file_handler.save_as(destination_file, file_type)
+    else:
+        logger.warning("No DCC file handler available for saving files.")
     latest_version = opsInfo.get_version_from_file(destination_file)
-    cmds.optionVar(intValue=("op_currOpenVersion", latest_version))
+    cmds.optionVar(intValue=("ops_currOpenVersion", latest_version))
     add_event_note(tab, level1, level2, level3, w_name, latest_version, note)
     return 1
 
 
 def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
     """Saves a master for the currently open item."""
-    ext = cmds.optionVar(query="op_masterFormat")
-    level1 = cmds.optionVar(query="op_currOpenLevel1")
-    level2 = cmds.optionVar(query="op_currOpenLevel2")
-    level3 = cmds.optionVar(query="op_currOpenLevel3")
-    tab = cmds.optionVar(query="op_currOpenTab")
-    master_name = cmds.optionVar(query="op_masterName")
+    ext = cmds.optionVar(query="ops_masterFormat")
+    level1 = cmds.optionVar(query="ops_currOpenLevel1")
+    level2 = cmds.optionVar(query="ops_currOpenLevel2")
+    level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    tab = cmds.optionVar(query="ops_currOpenTab")
+    master_name = cmds.optionVar(query="ops_masterName")
     
     master_file = opsInfo.get_file_name(tab, level1, level2, level3, "master")
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextVersion")
@@ -429,29 +429,32 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
     if os.path.exists(master_file):
         os.rename(master_file, destination_file)
         
-    if flatten: import_refs()
+    import opsEngine
+    engine = opsEngine.OpsEngine()
+    
+    if flatten and engine.file_handler and hasattr(engine.file_handler, 'flatten_references'):
+        w_name = cmds.optionVar(query="ops_workshopName") if cmds.optionVar(exists="ops_workshopName") else "workshop"
+        engine.file_handler.flatten_references(master_name, w_name)
         
-    if delete_disp_layers:
-        layers = cmds.ls(type="displayLayer") or []
-        for layer in layers:
-            if layer != "defaultLayer":
-                cmds.delete(layer)
+    if delete_disp_layers and engine.file_handler and hasattr(engine.file_handler, 'delete_display_layers'):
+        engine.file_handler.delete_display_layers()
                 
     if custom_command:
-        print(f"openPypeline Studio: begin custom command {custom_command}")
-        try: mel.eval(custom_command)
-        except Exception as e: cmds.warning(f"Custom command failed: {e}")
-        print(f"openPypeline Studio: end custom command {custom_command}")
+        logger.info(f"Begin custom command {custom_command}")
+        try: exec(custom_command)
+        except Exception as e: logger.warning(f"Custom command failed: {e}")
+        logger.info(f"End custom command {custom_command}")
         
-    cmds.file(rename=master_file)
     file_type = "mayaAscii" if ext == "ma" else "mayaBinary"
-    cmds.file(save=True, type=file_type)
+    if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
+        engine.file_handler.save_as(master_file, file_type)
     
     if after == 1: open_item("workshop", tab, level1, level2, level3, 0)
-    elif after == 2: cmds.optionVar(stringValue=("op_currOpenType", "master"))
+    elif after == 2: cmds.optionVar(stringValue=("ops_currOpenType", "master"))
     elif after == 3:
         close_file()
-        cmds.file(newFile=True)
+        if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
+            engine.file_handler.new_file()
         
     add_event_note(tab, level1, level2, level3, master_name, 0, comment)
     return 1
@@ -460,13 +463,13 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
 def remove_item(tab, level1, level2, level3):
     """Moves the files and folders under the selected item to the 'deleted' folder."""
     depth = sum(1 for lvl in [level1, level2, level3] if lvl)
-    curr_level1 = cmds.optionVar(query="op_currOpenLevel1")
-    curr_level2 = cmds.optionVar(query="op_currOpenLevel2")
-    curr_level3 = cmds.optionVar(query="op_currOpenLevel3")
-    curr_tab = cmds.optionVar(query="op_currOpenTab")
+    curr_level1 = cmds.optionVar(query="ops_currOpenLevel1")
+    curr_level2 = cmds.optionVar(query="ops_currOpenLevel2")
+    curr_level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    curr_tab = cmds.optionVar(query="ops_currOpenTab")
     
     original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    delete_path = cmds.optionVar(query="op_deletePath")
+    delete_path = cmds.optionVar(query="ops_deletePath")
     name = os.path.basename(original_path.rstrip('/'))
     
     confirm = cmds.confirmDialog(
@@ -501,7 +504,7 @@ def remove_item(tab, level1, level2, level3):
             os.rename(original_path, new_path)
             return remove_archive(tab, level1, level2, level3)
         except Exception as e:
-            cmds.error(f"openPypeline Studio: Remove failed. Folder {original_path} could not be moved to the 'deleted' folder. {e}")
+            logger.error(f"Remove failed. Folder {original_path} could not be moved to the 'deleted' folder. {e}")
             return 0
     return 0
 
@@ -509,7 +512,7 @@ def remove_item(tab, level1, level2, level3):
 def remove_archive(tab, level1, level2, level3):
     """Moves the archived files and folders under the selected item to the 'deleted' folder."""
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
-    delete_path = cmds.optionVar(query="op_deletePath")
+    delete_path = cmds.optionVar(query="ops_deletePath")
     name = os.path.basename(archive_path.rstrip('/'))
     
     os.makedirs(delete_path, exist_ok=True)
@@ -522,14 +525,14 @@ def remove_archive(tab, level1, level2, level3):
             os.rename(archive_path, new_path)
             return 1
         except Exception as e:
-            cmds.error(f"openPypeline Studio: Remove archive failed. Folder {archive_path} could not be moved to the 'deleted' folder. {e}")
+            logger.error(f"Remove archive failed. Folder {archive_path} could not be moved to the 'deleted' folder. {e}")
             return 0
     return 1
 
 
 def archive_item(tab, level1, level2, level3, keep_workshops, keep_versions):
     """Archives old versions of an item."""
-    w_name = cmds.optionVar(query="op_workshopName")
+    w_name = cmds.optionVar(query="ops_workshopName")
     path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
     w_attempts = w_successes = v_attempts = v_successes = 0
@@ -560,14 +563,14 @@ def archive_item(tab, level1, level2, level3, keep_workshops, keep_versions):
             
     msg = f"{w_successes} / {w_attempts} {w_name} files successfully moved to the archive.\n"
     msg += f"{v_successes} / {v_attempts} version files successfully moved to the archive.\n"
-    print(f"openPypeline Studio: {msg}")
+    logger.info(msg.strip())
     return 1
 
 
 def retrieve_archive(tab, level1, level2, level3, do_workshops, do_versions):
     """Restores all archived files of an item."""
     w_attempts = w_successes = v_attempts = v_successes = 0
-    w_name = cmds.optionVar(query="op_workshopName")
+    w_name = cmds.optionVar(query="ops_workshopName")
     original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
     
@@ -595,14 +598,14 @@ def retrieve_archive(tab, level1, level2, level3, do_workshops, do_versions):
             
     msg = f"{w_successes} / {w_attempts} {w_name} files successfully retrieved from the archive.\n"
     msg += f"{v_successes} / {v_attempts} version files successfully retrieved from the archive.\n"
-    print(f"openPypeline Studio: {msg}")
+    logger.info(msg.strip())
     return 1
 
 
 def close_file():
     """Closes the currently open file."""
-    w_name = cmds.optionVar(query="op_workshopName")
-    curr_level1 = cmds.optionVar(query="op_currOpenLevel1") if cmds.optionVar(exists="op_currOpenLevel1") else ""
+    w_name = cmds.optionVar(query="ops_workshopName")
+    curr_level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
     if cmds.file(query=True, modified=True) and curr_level1:
         confirm = cmds.confirmDialog(
             title="openPypeline Studio",
@@ -613,14 +616,17 @@ def close_file():
         if confirm == "Save": save_workshop("saved before closing")
         elif confirm == "Cancel": return 1
     
-    cmds.optionVar(stringValue=("op_currOpenType", ""))
-    cmds.optionVar(intValue=("op_currOpenVersion", 0))
-    cmds.optionVar(stringValue=("op_currOpenCategory", ""))
-    cmds.optionVar(stringValue=("op_currOpenLevel1", ""))
-    cmds.optionVar(stringValue=("op_currOpenLevel2", ""))
-    cmds.optionVar(stringValue=("op_currOpenLevel3", ""))
-    cmds.optionVar(intValue=("op_currOpenTab", 0))
-    cmds.file(force=True, newFile=True)
+    cmds.optionVar(stringValue=("ops_currOpenType", ""))
+    cmds.optionVar(intValue=("ops_currOpenVersion", 0))
+    cmds.optionVar(stringValue=("ops_currOpenCategory", ""))
+    cmds.optionVar(stringValue=("ops_currOpenLevel1", ""))
+    cmds.optionVar(stringValue=("ops_currOpenLevel2", ""))
+    cmds.optionVar(stringValue=("ops_currOpenLevel3", ""))
+    cmds.optionVar(intValue=("ops_currOpenTab", 0))
+    import opsEngine
+    engine = opsEngine.OpsEngine()
+    if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
+        engine.file_handler.new_file()
     return 1
 
 
@@ -630,7 +636,7 @@ def open_location(tab, level1, level2, level3):
     if os.path.isdir(path):
         if cmds.about(os=True) == "mac": os.system(f"open -a finder '{path}'")
         else: os.startfile(path.replace("/", "\\"))
-    else: cmds.warning(f"openPypeline Studio: couldn't find folder '{path}'.")
+    else: logger.warning(f"Couldn't find folder '{path}'.")
 
 
 def record_playblast(tab, level1, level2, level3):
@@ -664,13 +670,13 @@ def set_custom_notes(tab, level1, level2, level3, notes):
                 f.write("<?xml-stylesheet type=\"text/xsl\" href=\"xsl/plStylesheet.xsl\"?>\n")
                 f.write("<openPipeline_objectInfo>\n\t\t<description>\n")
                 f.write(f"\t\t\t{new_text}\n\t\t</description>\n</openPipeline_objectInfo>")
-        except Exception as e: cmds.warning(f"Could not create notes file: {e}")
+        except Exception as e: logger.warning(f"Could not create notes file: {e}")
     else:
         try:
             with open(notes_file, "r") as f: content = f.read()
             content = re.sub(r'<description>.*?</description>', f'<description>\n\t\t\t{new_text}\n\t\t</description>', content, flags=re.DOTALL)
             with open(notes_file, "w") as f: f.write(content)
-        except Exception as e: cmds.warning(f"Could not update notes file: {e}")
+        except Exception as e: logger.warning(f"Could not update notes file: {e}")
     return 1
 
 
@@ -680,13 +686,13 @@ def view_playblast(tab, level1, level2, level3):
     if os.path.isfile(playblast_file):
         if cmds.about(os=True) == "mac": os.system(f"open '{playblast_file}'")
         else: os.startfile(playblast_file)
-    else: cmds.warning(f"openPypeline Studio: couldn't find playblast file '{playblast_file}'.")
+    else: logger.warning(f"Couldn't find playblast file '{playblast_file}'.")
 
 
 def add_event_note(tab, level1, level2, level3, event, version, comment):
     """Adds an event note to an item's history."""
     history_file = opsInfo.get_file_name(tab, level1, level2, level3, "historyFile")
-    user_name = cmds.optionVar(query="op_currentUser") if cmds.optionVar(exists="op_currentUser") else "default"
+    user_name = cmds.optionVar(query="ops_currentUser") if cmds.optionVar(exists="ops_currentUser") else "default"
     date_str = opsInfo.get_date()
     time_str = opsInfo.get_time()
     
@@ -700,5 +706,5 @@ def add_event_note(tab, level1, level2, level3, event, version, comment):
             if version: f.write(f"\t\t<version>{version}</version>\n")
             f.write(f"\t\t<comment>{comment}</comment>\n")
             f.write("\t</note>\n")
-    except Exception as e: cmds.warning(f"Could not write to history file: {e}")
+    except Exception as e: logger.warning(f"Could not write to history file: {e}")
     return 1

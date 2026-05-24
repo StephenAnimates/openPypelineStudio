@@ -1,5 +1,19 @@
+"""
+File: Version.py
+Description: Core version control management for openPypeline Studio.
+             Handles parsing, incrementing, and verifying file versions.
+             Designed to be extensible for custom integrations like Git, SVN, or CVS.
+"""
+
 import os
 import re
+import importlib
+import logging
+
+logger = logging.getLogger("openPypeline.version")
+
+from ..util import prefs
+importlib.reload(prefs)
 
 class Version():
     '''
@@ -17,7 +31,6 @@ class Version():
     '''
     def __init__(self):
         pass
-        self.object = object
 
     def getByIndex(self, index):
         pass
@@ -26,46 +39,70 @@ class Version():
         '''
         Get latest version
         '''
-        all = self.all(path)
-        if len(all) > 0:
-            latest = max(all)
-            return latest
-        else:
-            return None
+        # Retrieve a list of all existing version numbers in the directory
+        all_versions = self.all(path)
+        if all_versions:
+            # Return the highest version number if the list is not empty
+            return max(all_versions)
+        # Return None if no versions were found
+        return None
         
-    def verify(self):
+    def verify(self, path):
         '''
         Verify that version exists
         '''
+        # Check if the exact filepath exists on the filesystem
         if os.path.exists(path):
             return 1
-        else:
-            return 0
+        return 0
         
-    def next(self, input="testMaster_workshop_0003.mb"):
+    def next(self, filepath):
         '''
         Get the next version
         '''     
-        basename = os.path.splitext(input)
-        elements = basename[0].split("_")
+        # Split the filepath to isolate the base name and the extension
+        basename, ext = os.path.splitext(filepath)
         
-        version = int(elements[2])
-        next = version + 1
+        # Use regex to find the version number at the end of the base name
+        match = re.search(r'_(\d+)$', basename)
+        if match:
+            # If a version number is found, parse it as an integer and increment by 1
+            version = int(match.group(1))
+            next_version = version + 1
+            print(f"Current version is {version:04d}. Next version is {next_version:04d}.")
+            return next_version
         
-        print '%(asset)s has %(#)04d %(type)s.' % {'asset': elements[0], "#": version, "type": elements[1]}     
+        # If no version number could be parsed, default to version 1
+        print("Could not determine version from filename.")
+        return 1
        
         
     def all(self, path):
         '''
         Get a list of all the versions
         '''
+        # Initialize an empty list to store discovered version numbers
         versions = []
-        versionspath = os.path.join(path, "workshop") # workshop is temp
-        inventory = [f for f in os.listdir(versionspath) if f[0] != '.']
-        for version in inventory:
-            basename = os.path.splitext(version)
-            elements = basename[0].split("_")
-            versions.append(int(elements[2]))
+        
+        # Retrieve the workshop folder name from preferences (defaulting to 'workshop')
+        w_name = prefs.get_pref("ops_workshopName", "workshop")
+        
+        # Construct the full path to the versions directory
+        versionspath = os.path.join(path, w_name)
+        if not os.path.isdir(versionspath):
+            # If the directory doesn't exist, return the empty list
+            return versions
+            
+        # List all files in the directory, filtering out hidden OS files (starting with '.')
+        inventory = [f for f in os.listdir(versionspath) if not f.startswith('.')]
+        for version_file in inventory:
+            # Safely extract version using regex to avoid issues with underscores in item names or arbitrary extensions
+            match = re.search(r'_(\d+)\.[a-zA-Z0-9]+$', version_file)
+            if match:
+                # If a valid version string is found, convert it to an integer and add it to the list
+                versions.append(int(match.group(1)))
+                
+        # Sort the list of versions in ascending order before returning
         versions.sort()
         return versions
     

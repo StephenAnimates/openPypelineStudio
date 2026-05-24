@@ -1,11 +1,15 @@
 import os
+import importlib
 
-import file
-reload(file)
+from . import file as base_file
+importlib.reload(base_file)
 
-class Master(file.File):
+from ..util import prefs
+importlib.reload(prefs)
+
+class Master(base_file.File):
     def __init__(self):
-        pass
+        super().__init__()
         
     def getMaster(self):
         pass

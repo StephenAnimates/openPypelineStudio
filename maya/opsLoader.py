@@ -11,50 +11,30 @@ Source:
 """
 
 import maya.cmds as cmds
-import maya.mel as mel
 import os
 import sys
 import importlib
 from functools import partial
+import logging
+
+# --- Logger Setup ---
+logger = logging.getLogger("openPypeline")
+logger.setLevel(logging.INFO) # Change to logging.DEBUG to see verbose file sourcing
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('[%(name)s] %(levelname)s: %(message)s'))
+    logger.addHandler(handler)
 
 # --- Constants for UI element names ---
-SETUP_WINDOW = "openPypelineInitSetupWindow"
-MAIN_PATH_TEXT_FIELD = "mainPathTextField"
-PROJ_PATH_TEXT_FIELD = "mainProjPathTextField"
-PROJ_PATH_TOGGLE_BUTTON = "op_projPathToggleButton"
-PROJ_PATH_BROWSE_BUTTON = "op_projPathBrowseButton"
+SETUP_WINDOW = "ops_setupWindow"
+MAIN_PATH_TEXT_FIELD = "ops_mainPathTextField"
+PROJ_PATH_TEXT_FIELD = "ops_mainProjPathTextField"
+PROJ_PATH_TOGGLE_BUTTON = "ops_projPathToggleButton"
+PROJ_PATH_BROWSE_BUTTON = "ops_projPathBrowseButton"
 
 # --- Constants for optionVar keys ---
-SCRIPT_PATH_OPTION_VAR = "openPypeline_scriptPath"
-PROJECT_PATH_OPTION_VAR = "openPypeline_projectFilePath"
-
-
-def source_mel_module(path):
-    """
-    Finds and sources all .mel files in a given directory.
-
-    Args:
-        path (str): The directory path to look in.
-
-    Returns:
-        None
-    """
-    if not os.path.isdir(path):
-        cmds.warning(f"Cannot source MEL modules from non-existent path: {path}")
-        return
-
-    print(f"----- Sourcing MEL from {path} ------")
-    print("//////////////////////////////////////////////////////")
-    for file_name in os.listdir(path):
-        if file_name.endswith(".mel"):
-            script_file = os.path.join(path, file_name).replace("\\", "/")
-            cmd_string = f'source "{script_file}";'
-            print(f"//// Source: {cmd_string}")
-            try:
-                mel.eval(cmd_string)
-            except Exception as e:
-                cmds.warning(f"Failed to source {script_file}: {e}")
-
+SCRIPT_PATH_OPTION_VAR = "ops_scriptPath"
+PROJECT_PATH_OPTION_VAR = "ops_projectFilePath"
 
 def source_python_module(path):
     """
@@ -105,7 +85,8 @@ def is_valid_script_path(folder):
         return False
 
     py_loader_file = os.path.join(folder, "opsLoader.py")
-    sub_folder = os.path.join(folder, "openpypeline")
+    root_folder = os.path.dirname(folder.rstrip("/\\"))
+    sub_folder = os.path.join(root_folder, "openpypeline")
 
     if not os.path.isfile(py_loader_file):
         return False
@@ -207,7 +188,8 @@ def setup_exec(*args):
     if cmds.textField(PROJ_PATH_TEXT_FIELD, query=True, editable=True):
         proj_file_path = cmds.textField(PROJ_PATH_TEXT_FIELD, query=True, text=True)
     else:
-        proj_file_path = os.path.join(script_path, "openpypeline/").replace("\\", "/")
+        root_folder = os.path.dirname(script_path.rstrip("/\\"))
+        proj_file_path = os.path.join(root_folder, "openpypeline/").replace("\\", "/")
 
     # Ensure project path also has a trailing slash
     proj_file_path = os.path.join(proj_file_path, "").replace("\\", "/")
@@ -280,7 +262,8 @@ def openPypelineSetup():
             cmds.button(label="Accept", width=190, command=setup_exec)
             cmds.button(label="Cancel", width=190, command=lambda *args: cmds.deleteUI(SETUP_WINDOW))
 
-    if project_path and project_path != os.path.join(script_path, "openpypeline/").replace("\\", "/"):
+    root_folder = os.path.dirname(script_path.rstrip("/\\"))
+    if project_path and project_path != os.path.join(root_folder, "openpypeline/").replace("\\", "/"):
         toggle_project_path_field()
         cmds.textField(PROJ_PATH_TEXT_FIELD, edit=True, text=project_path)
 
@@ -309,21 +292,30 @@ def openPypeline():
         error += "Project File path has not yet been set or could not be found.\n"
 
     if not error:
-        print("openPypeline Studio paths are valid. Sourcing modules...")
-        base_path = os.path.join(script_path, scripts_folder_name, "").replace("\\", "/")
+        logger.info("Paths are valid. Sourcing modules...")
+        root_path = os.path.dirname(script_path.rstrip("/\\"))
+        base_path = os.path.join(root_path, scripts_folder_name, "").replace("\\", "/")
         addons_path = os.path.join(base_path, "addons", "").replace("\\", "/")
         custom_path = os.path.join(base_path, "custom", "").replace("\\", "/")
 
-        source_mel_module(base_path)
-        source_mel_module(addons_path)
         source_python_module(addons_path)
-        source_mel_module(custom_path)
+        source_python_module(custom_path)
+        
+        # Add backend logic and the modernized UI paths to sys.path
+        ui_path = os.path.join(base_path, "app", "maya", "ui").replace("\\", "/")
+        backend_path = os.path.join(script_path, "openPypelineStudio").replace("\\", "/")
+        for path in [root_path, ui_path, backend_path]:
+            if path not in sys.path:
+                sys.path.insert(0, path)
 
         try:
-            mel.eval("openPypelineUI()")
+            import UIObjects
+            import opsMainUI
+            UIObjects.UIObjects().opsMainUI = opsMainUI.opsMainUI()
+            UIObjects.UIObjects().opsMainUI.showWindow()
         except Exception as e:
-            cmds.error(f"Failed to launch openPypelineUI: {e}")
+            logger.error(f"Failed to launch openPypelineUI: {e}")
 
     else:
-        print("openPypeline Studio paths are invalid or not set. Launching setup...")
+        logger.warning("Paths are invalid or not set. Launching setup...")
         openPypelineSetup()

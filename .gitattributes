@@ -1,14 +1,11 @@
-# Auto-detect text files and normalize line endings across platforms
-* text=auto
+# Fix GitHub language statistics by ignoring vector/PostScript assets
+*.ps linguist-vendored
+*.eps linguist-vendored
 
-# Explicitly declare text files
-*.py text diff=python
-*.mel text
-*.xml text
+# Ignore Maya scene files and data from language statistics
+*.ma linguist-detectable=false
+*.mb linguist-detectable=false
+*.xml linguist-detectable=false
 
-# Explicitly declare binary files (prevents image corruption)
-*.png binary
-*.jpg binary
-
-# Custom linguist language overrides
-*.mel linguist-language=Maya=MEL
+# Ignore compiled python files from language statistics
+*.pyc linguist-vendored

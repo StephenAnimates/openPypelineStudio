@@ -3,12 +3,16 @@ Module: opsProjectManagerGUI.py
 
 Description:
     Creates the openPypeline Studio Project Manager UI.
+    
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import maya.cmds as cmds
+import importlib
 
 import window as window
-reload(window)
+importlib.reload(window)
 
 import UIObjects as UIObjects
 

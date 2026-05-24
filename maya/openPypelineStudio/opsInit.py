@@ -2,6 +2,9 @@
 File: opsInit.py
 Description: Initializes all of the optionVars and configurations for openPypeline Studio.
              Refactored from openPipelineInit.mel (now opsInit.py) to use modern Python libraries.
+             
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import maya.cmds as cmds
@@ -21,38 +24,38 @@ def opsInitialize():
     Initializes all of the optionVars for openPypeline Studio.
     """
     
-    if not cmds.optionVar(exists="op_currProjectName"):
-        cmds.optionVar(stringValue=("op_currProjectName", ""))
+    if not cmds.optionVar(exists="ops_currProjectName"):
+        cmds.optionVar(stringValue=("ops_currProjectName", ""))
         
-    if not cmds.optionVar(exists="op_currentUser"):
-        cmds.optionVar(stringValue=("op_currentUser", "default"))
+    if not cmds.optionVar(exists="ops_currentUser"):
+        cmds.optionVar(stringValue=("ops_currentUser", "default"))
         
     # Define the optionVars to initialize with their types ('sv' for string, 'iv' for int) and default values
     option_vars = {
-        "op_currOpenType": ("sv", ""),
-        "op_currOpenCategory": ("sv", ""),
-        "op_currOpenVersion": ("iv", 0),
-        "op_currOpenLevel1": ("sv", ""),
-        "op_currOpenLevel2": ("sv", ""),
-        "op_currOpenLevel3": ("sv", ""),
-        "op_currOpenTab": ("iv", 0),
-        "op_currProjectPath": ("sv", ""),
-        "op_libPath": ("sv", ""),
-        "op_shotPath": ("sv", ""),
-        "op_scriptsPath": ("sv", ""),
-        "op_rendersPath": ("sv", ""),
-        "op_particlesPath": ("sv", ""),
-        "op_texturesPath": ("sv", ""),
-        "op_archivePath": ("sv", ""),
-        "op_deletePath": ("sv", ""),
-        "op_workshopFormat": ("sv", ""),
-        "op_masterFormat": ("sv", ""),
-        "op_workshopName": ("sv", ""),
-        "op_masterName": ("sv", ""),
+        "ops_currOpenType": ("sv", ""),
+        "ops_currOpenCategory": ("sv", ""),
+        "ops_currOpenVersion": ("iv", 0),
+        "ops_currOpenLevel1": ("sv", ""),
+        "ops_currOpenLevel2": ("sv", ""),
+        "ops_currOpenLevel3": ("sv", ""),
+        "ops_currOpenTab": ("iv", 0),
+        "ops_currProjectPath": ("sv", ""),
+        "ops_libPath": ("sv", ""),
+        "ops_shotPath": ("sv", ""),
+        "ops_scriptsPath": ("sv", ""),
+        "ops_rendersPath": ("sv", ""),
+        "ops_particlesPath": ("sv", ""),
+        "ops_texturesPath": ("sv", ""),
+        "ops_archivePath": ("sv", ""),
+        "ops_deletePath": ("sv", ""),
+        "ops_workshopFormat": ("sv", ""),
+        "ops_masterFormat": ("sv", ""),
+        "ops_workshopName": ("sv", ""),
+        "ops_masterName": ("sv", ""),
     }
     
     # If there is no current project, we should force reset all optionVars below
-    force_reset = (cmds.optionVar(query="op_currProjectName") == "")
+    force_reset = (cmds.optionVar(query="ops_currProjectName") == "")
     
     for var_name, (var_type, default_val) in option_vars.items():
         if force_reset or not cmds.optionVar(exists=var_name):
@@ -68,5 +71,5 @@ def opsReset():
     This reverts openPypeline Studio to a state in which no project is activated 
     and no item is open for editing.
     """
-    cmds.optionVar(stringValue=("op_currProjectName", ""))
+    cmds.optionVar(stringValue=("ops_currProjectName", ""))
     opsInitialize()

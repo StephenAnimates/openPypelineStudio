@@ -1,3 +1,11 @@
+"""
+File: UIObjects.py
+Description: Singleton class for managing Maya UI instances and dock controls.
+             
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
+"""
+
 import singleton as singleton
 import maya.cmds as cmds
 

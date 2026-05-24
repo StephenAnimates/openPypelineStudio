@@ -1,5 +1,8 @@
 import xml.dom.minidom
 import __main__
+import logging
+
+logger = logging.getLogger("openPypeline.xml")
 
 class xmlserialize(object): pass
 class xmlunpicklingException(Exception): pass
@@ -17,9 +20,8 @@ class xmlfile(object):
 	def save(self, obj):
 		''' Save node to self.filename '''
 		node = self.pickle(root=obj, fabric=xml.dom.minidom.Document())
-		f = open(self.filename, 'w')
-		node.writexml(f)
-		f.close()
+		with open(self.filename, 'w', encoding='utf-8') as f:
+			node.writexml(f)
 		
 	# helper functions
 	def getMod(self, cls):
@@ -31,8 +33,12 @@ class xmlfile(object):
 		'''
 		import __main__
 		import sys
+		
+		if '.' not in cls:
+			return None
+
 		# separate the module from the class [module1.module2].[cls]
-		print(f"Class: {cls}")
+		logger.debug(f"Class: {cls}")
 		mod = cls[0:cls.rindex('.')]
 		className = cls[cls.rindex('.')+1:]
 	
@@ -45,10 +51,11 @@ class xmlfile(object):
 		for d in dir(__main__):
 			try:
 				module_obj = getattr(__main__, d)
-				if getattr(module_obj, '__name__', None) + "." + className == cls:
+				mod_name = getattr(module_obj, '__name__', None)
+				if mod_name and f"{mod_name}.{className}" == cls:
 					class_obj = getattr(module_obj, className)
 					return class_obj()
-			except:
+			except Exception:
 				pass # Ignore if no attribute __name__
 		
 		return None
@@ -56,10 +63,9 @@ class xmlfile(object):
 	def getType(self, obj):
 		""" Generates string representation of class of obj 
 			discarding decoration """
-		#return str(obj.__class__).split("'")[1].split(".")[-1]
 		return str(obj.__class__).split("'")[1]
 		
-	_easyToPickle = [ "int", "float", "str" ]
+	_easyToPickle = [ "int", "float", "str", "unicode", "long" ]
 	
 	def _isCallable(self, obj):
 		return hasattr(obj, "__call__")
@@ -105,7 +111,7 @@ class xmlfile(object):
 		return node
 	
 	def _pickleObjectWithAttributes(self, node, root, fabric, elementName):
-		''' Pickle all members or just a subset ??? '''
+		''' Pickle object members, prioritizing custom encoding if present. '''
 		if hasattr(root, "__pickle_to_xml__"):
 			attributesToPickle = root.__pickle_to_xml__
 		else:
@@ -156,7 +162,7 @@ class xmlfile(object):
 		
 		if typeName in self._easyToPickle: 
 			initValue = self._getText(node.childNodes)
-			types = {'int': int, 'float': float, 'str': str}
+			types = {'int': int, 'float': float, 'str': str, 'unicode': str, 'long': int}
 			return types[typeName](initValue)
 		elif typeName=="tuple":
 			return self._unpickleTuple(node)
@@ -172,7 +178,7 @@ class xmlfile(object):
 			try:
 				import __main__
 				obj = getattr(__main__, typeName)()
-			except:
+			except Exception:
 				obj = self.getMod(typeName)
 			
 			for name, element in self._getElementChilds(node):
@@ -191,7 +197,7 @@ class xmlfile(object):
 			li.append((idx, obj))
 		
 		# rebuild list with right order
-		li.sort()
+		li.sort(key=lambda x: x[0])
 		return [ item[1] for item in li ]
 	
 	def _unpickleTuple(self, node):

@@ -1,24 +1,36 @@
 import os
+import importlib
+import logging
 
-import file
-reload(file)
+logger = logging.getLogger("openPypeline.workshop")
 
-class Workshop(file.File):
+from . import file as base_file
+importlib.reload(base_file)
+
+from ..util import prefs
+importlib.reload(prefs)
+
+class Workshop(base_file.File):
     def __init__(self):
-        pass
+        super().__init__()
     
     def open(self, path, item, version):
-        # break out workshop
-        name = '%(item)s_workshop_%(version)04d.mb' % {'item': item, "version": version}     
-        workshopPath = os.path.join(path, "workshop", name)
+        """Resolves and returns the file path for a specific workshop version."""
+        # Fetch nomenclature and format dynamically from preferences
+        w_name = prefs.get_pref("ops_workshopName", "workshop")
+        w_ext = prefs.get_pref("ops_workshopFormat", "ma")
+        
+        # Build workshop filename safely
+        name = f"{item}_{w_name}_{version:04d}.{w_ext}"
+        workshopPath = os.path.join(path, w_name, name).replace("\\", "/")
                 
         if self.query(workshopPath):
-            print workshopPath
+            logger.debug(f"Found workshop: {workshopPath}")
             return workshopPath
         else:
-            print "error"
+            logger.error(f"Could not find workshop at {workshopPath}")
+            return None
 
     
     def save(self):
         pass
-

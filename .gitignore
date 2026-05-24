@@ -8,6 +8,25 @@ __pycache__/
 mayaJournal
 *.swatch
 *.crash
+*crash.ma
+*crash.mb
+mayaRenderLog.txt
+
+# Maya caches and heavy data
+cache/
+particles/
+
+# Render outputs and playblasts
+renders/
+images/
+movies/
+*.avi
+*.mov
+*.mp4
+
+# Autosaves and Incremental Saves
+autosave/
+incrementalSave/
 
 # OS generated files
 .DS_Store
@@ -22,3 +41,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Documentation
+_build/

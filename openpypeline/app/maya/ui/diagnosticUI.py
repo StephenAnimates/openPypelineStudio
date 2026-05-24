@@ -4,34 +4,37 @@ Module: diagnosticUI.py
 Description:
     This script is an example of how a single class can manage and store the data for all Maya openPypeline Studio GUIs.
     With its loadPrefs() and savePrefs() procedures, it also demonstrates its potential ability to save out both session independent & application independent information.
+    
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import maya.cmds as cmds
 import os
+import importlib
 
 import window as window
 
 import UIObjects as UIObjects
 
 import openpypeline.core.util.XML as XML
-reload(XML)
+importlib.reload(XML)
 
-import openPypelineSaveMasterGUI as openPypelineSaveMasterGUI
-reload(openPypelineSaveMasterGUI)
+import opsSaveMasterGUI as opsSaveMasterGUI
+importlib.reload(opsSaveMasterGUI)
 
-import openPypelineProjectManagerGUI as openPypelineProjectManagerGUI
-reload(openPypelineProjectManagerGUI)
+import openpypeline.app.maya.ui.opsProjectManagerGUI as opsProjectManagerGUI
+importlib.reload(opsProjectManagerGUI)
 
-import openPypelineProjDialogGUI as openPypelineProjDialogGUI
-reload(openPypelineProjDialogGUI)
+import opsProjDialogGUI as opsProjDialogGUI
+importlib.reload(opsProjDialogGUI)
 
-import openPypelineMainUI as openPypelineMainUI
-reload(openPypelineMainUI)
+import opsMainUI as opsMainUI
+importlib.reload(opsMainUI)
 
 class diagnosticUI(window.window):
 
     def __init__(self, filePath = None):
-        
         
         self.UIObjects = UIObjects.UIObjects()
         
@@ -41,10 +44,10 @@ class diagnosticUI(window.window):
         self.height=300
         self.name = "Diagnostic UI Manager"
         self.dockable=0
-        self.UIObjects.openPypelineSaveMasterGUI = openPypelineSaveMasterGUI.openPypelineSaveMasterGUI()
-        self.UIObjects.openPypelineProjectManagerGUI = openPypelineProjectManagerGUI.openPypelineProjectManagerGUI()
-        self.UIObjects.openPypelineProjDialogGUI = openPypelineProjDialogGUI.openPypelineProjDialogGUI()
-        self.UIObjects.openPypelineMainUI = openPypelineMainUI.openPypelineMainUI()
+        self.UIObjects.opsSaveMasterGUI = opsSaveMasterGUI.opsSaveMasterGUI()
+        self.UIObjects.opsProjectManagerGUI = opsProjectManagerGUI.opsProjectManagerGUI()
+        self.UIObjects.opsProjDialogGUI = opsProjDialogGUI.opsProjDialogGUI()
+        self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
     
     def content(self):
         """
@@ -71,10 +74,10 @@ class diagnosticUI(window.window):
         self.diagnosticUI_UIObjects_scrollField = cmds.scrollField('diagnosticUI_UIObjects_scrollField', parent=self.form1, ww=1, editable=0)
 
     def _build_buttons(self):
-        self.diagnosticUImainUI_btn = cmds.button(l="Open Pipeline Main GUI", parent=self.form1, bgc=(.85, .85, .85), c=lambda *args:self.buttonRelease('openPypelineMainUI'))
-        self.diagnosticUIProjManager_btn = cmds.button(l="Project Manager GUI", parent=self.form1, bgc=(.8, .8, .8), c=lambda *args:self.buttonRelease('openPypelineProjectManagerGUI'))
-        self.diagnosticUISaveMaster_btn = cmds.button(l="Save Master GUI", parent=self.form1, bgc=(.75, .75, .75), c=lambda *args:self.buttonRelease('openPypelineSaveMasterGUI'))
-        self.diagnosticUIProjDialog_btn = cmds.button(l="Project Dialogue GUI", parent=self.form1, bgc=(.7, .7, .7), c=lambda *args:self.buttonRelease('openPypelineProjDialogGUI'))
+        self.diagnosticUImainUI_btn = cmds.button(l="Open Pipeline Main GUI", parent=self.form1, bgc=(.85, .85, .85), c=lambda *args:self.buttonRelease('opsMainUI'))
+        self.diagnosticUIProjManager_btn = cmds.button(l="Project Manager GUI", parent=self.form1, bgc=(.8, .8, .8), c=lambda *args:self.buttonRelease('opsProjectManagerGUI'))
+        self.diagnosticUISaveMaster_btn = cmds.button(l="Save Master GUI", parent=self.form1, bgc=(.75, .75, .75), c=lambda *args:self.buttonRelease('opsSaveMasterGUI'))
+        self.diagnosticUIProjDialog_btn = cmds.button(l="Project Dialogue GUI", parent=self.form1, bgc=(.7, .7, .7), c=lambda *args:self.buttonRelease('opsProjDialogGUI'))
 
     def _attach_form_elements(self):
         cmds.formLayout(
@@ -120,10 +123,8 @@ class diagnosticUI(window.window):
         self.showWindow()
         self.updateTextField()
     
-    
     def buttonRelease(self, window):
         getattr(self.UIObjects, window).showWindow()
-    
     
     def updateTextField(self):
         '''
