@@ -41,7 +41,7 @@ class window():
         # Create safe, space-free names for the internal Maya UI components
         self.uiName = self.name.replace(" ", "")
         self.dockControl = self.uiName
-        self.window = str(self.uiName)+"_window"
+        self.window = f"{self.uiName}_window"
         
         # In modern Maya (2026/2027), dockControl is natively supported
         self.is_modern_maya = True

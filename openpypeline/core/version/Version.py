@@ -69,11 +69,11 @@ class Version():
             # If a version number is found, parse it as an integer and increment by 1
             version = int(match.group(1))
             next_version = version + 1
-            print(f"Current version is {version:04d}. Next version is {next_version:04d}.")
+            logger.info(f"Current version is {version:04d}. Next version is {next_version:04d}.")
             return next_version
         
         # If no version number could be parsed, default to version 1
-        print("Could not determine version from filename.")
+        logger.warning("Could not determine version from filename.")
         return 1
        
         
