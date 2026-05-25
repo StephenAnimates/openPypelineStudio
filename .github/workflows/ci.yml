@@ -28,7 +28,6 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "${{ matrix.python-version }}"
-        cache: 'pip'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -52,7 +51,6 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-        cache: 'pip'
     - name: Install documentation dependencies
       run: |
         python -m pip install --upgrade pip
@@ -60,4 +58,6 @@ jobs:
     - name: Build documentation
       run: |
         # Run sphinx build to catch any autodoc or configuration errors
+        # Auto-generate the API .rst files from the Python source
+        sphinx-apidoc -f -o utilities/ openpypeline/
         sphinx-build -b html utilities/ utilities/_build/html
