@@ -68,7 +68,7 @@ def activate_project(proj_name):
         cmds.optionVar(stringValue=("ops_masterFormat", proj_m_format))
         cmds.optionVar(stringValue=("ops_workshopFormat", proj_w_format))
         cmds.optionVar(stringValue=("ops_masterName", proj_m_name))
-        cmds.optionVar(stringValue=("ops_workshopName", proj_w_name))
+        cmds.optionVar(stringValue=("ops_wip", proj_w_name))
         cmds.optionVar(stringValue=("ops_deletePath", delete_path))
         cmds.optionVar(stringValue=("ops_archivePath", archive_path))
         cmds.optionVar(stringValue=("ops_users", proj_users))
@@ -179,7 +179,7 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
                     index = i
                     break
             if index == -1:
-            logger.error(f"Couldn't edit Project. Can't find Project with name '{old_name}'.")
+                logger.error(f"Couldn't edit Project. Can't find Project with name '{old_name}'.")
                 return 0
             proj_data[index] = new_line
             
@@ -233,7 +233,7 @@ def create_new_item(tab, level1, level2, level3, mode):
     workshop_folder = opsInfo.get_file_name(tab, level1, level2, level3, "workshopFolder")
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
     category = opsInfo.get_category(tab, level1, level2, level3)
-    w_name = cmds.optionVar(query="ops_workshopName")
+    w_name = cmds.optionVar(query="ops_wip")
 
     if depth and item_path:
         if not re.match(r"^[a-zA-Z0-9_]*$", item_name):
@@ -262,8 +262,9 @@ def create_new_item(tab, level1, level2, level3, mode):
             add_event_note(tab, level1, level2, level3, "created", 0, "")
             
             ext = cmds.optionVar(query="ops_workshopFormat")
-            file_type = "mayaBinary" if ext == "mb" else "mayaAscii"
-            
+            file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
+            file_type = file_type_map.get(ext, "mayaBinary")
+
             import opsEngine
             engine = opsEngine.OpsEngine()
 
@@ -293,7 +294,7 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
         curr_level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
         
         if cmds.file(query=True, modified=True) and curr_level1:
-            w_name = cmds.optionVar(query="ops_workshopName")
+            w_name = cmds.optionVar(query="ops_wip")
             confirm = cmds.confirmDialog(
                 title="openPypeline Studio",
                 message=f"Would you like to Save {w_name} before editing Asset?",
@@ -386,7 +387,7 @@ def reference_item(item_type, tab, level1, level2, level3, flags=""):
 def save_workshop(note=""):
     """Saves a workshop for the currently open item."""
     ext = cmds.optionVar(query="ops_workshopFormat")
-    w_name = cmds.optionVar(query="ops_workshopName")
+    w_name = cmds.optionVar(query="ops_wip")
     level1 = cmds.optionVar(query="ops_currOpenLevel1")
     level2 = cmds.optionVar(query="ops_currOpenLevel2")
     level3 = cmds.optionVar(query="ops_currOpenLevel3")
@@ -394,18 +395,24 @@ def save_workshop(note=""):
     
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
     
-    if ext == "ma": file_type = "mayaAscii"
-    elif ext == "mb": file_type = "mayaBinary"
-    else:
-        file_type = "mayaBinary"
+    file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
+    file_type = file_type_map.get(ext, "mayaBinary")
+    if ext not in file_type_map:
         logger.warning(f"Invalid file format ({ext}) specified: saving to Maya Binary")
         
     import opsEngine
     engine = opsEngine.OpsEngine()
-    if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
-        engine.file_handler.save_as(destination_file, file_type)
+    
+    if file_type in ["USD Export", "Alembic"]:
+        if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
+            engine.file_handler.export_file(destination_file, file_type, selected=False)
+        else:
+            logger.warning("No DCC file handler available for exporting files.")
     else:
-        logger.warning("No DCC file handler available for saving files.")
+        if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
+            engine.file_handler.save_as(destination_file, file_type)
+        else:
+            logger.warning("No DCC file handler available for saving files.")
     latest_version = opsInfo.get_version_from_file(destination_file)
     cmds.optionVar(intValue=("ops_currOpenVersion", latest_version))
     add_event_note(tab, level1, level2, level3, w_name, latest_version, note)
@@ -433,7 +440,7 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
     engine = opsEngine.OpsEngine()
     
     if flatten and engine.file_handler and hasattr(engine.file_handler, 'flatten_references'):
-        w_name = cmds.optionVar(query="ops_workshopName") if cmds.optionVar(exists="ops_workshopName") else "workshop"
+        w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
         engine.file_handler.flatten_references(master_name, w_name)
         
     if delete_disp_layers and engine.file_handler and hasattr(engine.file_handler, 'delete_display_layers'):
@@ -445,9 +452,15 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
         except Exception as e: logger.warning(f"Custom command failed: {e}")
         logger.info(f"End custom command {custom_command}")
         
-    file_type = "mayaAscii" if ext == "ma" else "mayaBinary"
-    if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
-        engine.file_handler.save_as(master_file, file_type)
+    file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
+    file_type = file_type_map.get(ext, "mayaBinary")
+    
+    if file_type in ["USD Export", "Alembic"]:
+        if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
+            engine.file_handler.export_file(master_file, file_type, selected=False)
+    else:
+        if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
+            engine.file_handler.save_as(master_file, file_type)
     
     if after == 1: open_item("workshop", tab, level1, level2, level3, 0)
     elif after == 2: cmds.optionVar(stringValue=("ops_currOpenType", "master"))
@@ -532,7 +545,7 @@ def remove_archive(tab, level1, level2, level3):
 
 def archive_item(tab, level1, level2, level3, keep_workshops, keep_versions):
     """Archives old versions of an item."""
-    w_name = cmds.optionVar(query="ops_workshopName")
+    w_name = cmds.optionVar(query="ops_wip")
     path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
     w_attempts = w_successes = v_attempts = v_successes = 0
@@ -570,7 +583,7 @@ def archive_item(tab, level1, level2, level3, keep_workshops, keep_versions):
 def retrieve_archive(tab, level1, level2, level3, do_workshops, do_versions):
     """Restores all archived files of an item."""
     w_attempts = w_successes = v_attempts = v_successes = 0
-    w_name = cmds.optionVar(query="ops_workshopName")
+    w_name = cmds.optionVar(query="ops_wip")
     original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
     
@@ -604,7 +617,7 @@ def retrieve_archive(tab, level1, level2, level3, do_workshops, do_versions):
 
 def close_file():
     """Closes the currently open file."""
-    w_name = cmds.optionVar(query="ops_workshopName")
+    w_name = cmds.optionVar(query="ops_wip")
     curr_level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
     if cmds.file(query=True, modified=True) and curr_level1:
         confirm = cmds.confirmDialog(

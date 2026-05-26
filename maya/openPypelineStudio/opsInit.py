@@ -18,12 +18,22 @@ OPENPIPELINE_ICON_FILENAME = "openPypelineIcon.png"
 OPENPIPELINE_DEFAULT_PREVIEW_FILENAME = "defaultPreview.png"
 OPENPIPELINE_NO_PREVIEW_FILENAME = "noPreview.png"
 
+# --- Pipeline System Options ---
+DEFAULT_WIP_DIR_NAME = "wip"     # Originally "workshop"
+DEFAULT_MASTER_DIR_NAME = "master"
 
 def opsInitialize():
     """
     Initializes all of the optionVars for openPypeline Studio.
     """
     
+    # --- Backward Compatibility Migration ---
+    # Migrate legacy 'ops_workshopName' to the new 'ops_wip' variable
+    if cmds.optionVar(exists="ops_workshopName"):
+        legacy_wip = cmds.optionVar(query="ops_workshopName")
+        cmds.optionVar(stringValue=("ops_wip", legacy_wip))
+        cmds.optionVar(remove="ops_workshopName")
+        
     if not cmds.optionVar(exists="ops_currProjectName"):
         cmds.optionVar(stringValue=("ops_currProjectName", ""))
         
@@ -50,8 +60,8 @@ def opsInitialize():
         "ops_deletePath": ("sv", ""),
         "ops_workshopFormat": ("sv", ""),
         "ops_masterFormat": ("sv", ""),
-        "ops_workshopName": ("sv", ""),
-        "ops_masterName": ("sv", ""),
+        "ops_wip": ("sv", DEFAULT_WIP_DIR_NAME),
+        "ops_masterName": ("sv", DEFAULT_MASTER_DIR_NAME),
     }
     
     # If there is no current project, we should force reset all optionVars below

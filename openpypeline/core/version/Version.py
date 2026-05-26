@@ -23,10 +23,10 @@ class Version():
     other other revision control schemas.
     
     Default naming:
-        [name]_workshop_####.type
+        [name]_wip_####.type
     
     Examples:
-        testMaster_workshop_0003.mb
+        testMaster_wip_0003.mb
     
     '''
     def __init__(self):
@@ -84,8 +84,8 @@ class Version():
         # Initialize an empty list to store discovered version numbers
         versions = []
         
-        # Retrieve the workshop folder name from preferences (defaulting to 'workshop')
-        w_name = prefs.get_pref("ops_workshopName", "workshop")
+        # Retrieve the work-in-progress folder name from preferences (defaulting to 'wip')
+        w_name = prefs.get_pref("ops_wip", "wip")
         
         # Construct the full path to the versions directory
         versionspath = os.path.join(path, w_name)

@@ -12,7 +12,17 @@ Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio*
 * **Playblast & Notes Management:** Integrated tools for taking snapshots, recording playblasts, and leaving notes for artists.
 * **Modern Python API:** Extensible and fully accessible via Python 3.
 
-## ⚙️ Requirements
+## 🗺️ Roadmap & Planned Integrations
+Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framework. Planned upcoming features include:
+* **VFX Reference Platform Standards:** Full support for **OpenUSD** (Universal Scene Description), **OpenColorIO (OCIO)**, **OpenImageIO (OIIO)**, and **Alembic (.abc)**.
+* **Production Tracking:** Abstracted API support for major trackers including **Autodesk Flow Production Tracking (ShotGrid)**, **Ftrack**, and **Kitsu**.
+* **Expanded DCC Support:**
+  * **Substance 3D Suite:** Painter, Designer (Mac/Windows), and Modeler (Windows).
+  * **Sculpting:** ZBrush.
+  * **Real-time & Game Engines:** Unity and Unreal Engine.
+  * **Compositing & FX:** Nuke and Houdini.
+
+## ⚙️ Current Requirements
 * **Autodesk Maya 2026** (or newer recommended)
 * Python 3.11+ (Native to modern Maya)
 

@@ -32,6 +32,15 @@ importlib.reload(opsProjDialogGUI)
 import opsMainUI as opsMainUI
 importlib.reload(opsMainUI)
 
+import opsProject
+importlib.reload(opsProject)
+
+import opsActions
+importlib.reload(opsActions)
+
+import opsLoader
+importlib.reload(opsLoader)
+
 class diagnosticUI(window.window):
 
     def __init__(self, filePath = None):

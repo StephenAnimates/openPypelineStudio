@@ -26,8 +26,8 @@ class opsProjectManagerGUI(window.window):
         self.height=460
         self.name = "openPypeline Studio Project Manager"
         self.dockable=0
-        self.scriptLocation = cmds.optionVar(query="openPipeline_scriptPath") if cmds.optionVar(exists="openPipeline_scriptPath") else "Not Set"
-        self.projectLocation = cmds.optionVar(query="openPipeline_projectFilePath") if cmds.optionVar(exists="openPipeline_projectFilePath") else "Not Set"
+        self.scriptLocation = cmds.optionVar(query="ops_scriptPath") if cmds.optionVar(exists="ops_scriptPath") else "Not Set"
+        self.projectLocation = cmds.optionVar(query="ops_projectFilePath") if cmds.optionVar(exists="ops_projectFilePath") else "Not Set"
     
     def content(self):
         """
@@ -43,6 +43,8 @@ class opsProjectManagerGUI(window.window):
         
         self._attach_form_elements()
         
+        self.on_refresh_list()
+        
         return [self.form1]
 
     def _build_locations_section(self):
@@ -50,18 +52,18 @@ class opsProjectManagerGUI(window.window):
         self.projManagerScriptLocation_txtField = cmds.textField('projManagerScriptLocation_txtField', parent=self.form1, editable=0, tx=self.scriptLocation)
         self.projManagerProjFileLocation_txt = cmds.text('projManagerProjFileLocation_txt', parent=self.form1, align="right", l="Project File Location:", w=110)
         self.projManagerProjFPath_txtField = cmds.textField('projManagerProjFPath_txtField', parent=self.form1, editable=0, tx=self.projectLocation)
-        self.projManagerOpenPipelineSetup_btn = cmds.button('projManagerOpenPipelineSetup_btn', parent=self.form1, l="Edit\nLocations...", h=45, c="openPipelineSetup")
+        self.projManagerOpenPipelineSetup_btn = cmds.button('projManagerOpenPipelineSetup_btn', parent=self.form1, l="Edit\nLocations...", h=45, c=self.on_edit_locations)
         
     def _build_project_list_section(self):
-        self.projManagerEditUsers_btn = cmds.button('projManagerEditUsers_btn', l="Edit Users", parent=self.form1, c="openPipelineProjEditUsers", ann="Add / Remove users to system")
-        self.projManagerProjectList_txtScrollList = cmds.textScrollList('projManagerProjectList_txtScrollList', parent=self.form1, sc="openPipelineProjectUISelection", doubleClickCommand="openPipelineProjDialogWindow 1")
+        self.projManagerEditUsers_btn = cmds.button('projManagerEditUsers_btn', l="Edit Users", parent=self.form1, c=self.on_edit_users, ann="Add / Remove users to system")
+        self.projManagerProjectList_txtScrollList = cmds.textScrollList('projManagerProjectList_txtScrollList', parent=self.form1, sc=self.on_project_selection, doubleClickCommand=self.on_edit_project)
         
     def _build_project_buttons_subform(self):
         self.form2 = cmds.formLayout('opsProjectManagerGUI_form2', parent=self.form1, numberOfDivisions=100)
         
-        self.projManagerProjNew_btn = cmds.button('projManagerProjNew_btn', parent=self.form2, l="New...", bgc=(.6, .8, .5), c="openPipelineProjDialogWindow 0", ann="") 
-        self.projManagerProjRm_btn = cmds.button('projManagerProjRm_btn', parent=self.form2, l="Remove", bgc=(.8, .3, .3), en=0, c="openPipelineRemoveProjectProcess", ann="")
-        self.projManagerProjEdit_btn = cmds.button('projManagerProjEdit_btn', parent=self.form2, l="Edit..", bgc=(.5, .7, .7), en=0, c="openPipelineProjDialogWindow 1", ann="")
+        self.projManagerProjNew_btn = cmds.button('projManagerProjNew_btn', parent=self.form2, l="New...", bgc=(.6, .8, .5), c=self.on_new_project, ann="") 
+        self.projManagerProjRm_btn = cmds.button('projManagerProjRm_btn', parent=self.form2, l="Remove", bgc=(.8, .3, .3), en=0, c=self.on_remove_project, ann="")
+        self.projManagerProjEdit_btn = cmds.button('projManagerProjEdit_btn', parent=self.form2, l="Edit..", bgc=(.5, .7, .7), en=0, c=self.on_edit_project, ann="")
 
         cmds.formLayout(
             self.form2,
@@ -86,8 +88,8 @@ class opsProjectManagerGUI(window.window):
         self.projManagerProjInfo_scrollField = cmds.scrollField('projManagerProjInfo_scrollField', parent=self.form1, ww=1, editable=0)
         
     def _build_action_buttons(self):
-        self.projManagerRefresh_btn = cmds.button('projManagerRefresh_btn', parent=self.form1, height=30, l="Refresh List", c="openPipelineProjectUI")
-        self.projManagerClose_btn = cmds.button('projManagerClose_btn', parent=self.form1, height=30, l="Close", c="openPipelineCloseProjUI")  
+        self.projManagerRefresh_btn = cmds.button('projManagerRefresh_btn', parent=self.form1, height=30, l="Refresh List", c=self.on_refresh_list)
+        self.projManagerClose_btn = cmds.button('projManagerClose_btn', parent=self.form1, height=30, l="Close", c=self.on_close)  
                 
     def _attach_form_elements(self):
         cmds.formLayout(
@@ -137,3 +139,81 @@ class opsProjectManagerGUI(window.window):
                 (self.projManagerProjInfo_scrollField, 'bottom', 20, self.projManagerRefresh_btn),
             ]
         )
+
+    # --- Button Callbacks ---
+
+    def on_edit_locations(self, *args):
+        """Launches the Setup UI to change the script or project paths."""
+        import opsLoader
+        opsLoader.openPypelineSetup()
+        
+    def on_edit_users(self, *args):
+        """Launches the UI to edit user permissions."""
+        import opsProject
+        opsProject.proj_edit_users()
+        
+    def on_project_selection(self, *args):
+        """Updates the UI info field when a project is selected."""
+        selected = cmds.textScrollList(self.projManagerProjectList_txtScrollList, query=True, selectItem=True)
+        if not selected:
+            return
+        
+        # Enable Edit and Remove buttons
+        cmds.button(self.projManagerProjEdit_btn, edit=True, enable=True)
+        cmds.button(self.projManagerProjRm_btn, edit=True, enable=True)
+        
+        # Fetch and display project info
+        import opsProject
+        info_string = opsProject.get_project_info_string(selected[0])
+        cmds.scrollField(self.projManagerProjInfo_scrollField, edit=True, text=info_string)
+        
+    def on_new_project(self, *args):
+        """Launches the Project Dialog window in 'New' mode."""
+        self.UIObjects.opsProjDialogGUI.showWindow()
+        
+    def on_edit_project(self, *args):
+        """Launches the Project Dialog window in 'Edit' mode."""
+        self.UIObjects.opsProjDialogGUI.showWindow()
+        
+    def on_remove_project(self, *args):
+        """Prompts the user and removes the selected project configuration."""
+        selected = cmds.textScrollList(self.projManagerProjectList_txtScrollList, query=True, selectItem=True)
+        if not selected:
+            return
+            
+        proj_name = selected[0]
+        res = cmds.confirmDialog(
+            title="Remove Project Confirm", 
+            message=f"Are you sure you want to remove project {proj_name}?",
+            button=["Yes", "Cancel"], 
+            defaultButton="Yes", 
+            cancelButton="Cancel", 
+            dismissString="Cancel"
+        )
+        
+        if res == "Yes":
+            import opsActions
+            if opsActions.remove_project(proj_name):
+                self.on_refresh_list()
+            else:
+                cmds.error("Project was not found.")
+                
+    def on_refresh_list(self, *args):
+        """Clears and rebuilds the list of available projects."""
+        import opsProject
+        import opsUtils
+        
+        cmds.textScrollList(self.projManagerProjectList_txtScrollList, edit=True, removeAll=True)
+        
+        proj_list = [opsUtils.get_xml_data(p, "name") for p in opsProject.get_projects_data()]
+        for p in proj_list:
+            cmds.textScrollList(self.projManagerProjectList_txtScrollList, edit=True, append=p)
+            
+        cmds.scrollField(self.projManagerProjInfo_scrollField, edit=True, text="")
+        cmds.button(self.projManagerProjEdit_btn, edit=True, enable=False)
+        cmds.button(self.projManagerProjRm_btn, edit=True, enable=False)
+        
+    def on_close(self, *args):
+        """Closes the Project Manager UI."""
+        import opsProject
+        opsProject.close_proj_ui()

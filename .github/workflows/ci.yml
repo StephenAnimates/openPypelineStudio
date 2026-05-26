@@ -40,7 +40,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics
     - name: Run unit tests
       run: |
-        # Uncomment the line below when your test suite is ready:
+        # TODO: Uncomment the line below when your test suite is ready to run automatically:
         # pytest
 
   docs:

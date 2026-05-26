@@ -71,7 +71,7 @@ def update_currently_open(*args):
         if cmds.text("ops_currOpenHeading_txt", exists=True): cmds.text("ops_currOpenHeading_txt", edit=True, label="none")
         if cmds.text("ops_currOpenHeadingVersion_txt", exists=True): cmds.text("ops_currOpenHeadingVersion_txt", edit=True, label="      ", backgroundColor=(0.8, 0.8, 0.8))
     elif os.path.isdir(curr_path):
-        w_name = cmds.optionVar(query="ops_workshopName") if cmds.optionVar(exists="ops_workshopName") else "workshop"
+        w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
         m_name = cmds.optionVar(query="ops_masterName") if cmds.optionVar(exists="ops_masterName") else "master"
         
         num_versions = opsInfo.get_num_workshops(tab, level1, level2, level3)
@@ -552,7 +552,7 @@ def _rename_asset_callback():
 
 
 def prompt_save_workshop(*args):
-    w_name = cmds.optionVar(query="ops_workshopName").capitalize()
+    w_name = cmds.optionVar(query="ops_wip").capitalize()
     if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
     cmds.window("ops_secondaryUI", title=f"Save {w_name}", widthHeight=(300, 90))
     cmds.columnLayout(rowSpacing=5, columnOffset=("both", 10))
@@ -566,11 +566,64 @@ def prompt_save_workshop(*args):
     cmds.showWindow("ops_secondaryUI")
 
 
+def prompt_revive(*args):
+    tab = cmds.optionVar(query="ops_currOpenTab") if cmds.optionVar(exists="ops_currOpenTab") else 0
+    level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
+    level2 = cmds.optionVar(query="ops_currOpenLevel2") if cmds.optionVar(exists="ops_currOpenLevel2") else ""
+    level3 = cmds.optionVar(query="ops_currOpenLevel3") if cmds.optionVar(exists="ops_currOpenLevel3") else ""
+    
+    if not level1:
+        return
+        
+    w_name = cmds.optionVar(query="ops_wip").capitalize() if cmds.optionVar(exists="ops_wip") else "Workshop"
+    
+    workshops = opsInfo.get_workshops(tab, level1, level2, level3)
+    if not workshops or len(workshops) < 2:
+        cmds.warning(f"Not enough {w_name} files to revive.")
+        return
+        
+    if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
+    cmds.window("ops_secondaryUI", title=f"Revive {w_name}", widthHeight=(280, 200))
+    cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=("both", 10))
+    cmds.text(label=f"Select a previous {w_name} version to revive:", align="left")
+    
+    cmds.textScrollList("ops_revive_scrollList", height=100)
+    
+    # Skip index 0 (the latest version) since you can't revive what is already current
+    for i in range(1, len(workshops)):
+        version = opsInfo.get_version_from_file(workshops[i])
+        cmds.textScrollList("ops_revive_scrollList", edit=True, append=f"Version {version:04d}")
+        
+    cmds.rowLayout(numberOfColumns=2, columnWidth2=(130, 130))
+    cmds.button(label="Revive", width=130, backgroundColor=(0.5, 0.7, 0.7), command=lambda x: _revive_callback(tab, level1, level2, level3))
+    cmds.button(label="Cancel", width=130, command=lambda x: cmds.deleteUI("ops_secondaryUI"))
+    
+    cmds.showWindow("ops_secondaryUI")
+
+
+def _revive_callback(tab, level1, level2, level3):
+    selected_idx = cmds.textScrollList("ops_revive_scrollList", query=True, selectIndexedItem=True)
+    if not selected_idx:
+        return
+        
+    # Because we skipped index 0 in the UI list, a UI index of 1 perfectly matches an offset of 1
+    offset = selected_idx[0]
+    
+    import opsActions
+    # Safely prompt to save current changes, then open the older file
+    if opsActions.open_item("workshop", tab, level1, level2, level3, offset):
+        # Save the old file back into the pipeline as the newest version
+        opsActions.save_workshop("Revived from an older version.")
+        
+    cmds.deleteUI("ops_secondaryUI")
+    refresh_ui()
+
+
 def prompt_archive(tab, level, *args):
     levels = opsInfo.get_currently_selected_item(tab, level)
     if not levels[0]: return
     
-    w_name = cmds.optionVar(query="ops_workshopName").capitalize()
+    w_name = cmds.optionVar(query="ops_wip").capitalize()
     m_name = cmds.optionVar(query="ops_masterName").capitalize()
     
     item_name_str = f"{levels[0]}"

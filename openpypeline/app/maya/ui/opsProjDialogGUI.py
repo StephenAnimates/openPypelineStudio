@@ -47,6 +47,9 @@ class opsProjDialogGUI(window.window):
         self.ops_particles = 'particles'
         self.ops_archive = 'archive'
         self.ops_deleted = 'deleted'
+        
+        self.mode = 0
+        self.old_name = ""
     
     def content(self):
         """
@@ -107,11 +110,11 @@ class opsProjDialogGUI(window.window):
         
     def _build_custom_users_section(self):
         """Builds the custom users management section."""
-        self.ops_customUsers_checkBox = cmds.checkBox('ops_customUsers_checkBox', parent=self.form1, label="")
+        self.ops_customUsers_checkBox = cmds.checkBox('ops_customUsers_checkBox', parent=self.form1, label="", cc=opsProject.proj_custom_users)
         self.ops_enableCustomUsers_txt = cmds.text('ops_enableCustomUsers_txt', parent=self.form1, fn="boldLabelFont", label="Enable Custom Users", align="left", width=320)
         self.ops_customUsers_txt = cmds.text('ops_customUsers_txt', parent=self.form1, fn="boldLabelFont", label="Users:", align="left", width=80)
         self.ops_customUsers_txtField = cmds.textField('ops_customUsers_txtField', parent=self.form1, enable=0, h=20)
-        self.ops_customUsers_btn = cmds.button('ops_customUsers_btn', parent=self.form1, l="...")
+        self.ops_customUsers_btn = cmds.button('ops_customUsers_btn', parent=self.form1, l="...", c=opsProject.proj_set_users_prompt_ui)
         self.ops_separator5 = cmds.separator(parent=self.form1, h=5, st="out")
         
     def _build_dates_section(self):
@@ -132,6 +135,9 @@ class opsProjDialogGUI(window.window):
         self.ops_masterFileFormat_optMenu = cmds.optionMenu('ops_masterFileFormat_optMenu', parent=self.form1)
         cmds.menuItem(label="mb", parent=self.ops_masterFileFormat_optMenu)
         cmds.menuItem(label="ma", parent=self.ops_masterFileFormat_optMenu)
+        cmds.menuItem(label="usd", parent=self.ops_masterFileFormat_optMenu)
+        cmds.menuItem(label="usda", parent=self.ops_masterFileFormat_optMenu)
+        cmds.menuItem(label="abc", parent=self.ops_masterFileFormat_optMenu)
         self.ops_separator7 = cmds.separator(parent=self.form1, h=5, st="out")
         
     def _build_workshop_files_section(self):
@@ -144,6 +150,9 @@ class opsProjDialogGUI(window.window):
         self.ops_workshopFileFormat_optMenu = cmds.optionMenu('ops_workshopFileFormat_optMenu', parent=self.form1)
         cmds.menuItem(label="mb", parent=self.ops_workshopFileFormat_optMenu)
         cmds.menuItem(label="ma", parent=self.ops_workshopFileFormat_optMenu)
+        cmds.menuItem(label="usd", parent=self.ops_workshopFileFormat_optMenu)
+        cmds.menuItem(label="usda", parent=self.ops_workshopFileFormat_optMenu)
+        cmds.menuItem(label="abc", parent=self.ops_workshopFileFormat_optMenu)
         self.ops_separator8 = cmds.separator(parent=self.form1, h=5, st="out")
         
     def _build_sub_folder_section(self):
@@ -177,8 +186,8 @@ class opsProjDialogGUI(window.window):
         
     def _build_action_buttons(self):
         """Builds the main Accept and Cancel buttons for the dialog."""
-        self.ops_accept_btn = cmds.button('ops_accept_btn', parent=self.form1, l="Accept")
-        self.ops_cancel_btn = cmds.button('ops_cancel_btn', parent=self.form1, l="Cancel")
+        self.ops_accept_btn = cmds.button('ops_accept_btn', parent=self.form1, l="Accept", command=self.on_accept)
+        self.ops_cancel_btn = cmds.button('ops_cancel_btn', parent=self.form1, l="Cancel", command=self.on_cancel)
         
     def _attach_form_elements(self):
         """

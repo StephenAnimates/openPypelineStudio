@@ -166,6 +166,8 @@ class opsProjectManagerGUI(window.window):
     def on_edit_locations(self, *args):
         """Launches the Setup UI to change the script or project paths."""
         import opsLoader
+        import importlib
+        importlib.reload(opsLoader)
         opsLoader.openPypelineSetup()
         
     def on_edit_users(self, *args):

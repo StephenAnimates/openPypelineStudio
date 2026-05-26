@@ -66,15 +66,36 @@ class opsSaveMasterGUI(window.window):
             'ops_masterCallback_btn',
             label = self.mName,
             backgroundColor = (0.9, 0.7, 0.4),
-            parent=self.form1
+            parent=self.form1,
+            command=self.on_master_callback
         )
         
         self.cancel_btn = cmds.button(
             'cancel_btn',
             label = "cancel",
             backgroundColor = ( 0.8, 0.4, 0.4),
-            parent=self.form1
+            parent=self.form1,
+            command=self.on_cancel
         )
+
+    # --- Button Callbacks ---
+
+    def on_master_callback(self, *args):
+        import opsActions
+        import opsUIWrappers
+        
+        flatten = cmds.checkBox(self.masterImportReferencesBox_checkBox, query=True, value=True)
+        del_layers = cmds.checkBox(self.masterDeleteLayersBox_checkBox, query=True, value=True)
+        after = cmds.radioButtonGrp(self.ops_afterMasterField_radioBtnGrp, query=True, select=True)
+        command = cmds.textField(self.ops_masterCommandField_txtField, query=True, text=True)
+        comment = cmds.scrollField(self.ops_masterCommentField_scrollField, query=True, text=True)
+        
+        opsActions.save_master(comment, flatten, del_layers, after, command)
+        self.deleteWindow()
+        opsUIWrappers.refresh_ui()
+        
+    def on_cancel(self, *args):
+        self.deleteWindow()
 
     def _attach_form_elements(self):
         cmds.formLayout(

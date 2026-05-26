@@ -48,13 +48,15 @@ def get_custom_notes(tab, level1, level2, level3):
 
 
 def get_date():
-    """Returns the current date in MM/DD/YYYY format."""
-    return datetime.datetime.now().strftime("%m/%d/%Y")
+    """Returns the current date using the user's preferred format."""
+    date_fmt = cmds.optionVar(query="ops_dateFormat") if cmds.optionVar(exists="ops_dateFormat") else "%m/%d/%Y"
+    return datetime.datetime.now().strftime(date_fmt)
 
 
 def get_time():
-    """Returns the current time in HH:MM:SS format."""
-    return datetime.datetime.now().strftime("%H:%M:%S")
+    """Returns the current time using the user's preferred format."""
+    time_fmt = cmds.optionVar(query="ops_timeFormat") if cmds.optionVar(exists="ops_timeFormat") else "%H:%M:%S"
+    return datetime.datetime.now().strftime(time_fmt)
 
 
 def has_workshop(tab, level1, level2, level3):
@@ -77,7 +79,7 @@ def has_playblast(tab, level1, level2, level3):
 def get_workshops(tab, level1, level2, level3, archive=0):
     """Returns the workshop files for a given item, from newest to oldest."""
     folder = get_file_name(tab, level1, level2, level3, "workshopFolder", 0, archive)
-    w_name = cmds.optionVar(query="ops_workshopName") if cmds.optionVar(exists="ops_workshopName") else "workshop"
+    w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
     w_ext = cmds.optionVar(query="ops_workshopFormat") if cmds.optionVar(exists="ops_workshopFormat") else "ma"
     
     if os.path.isdir(folder):
@@ -130,7 +132,7 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
     """
     depth = sum(1 for lvl in [level1, level2, level3] if lvl)
     file_name = ""
-    w_name = cmds.optionVar(query="ops_workshopName") if cmds.optionVar(exists="ops_workshopName") else "workshop"
+    w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
     w_ext = cmds.optionVar(query="ops_workshopFormat") if cmds.optionVar(exists="ops_workshopFormat") else "ma"
     m_name = cmds.optionVar(query="ops_masterName") if cmds.optionVar(exists="ops_masterName") else "master"
     m_ext = cmds.optionVar(query="ops_masterFormat") if cmds.optionVar(exists="ops_masterFormat") else "ma"

@@ -10,14 +10,31 @@ import logging
 
 logger = logging.getLogger("openPypeline.maya.file")
 
+def _ensure_plugins_loaded(filepath=None, file_type=None):
+    """Helper to ensure required plugins are loaded based on file extension or type."""
+    ext = os.path.splitext(filepath)[-1].lower() if filepath else ""
+    
+    if ext in ['.usd', '.usda', '.usdc'] or file_type == "USD Export":
+        if not cmds.pluginInfo("mayaUsdPlugin", query=True, loaded=True):
+            try: cmds.loadPlugin("mayaUsdPlugin")
+            except Exception as e: logger.error(f"Failed to load Maya USD Plugin: {e}")
+            
+    if ext == '.abc' or file_type == "Alembic":
+        for plugin in ["AbcImport", "AbcExport"]:
+            if not cmds.pluginInfo(plugin, query=True, loaded=True):
+                try: cmds.loadPlugin(plugin)
+                except Exception as e: logger.error(f"Failed to load {plugin}: {e}")
+
 def open(filepath):
     """
-    Opens a Maya scene file (.ma, .mb) given the filepath.
+    Opens a Maya scene file (.ma, .mb) or supported container given the filepath.
     """
     if not os.path.exists(filepath):
         cmds.warning(f"openPypeline Studio: File does not exist: {filepath}")
         return False
         
+    _ensure_plugins_loaded(filepath=filepath)
+    
     try:
         cmds.file(filepath, force=True, open=True)
         logger.info(f"Successfully opened {filepath}")
@@ -38,6 +55,8 @@ def save():
 
 def import_file(filepath):
     """Imports a file into the current Maya scene."""
+    _ensure_plugins_loaded(filepath=filepath)
+    
     try:
         cmds.file(filepath, i=True)
         logger.info(f"Successfully imported {filepath}")
@@ -48,6 +67,8 @@ def import_file(filepath):
 
 def reference_file(filepath):
     """References a file into the current Maya scene."""
+    _ensure_plugins_loaded(filepath=filepath)
+    
     try:
         cmds.file(filepath, reference=True)
         logger.info(f"Successfully referenced {filepath}")
@@ -82,6 +103,8 @@ def save_as(filepath, file_type=None):
 
 def export_file(filepath, file_type=None, selected=False):
     """Exports the current scene or selection to a file."""
+    _ensure_plugins_loaded(filepath=filepath, file_type=file_type)
+                
     try:
         kwargs = {"force": True}
         if file_type:
@@ -91,12 +114,14 @@ def export_file(filepath, file_type=None, selected=False):
             kwargs["exportSelected"] = True
         else:
             kwargs["exportAll"] = True
-            kwargs["preserveReferences"] = True
-            kwargs["constructionHistory"] = True
-            kwargs["channels"] = True
-            kwargs["constraints"] = True
-            kwargs["expressions"] = True
-            kwargs["shader"] = True
+            # Only pass Maya-specific export flags if using a native Maya format
+            if file_type in ["mayaAscii", "mayaBinary", None]:
+                kwargs["preserveReferences"] = True
+                kwargs["constructionHistory"] = True
+                kwargs["channels"] = True
+                kwargs["constraints"] = True
+                kwargs["expressions"] = True
+                kwargs["shader"] = True
             
         cmds.file(filepath, **kwargs)
         logger.info(f"Successfully exported to {filepath}")

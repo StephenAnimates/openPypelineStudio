@@ -81,7 +81,7 @@ def is_valid_script_path(folder):
     Returns:
         bool: True if the path is a valid script path, False otherwise.
     """
-    if not folder or not os.path.isdir(folder):
+    if not folder or not isinstance(folder, str) or not os.path.isdir(folder):
         return False
 
     py_loader_file = os.path.join(folder, "opsLoader.py")
@@ -106,7 +106,7 @@ def is_valid_project_file_path(folder):
     Returns:
         bool: True if the path is valid, False otherwise.
     """
-    return os.path.isdir(folder)
+    return isinstance(folder, str) and os.path.isdir(folder)
 
 
 def set_text_field_path(field_name, path, *args):
@@ -163,6 +163,7 @@ def toggle_project_path_field(*args):
     else:
         # Get the last known project path to populate the field
         project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR)
+        if not isinstance(project_path, str): project_path = ""
         cmds.textField(PROJ_PATH_TEXT_FIELD, edit=True, editable=True, text=project_path)
         cmds.button(PROJ_PATH_TOGGLE_BUTTON, edit=True, label="Default")
         cmds.button(PROJ_PATH_BROWSE_BUTTON, edit=True, enable=True)
@@ -229,8 +230,19 @@ def openPypelineSetup():
     if cmds.window(SETUP_WINDOW, exists=True):
         cmds.deleteUI(SETUP_WINDOW)
 
-    script_path = cmds.optionVar(query=SCRIPT_PATH_OPTION_VAR)
-    project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR)
+    # --- Backward Compatibility Migration ---
+    if cmds.optionVar(exists="openPipeline_scriptPath") and not cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR):
+        cmds.optionVar(stringValue=(SCRIPT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_scriptPath")))
+        cmds.optionVar(remove="openPipeline_scriptPath")
+    if cmds.optionVar(exists="openPipeline_projectFilePath") and not cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR):
+        cmds.optionVar(stringValue=(PROJECT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_projectFilePath")))
+        cmds.optionVar(remove="openPipeline_projectFilePath")
+
+    script_path = cmds.optionVar(query=SCRIPT_PATH_OPTION_VAR) if cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR) else ""
+    project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR) if cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR) else ""
+    
+    if not isinstance(script_path, str): script_path = ""
+    if not isinstance(project_path, str): project_path = ""
 
     cmds.window(SETUP_WINDOW, title="openPypeline Studio Setup", widthHeight=(405, 350), sizeable=False)
 
@@ -284,8 +296,19 @@ def openPypeline():
     Returns:
         None
     """
+    # --- Backward Compatibility Migration ---
+    if cmds.optionVar(exists="openPipeline_scriptPath") and not cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR):
+        cmds.optionVar(stringValue=(SCRIPT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_scriptPath")))
+        cmds.optionVar(remove="openPipeline_scriptPath")
+    if cmds.optionVar(exists="openPipeline_projectFilePath") and not cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR):
+        cmds.optionVar(stringValue=(PROJECT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_projectFilePath")))
+        cmds.optionVar(remove="openPipeline_projectFilePath")
+
     script_path = cmds.optionVar(query=SCRIPT_PATH_OPTION_VAR) if cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR) else ""
     project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR) if cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR) else ""
+    
+    if not isinstance(script_path, str): script_path = ""
+    if not isinstance(project_path, str): project_path = ""
 
     scripts_folder_name = "openpypeline"
     error = ""
