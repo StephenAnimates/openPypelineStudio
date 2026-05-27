@@ -12,6 +12,7 @@ import maya.cmds as cmds
 import os
 import re
 import logging
+from openpypeline.core.util import prefs
 
 logger = logging.getLogger("openPypeline.actions")
 
@@ -57,21 +58,21 @@ def activate_project(proj_name):
         delete_path = proj_deleted if os.path.isdir(proj_deleted) else os.path.join(proj_path, proj_deleted)
         delete_path = os.path.join(delete_path, "").replace("\\", "/")
 
-        cmds.optionVar(stringValue=("ops_currProjectName", proj_name))
-        cmds.optionVar(stringValue=("ops_currProjectPath", proj_path))
-        cmds.optionVar(stringValue=("ops_libPath", lib_path))
-        cmds.optionVar(stringValue=("ops_shotPath", shot_path))
-        cmds.optionVar(stringValue=("ops_scriptsPath", scripts_path))
-        cmds.optionVar(stringValue=("ops_rendersPath", renders_path))
-        cmds.optionVar(stringValue=("ops_particlesPath", particles_path))
-        cmds.optionVar(stringValue=("ops_texturesPath", textures_path))
-        cmds.optionVar(stringValue=("ops_masterFormat", proj_m_format))
-        cmds.optionVar(stringValue=("ops_workshopFormat", proj_w_format))
-        cmds.optionVar(stringValue=("ops_masterName", proj_m_name))
-        cmds.optionVar(stringValue=("ops_wip", proj_w_name))
-        cmds.optionVar(stringValue=("ops_deletePath", delete_path))
-        cmds.optionVar(stringValue=("ops_archivePath", archive_path))
-        cmds.optionVar(stringValue=("ops_users", proj_users))
+        prefs.set_pref("ops_currProjectName", proj_name)
+        prefs.set_pref("ops_currProjectPath", proj_path)
+        prefs.set_pref("ops_libPath", lib_path)
+        prefs.set_pref("ops_shotPath", shot_path)
+        prefs.set_pref("ops_scriptsPath", scripts_path)
+        prefs.set_pref("ops_rendersPath", renders_path)
+        prefs.set_pref("ops_particlesPath", particles_path)
+        prefs.set_pref("ops_texturesPath", textures_path)
+        prefs.set_pref("ops_masterFormat", proj_m_format)
+        prefs.set_pref("ops_wipFormat", proj_w_format)
+        prefs.set_pref("ops_masterName", proj_m_name)
+        prefs.set_pref("ops_wip", proj_w_name)
+        prefs.set_pref("ops_deletePath", delete_path)
+        prefs.set_pref("ops_archivePath", archive_path)
+        prefs.set_pref("ops_users", proj_users)
 
         if proj_scripts:
             opsLoader.source_mel_module(scripts_path)
@@ -93,17 +94,17 @@ def activate_project(proj_name):
         return 0
 
 
-def create_or_edit_project(mode, old_name, new_name, new_path, new_description, new_status, new_date, new_deadline, new_master_name, new_master_format, new_workshop_name, new_workshop_format, new_lib_loc, new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc, new_archive_loc, new_deleted_loc, new_users, user_mode):
+def create_or_edit_project(mode, old_name, new_name, new_path, new_description, new_status, new_date, new_deadline, new_master_name, new_master_format, new_wip_name, new_wip_format, new_lib_loc, new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc, new_archive_loc, new_deleted_loc, new_users, user_mode):
     """Creates a new project or edits the properties of an existing project."""
     mode_names = ["created", "edited"]
-    active_project_name = cmds.optionVar(query="ops_currProjectName") if cmds.optionVar(exists="ops_currProjectName") else ""
+    active_project_name = prefs.get_pref("ops_currProjectName", "")
     proj_data = opsProject.get_projects_data() or []
     error = ""
     
     # Input validations
     if len(new_name) > 22: error += "Project name cannot exceed 22 characters.\n"
     if len(new_master_name) > 18: error += "Master name cannot exceed 18 characters.\n"
-    if len(new_workshop_name) > 18: error += "Workshop name cannot exceed 18 characters.\n"
+    if len(new_wip_name) > 18: error += "WIP file name cannot exceed 18 characters.\n"
     if len(new_lib_loc) > 22: error += "Library sub-folder name cannot exceed 22 characters.\n"
     if len(new_shot_loc) > 22: error += "Shot sub-folder name cannot exceed 22 characters.\n"
     if len(new_scripts_loc) > 22: error += "Scripts sub-folder name cannot exceed 22 characters.\n"
@@ -121,7 +122,7 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
     valid_pattern = re.compile(r"^[a-zA-Z0-9_]*$")
     if not valid_pattern.match(new_name): error += "Project name is not valid (remove spaces and special characters).\n"
     if not valid_pattern.match(new_master_name): error += "Master name is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_workshop_name): error += "Workshop name is not valid (remove spaces and special characters).\n"
+    if not valid_pattern.match(new_wip_name): error += "WIP file name is not valid (remove spaces and special characters).\n"
     if not valid_pattern.match(new_lib_loc): error += "Library sub-folder is not valid (remove spaces and special characters).\n"
     if not valid_pattern.match(new_shot_loc): error += "Shot sub-folder is not valid (remove spaces and special characters).\n"
     if not valid_pattern.match(new_textures_loc): error += "Textures sub-folder is not valid (remove spaces and special characters).\n"
@@ -162,7 +163,7 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
         new_line = f"<name>{new_name}</name><path>{new_path}</path><description>{new_description}</description>" \
                    f"<date>{new_date}</date><deadline>{new_deadline}</deadline><status>{new_status}</status>" \
                    f"<mastername>{new_master_name}</mastername><masterformat>{new_master_format}</masterformat>" \
-                   f"<workshopname>{new_workshop_name}</workshopname><workshopformat>{new_workshop_format}</workshopformat>" \
+                   f"<wipname>{new_wip_name}</wipname><wipformat>{new_wip_format}</wipformat>" \
                    f"<libraryfolder>{new_lib_loc}</libraryfolder><scenesfolder>{new_shot_loc}</scenesfolder>" \
                    f"<archivefolder>{new_archive_loc}</archivefolder><deletedfolder>{new_deleted_loc}</deletedfolder>" \
                    f"<scriptsfolder>{new_scripts_loc}</scriptsfolder><rendersfolder>{new_renders_loc}</rendersfolder>" \
@@ -186,7 +187,7 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
         opsProject.rewrite_proj_file(proj_data)
         
         if active_project_name == old_name:
-            cmds.optionVar(stringValue=("ops_currProjectName", new_name))
+            prefs.set_pref("ops_currProjectName", new_name)
             activate_project(new_name)
             
         logger.info(f"Project {mode_names[mode]}.")
@@ -198,7 +199,7 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
 
 def remove_project(proj_name):
     """Removes a project from the openPypeline list (files remain intact)."""
-    curr_project_name = cmds.optionVar(query="ops_currProjectName") if cmds.optionVar(exists="ops_currProjectName") else ""
+    curr_project_name = prefs.get_pref("ops_currProjectName", "")
     projects_data = opsProject.get_projects_data() or []
     new_projects_data = []
     removed = False
@@ -211,8 +212,8 @@ def remove_project(proj_name):
             
     if removed:
         if curr_project_name == proj_name:
-            cmds.optionVar(stringValue=("ops_currProjectName", ""))
-            cmds.optionVar(stringValue=("ops_currProjectPath", ""))
+            prefs.set_pref("ops_currProjectName", "")
+            prefs.set_pref("ops_currProjectPath", "")
         opsProject.rewrite_proj_file(new_projects_data)
     else:
         logger.warning(f"Couldn't remove project '{proj_name}'. Project not found.")
@@ -230,10 +231,10 @@ def create_new_item(tab, level1, level2, level3, mode):
     version_folder = opsInfo.get_file_name(tab, level1, level2, level3, "versionFolder")
     component_folder = opsInfo.get_file_name(tab, level1, level2, level3, "componentFolder")
     note_folder = opsInfo.get_file_name(tab, level1, level2, level3, "noteFolder")
-    workshop_folder = opsInfo.get_file_name(tab, level1, level2, level3, "workshopFolder")
+    wip_folder = opsInfo.get_file_name(tab, level1, level2, level3, "workshopFolder")
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
     category = opsInfo.get_category(tab, level1, level2, level3)
-    w_name = cmds.optionVar(query="ops_wip")
+    w_name = prefs.get_pref("ops_wip", "wip")
 
     if depth and item_path:
         if not re.match(r"^[a-zA-Z0-9_]*$", item_name):
@@ -241,8 +242,8 @@ def create_new_item(tab, level1, level2, level3, mode):
         elif os.path.isdir(item_path):
             error += f"{category} '{item_name}' already exists!\n"
         elif not os.path.isdir(parent_path):
-            if depth == 2: create_new_item(tab, level1, "", "", 1)
-            elif depth == 3: create_new_item(tab, level1, level2, "", 1)
+            if depth == opsInfo.LEVEL_2: create_new_item(tab, level1, "", "", 1)
+            elif depth == opsInfo.LEVEL_3: create_new_item(tab, level1, level2, "", 1)
             else: error += f"Item '{parent_path}' doesn't exist. Can't create new {category} under it.\n"
         
         if error:
@@ -250,18 +251,18 @@ def create_new_item(tab, level1, level2, level3, mode):
             return ""
             
         os.makedirs(item_path, exist_ok=True)
-        if depth == 2: os.makedirs(component_folder, exist_ok=True)
-        if depth > 1:
-            os.makedirs(workshop_folder, exist_ok=True)
+        if depth == opsInfo.LEVEL_2: os.makedirs(component_folder, exist_ok=True)
+        if depth >= opsInfo.LEVEL_2:
+            os.makedirs(wip_folder, exist_ok=True)
             os.makedirs(version_folder, exist_ok=True)
             os.makedirs(note_folder, exist_ok=True)
 
-            cmds.optionVar(stringValue=("ops_creationPath", f"{item_path}/"))
-            cmds.optionVar(stringValue=("ops_creationType", category))
+            prefs.set_pref("ops_creationPath", f"{item_path}/")
+            prefs.set_pref("ops_creationType", category)
             
             add_event_note(tab, level1, level2, level3, "created", 0, "")
             
-            ext = cmds.optionVar(query="ops_workshopFormat")
+            ext = prefs.get_pref("ops_wipFormat", "ma")
             file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
             file_type = file_type_map.get(ext, "mayaBinary")
 
@@ -289,12 +290,12 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
     folder = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     depth = sum(1 for lvl in [level1, level2, level3] if lvl)
     
-    if depth > 1 and os.path.isdir(folder) and item_type in ["workshop", "master"]:
+    if depth >= opsInfo.LEVEL_2 and os.path.isdir(folder) and item_type in ["workshop", "master"]:
         version = 0
-        curr_level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
+        curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
         
         if cmds.file(query=True, modified=True) and curr_level1:
-            w_name = cmds.optionVar(query="ops_wip")
+            w_name = prefs.get_pref("ops_wip", "wip")
             confirm = cmds.confirmDialog(
                 title="openPypeline Studio",
                 message=f"Would you like to Save {w_name} before editing Asset?",
@@ -302,12 +303,12 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
                 defaultButton="Save"
             )
             if confirm == "Save":
-                save_workshop("saved before opening new item")
+                    save_wip("saved before opening new item")
             elif confirm == "Cancel":
                 return 0
                 
         file_to_open = opsInfo.get_file_name(tab, level1, level2, level3, item_type, version_offset)
-        latest_workshop = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
+        latest_wip = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
         category = opsInfo.get_category(tab, level1, level2, level3)
         
         if os.path.isfile(file_to_open):
@@ -318,7 +319,7 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
                 engine.file_handler.open(file_to_open)
             else:
                 logger.warning("No DCC file handler available to open files.")
-        elif item_type == "workshop" and not os.path.isfile(latest_workshop):
+        elif item_type == "workshop" and not os.path.isfile(latest_wip):
             choice = cmds.confirmDialog(
                 title="Edit Asset",
                 message="You are about to edit an item for the first time. Would you like to start with a new scene, or the currently open scene?",
@@ -337,13 +338,13 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
             logger.warning("File Not Found")
             return 0
             
-        cmds.optionVar(stringValue=("ops_currOpenType", item_type))
-        cmds.optionVar(intValue=("ops_currOpenVersion", version))
-        cmds.optionVar(stringValue=("ops_currOpenCategory", category))
-        cmds.optionVar(stringValue=("ops_currOpenLevel1", level1))
-        cmds.optionVar(stringValue=("ops_currOpenLevel2", level2))
-        cmds.optionVar(stringValue=("ops_currOpenLevel3", level3))
-        cmds.optionVar(intValue=("ops_currOpenTab", tab))
+        prefs.set_pref("ops_currOpenType", item_type)
+        prefs.set_pref("ops_currOpenVersion", version)
+        prefs.set_pref("ops_currOpenCategory", category)
+        prefs.set_pref("ops_currOpenLevel1", level1)
+        prefs.set_pref("ops_currOpenLevel2", level2)
+        prefs.set_pref("ops_currOpenLevel3", level3)
+        prefs.set_pref("ops_currOpenTab", tab)
     else:
         logger.warning("Invalid command or Item doesn't exist.")
         return 0
@@ -386,12 +387,12 @@ def reference_item(item_type, tab, level1, level2, level3, flags=""):
 
 def save_workshop(note=""):
     """Saves a workshop for the currently open item."""
-    ext = cmds.optionVar(query="ops_workshopFormat")
-    w_name = cmds.optionVar(query="ops_wip")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
-    tab = cmds.optionVar(query="ops_currOpenTab")
+    ext = prefs.get_pref("ops_wipFormat", "ma")
+    w_name = prefs.get_pref("ops_wip", "wip")
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
     
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
     
@@ -414,24 +415,24 @@ def save_workshop(note=""):
         else:
             logger.warning("No DCC file handler available for saving files.")
     latest_version = opsInfo.get_version_from_file(destination_file)
-    cmds.optionVar(intValue=("ops_currOpenVersion", latest_version))
+    prefs.set_pref("ops_currOpenVersion", latest_version)
     add_event_note(tab, level1, level2, level3, w_name, latest_version, note)
     return 1
 
 
-def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
+def save_master(comment, flatten, delete_disp_layers, after, custom_command="", task_id=0):
     """Saves a master for the currently open item."""
-    ext = cmds.optionVar(query="ops_masterFormat")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
-    tab = cmds.optionVar(query="ops_currOpenTab")
-    master_name = cmds.optionVar(query="ops_masterName")
+    ext = prefs.get_pref("ops_masterFormat", "ma")
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    master_name = prefs.get_pref("ops_masterName", "master")
     
     master_file = opsInfo.get_file_name(tab, level1, level2, level3, "master")
     destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextVersion")
     
-    save_workshop(comment)
+    save_wip(comment)
     
     if os.path.exists(master_file):
         os.rename(master_file, destination_file)
@@ -440,7 +441,7 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
     engine = opsEngine.OpsEngine()
     
     if flatten and engine.file_handler and hasattr(engine.file_handler, 'flatten_references'):
-        w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
+        w_name = prefs.get_pref("ops_wip", "wip")
         engine.file_handler.flatten_references(master_name, w_name)
         
     if delete_disp_layers and engine.file_handler and hasattr(engine.file_handler, 'delete_display_layers'):
@@ -463,26 +464,32 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command=""):
             engine.file_handler.save_as(master_file, file_type)
     
     if after == 1: open_item("workshop", tab, level1, level2, level3, 0)
-    elif after == 2: cmds.optionVar(stringValue=("ops_currOpenType", "master"))
+    elif after == 2: prefs.set_pref("ops_currOpenType", "master")
     elif after == 3:
         close_file()
         if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
             engine.file_handler.new_file()
         
     add_event_note(tab, level1, level2, level3, master_name, 0, comment)
+    
+    import tracker_factory
+    tracker = tracker_factory.get_tracker()
+    if tracker and task_id:
+        tracker.publish_version(task_id, master_file, 0, comment)
+        
     return 1
 
 
 def remove_item(tab, level1, level2, level3):
     """Moves the files and folders under the selected item to the 'deleted' folder."""
     depth = sum(1 for lvl in [level1, level2, level3] if lvl)
-    curr_level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    curr_level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    curr_level3 = cmds.optionVar(query="ops_currOpenLevel3")
-    curr_tab = cmds.optionVar(query="ops_currOpenTab")
+    curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    curr_level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    curr_level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    curr_tab = prefs.get_pref("ops_currOpenTab", 0)
     
     original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    delete_path = cmds.optionVar(query="ops_deletePath")
+    delete_path = prefs.get_pref("ops_deletePath", "")
     name = os.path.basename(original_path.rstrip('/'))
     
     confirm = cmds.confirmDialog(
@@ -494,11 +501,11 @@ def remove_item(tab, level1, level2, level3):
         os.makedirs(delete_path, exist_ok=True)
         is_current = 0
         if curr_tab == tab and curr_level1 == level1:
-            if depth == 1: is_current = 1
+            if depth == opsInfo.LEVEL_1: is_current = 1
             elif curr_level2 == level2:
-                if depth == 2: is_current = 1
+                if depth == opsInfo.LEVEL_2: is_current = 1
                 elif curr_level3 == level3:
-                    if depth == 3: is_current = 1
+                    if depth == opsInfo.LEVEL_3: is_current = 1
                     
         if is_current:
             confirm_close = cmds.confirmDialog(
@@ -525,7 +532,7 @@ def remove_item(tab, level1, level2, level3):
 def remove_archive(tab, level1, level2, level3):
     """Moves the archived files and folders under the selected item to the 'deleted' folder."""
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
-    delete_path = cmds.optionVar(query="ops_deletePath")
+    delete_path = prefs.get_pref("ops_deletePath", "")
     name = os.path.basename(archive_path.rstrip('/'))
     
     os.makedirs(delete_path, exist_ok=True)
@@ -543,17 +550,17 @@ def remove_archive(tab, level1, level2, level3):
     return 1
 
 
-def archive_item(tab, level1, level2, level3, keep_workshops, keep_versions):
+def archive_item(tab, level1, level2, level3, keep_wips, keep_versions):
     """Archives old versions of an item."""
-    w_name = cmds.optionVar(query="ops_wip")
+    w_name = prefs.get_pref("ops_wip", "wip")
     path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
     w_attempts = w_successes = v_attempts = v_successes = 0
     
-    if keep_workshops:
-        workshop_files = opsInfo.get_workshops(tab, level1, level2, level3)
-        for i in range(keep_workshops, len(workshop_files)):
-            file_path = workshop_files[i]
+    if keep_wips:
+        wip_files = opsInfo.get_wips(tab, level1, level2, level3)
+        for i in range(keep_wips, len(wip_files)):
+            file_path = wip_files[i]
             w_attempts += 1
             new_name = file_path.replace(path, archive_path)
             os.makedirs(os.path.dirname(new_name), exist_ok=True)
@@ -580,16 +587,16 @@ def archive_item(tab, level1, level2, level3, keep_workshops, keep_versions):
     return 1
 
 
-def retrieve_archive(tab, level1, level2, level3, do_workshops, do_versions):
+def retrieve_archive(tab, level1, level2, level3, do_wips, do_versions):
     """Restores all archived files of an item."""
     w_attempts = w_successes = v_attempts = v_successes = 0
-    w_name = cmds.optionVar(query="ops_wip")
+    w_name = prefs.get_pref("ops_wip", "wip")
     original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
     
-    if do_workshops:
-        archived_workshops = opsInfo.get_workshops(tab, level1, level2, level3, archive=1)
-        for file_path in archived_workshops:
+    if do_wips:
+        archived_wips = opsInfo.get_wips(tab, level1, level2, level3, archive=1)
+        for file_path in archived_wips:
             w_attempts += 1
             new_name = file_path.replace(archive_path, original_path)
             os.makedirs(os.path.dirname(new_name), exist_ok=True)
@@ -617,8 +624,8 @@ def retrieve_archive(tab, level1, level2, level3, do_workshops, do_versions):
 
 def close_file():
     """Closes the currently open file."""
-    w_name = cmds.optionVar(query="ops_wip")
-    curr_level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
+    w_name = prefs.get_pref("ops_wip", "wip")
+    curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
     if cmds.file(query=True, modified=True) and curr_level1:
         confirm = cmds.confirmDialog(
             title="openPypeline Studio",
@@ -629,13 +636,13 @@ def close_file():
         if confirm == "Save": save_workshop("saved before closing")
         elif confirm == "Cancel": return 1
     
-    cmds.optionVar(stringValue=("ops_currOpenType", ""))
-    cmds.optionVar(intValue=("ops_currOpenVersion", 0))
-    cmds.optionVar(stringValue=("ops_currOpenCategory", ""))
-    cmds.optionVar(stringValue=("ops_currOpenLevel1", ""))
-    cmds.optionVar(stringValue=("ops_currOpenLevel2", ""))
-    cmds.optionVar(stringValue=("ops_currOpenLevel3", ""))
-    cmds.optionVar(intValue=("ops_currOpenTab", 0))
+    prefs.set_pref("ops_currOpenType", "")
+    prefs.set_pref("ops_currOpenVersion", 0)
+    prefs.set_pref("ops_currOpenCategory", "")
+    prefs.set_pref("ops_currOpenLevel1", "")
+    prefs.set_pref("ops_currOpenLevel2", "")
+    prefs.set_pref("ops_currOpenLevel3", "")
+    prefs.set_pref("ops_currOpenTab", 0)
     import opsEngine
     engine = opsEngine.OpsEngine()
     if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
@@ -705,7 +712,7 @@ def view_playblast(tab, level1, level2, level3):
 def add_event_note(tab, level1, level2, level3, event, version, comment):
     """Adds an event note to an item's history."""
     history_file = opsInfo.get_file_name(tab, level1, level2, level3, "historyFile")
-    user_name = cmds.optionVar(query="ops_currentUser") if cmds.optionVar(exists="ops_currentUser") else "default"
+    user_name = prefs.get_pref("ops_currentUser", "default")
     date_str = opsInfo.get_date()
     time_str = opsInfo.get_time()
     

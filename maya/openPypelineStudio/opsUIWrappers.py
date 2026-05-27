@@ -3,15 +3,23 @@ File: opsUIWrappers.py
 Description: UI action wrappers for openPypeline Studio.
              Connects the UI button commands to the core opsActions logic.
              Replaces the legacy wrapper dialogs from openPipelineUI.mel.
+    
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 
-TODO: - Refactor the individual UI action functions to be more modular and reusable across different UI contexts.
-Ask: What's the best way to convert the `project_ui_selection` list to a `QListWidget` when we move to PySide?
+Status: Fully migrated to PySide6. UI components are now native Qt widgets and DCC-agnostic.
 """
 
-import maya.cmds as cmds
 import os
+from PySide6 import QtWidgets, QtCore, QtGui
 import opsInfo
 import opsActions
+import UIObjects
+from openpypeline.core.util import prefs
+
+def _get_ui():
+    ui_obj = UIObjects.UIObjects()
+    return ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
 
 
 def refresh_ui(*args):
@@ -21,36 +29,34 @@ def refresh_ui(*args):
         update_asset_type_list()
         update_sequence_list()
     except Exception as e:
-        cmds.warning(f"UI Refresh warning: {e}")
+        print(f"UI Refresh warning: {e}")
 
 
 def remove_secondary_windows(*args):
-    if cmds.window("ops_secondaryUI", exists=True):
-        cmds.deleteUI("ops_secondaryUI")
+    ui = _get_ui()
+    if ui and hasattr(ui, 'active_dialog') and ui.active_dialog:
+        ui.active_dialog.close()
 
 
 def close_ui(*args):
-    if cmds.workspaceControl("openPypelineUI", exists=True):
-        cmds.deleteUI("openPypelineUI")
-    elif cmds.window("openPypelineUI", exists=True):
-        cmds.deleteUI("openPypelineUI")
-    remove_secondary_windows()
-    try:
-        import opsProject
-        opsProject.close_proj_ui()
-    except Exception: pass
+    ui = _get_ui()
+    if ui:
+        ui.close()
 
 
 # --- Primary UI Updaters ---
 
 def update_currently_open(*args):
-    curr_type = cmds.optionVar(query="ops_currOpenType") if cmds.optionVar(exists="ops_currOpenType") else ""
-    curr_cat = cmds.optionVar(query="ops_currOpenCategory") if cmds.optionVar(exists="ops_currOpenCategory") else ""
-    curr_version = cmds.optionVar(query="ops_currOpenVersion") if cmds.optionVar(exists="ops_currOpenVersion") else 0
-    level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
-    level2 = cmds.optionVar(query="ops_currOpenLevel2") if cmds.optionVar(exists="ops_currOpenLevel2") else ""
-    level3 = cmds.optionVar(query="ops_currOpenLevel3") if cmds.optionVar(exists="ops_currOpenLevel3") else ""
-    tab = cmds.optionVar(query="ops_currOpenTab") if cmds.optionVar(exists="ops_currOpenTab") else 0
+    ui = _get_ui()
+    if not ui: return
+
+    curr_type = prefs.get_pref("ops_currOpenType", "")
+    curr_cat = prefs.get_pref("ops_currOpenCategory", "")
+    curr_version = prefs.get_pref("ops_currOpenVersion", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
 
     curr_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     ui_dir = os.path.dirname(__file__)
@@ -59,149 +65,163 @@ def update_currently_open(*args):
 
     if not level1:
         clear_current_history()
-        if cmds.scrollField("ops_currOpen_scrollField", exists=True): cmds.scrollField("ops_currOpen_scrollField", edit=True, text="")
-        if cmds.image("ops_currOpenPreview_img", exists=True): cmds.image("ops_currOpenPreview_img", edit=True, image=default_preview)
+        ui.ops_currOpen_scrollField.setPlainText("")
+        ui.ops_currOpenPreview_img.setPixmap(QtGui.QPixmap(default_preview))
         
-        for btn in ["ops_currOpenSaveWorkshop_btn", "ops_currOpenRecordPlayblast_btn", "ops_currOpenViewPlayblast_btn", 
-                    "ops_currOpenMaster_btn", "ops_currOpenRevive_btn", "ops_currOpenClose_btn", "ops_currOpenClearNote_btn",
-                    "ops_currOpenSaveNote_btn", "ops_currOpenSnapshot_btn", "ops_currOpenExplore_btn"]:
-            if cmds.button(btn, exists=True): cmds.button(btn, edit=True, enable=False)
+        for btn in [ui.ops_currOpenSaveWorkshop_btn, ui.ops_currOpenRecordPlayblast_btn, ui.ops_currOpenViewPlayblast_btn, 
+                    ui.ops_currOpenMaster_btn, ui.ops_currOpenRevive_btn, ui.ops_currOpenClose_btn, ui.ops_currOpenClearNote_btn,
+                    ui.ops_currOpenSaveNote_btn, ui.ops_currOpenSnapshot_btn, ui.ops_currOpenExplore_btn]:
+            btn.setEnabled(False)
                 
-        if cmds.textField("ops_currOpenLocation_txtField", exists=True): cmds.textField("ops_currOpenLocation_txtField", edit=True, text="")
-        if cmds.text("ops_currOpenHeading_txt", exists=True): cmds.text("ops_currOpenHeading_txt", edit=True, label="none")
-        if cmds.text("ops_currOpenHeadingVersion_txt", exists=True): cmds.text("ops_currOpenHeadingVersion_txt", edit=True, label="      ", backgroundColor=(0.8, 0.8, 0.8))
-    elif os.path.isdir(curr_path):
-        w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
-        m_name = cmds.optionVar(query="ops_masterName") if cmds.optionVar(exists="ops_masterName") else "master"
+        ui.ops_currOpenLocation_txtField.setText("")
+        ui.ops_currOpenHeading_txt.setText("none")
+        ui.ops_currOpenHeadingVersion_txt.setText("      ")
+        ui.ops_currOpenHeadingVersion_txt.setStyleSheet("font-weight: bold; background-color: #cccccc;")
         
-        num_versions = opsInfo.get_num_workshops(tab, level1, level2, level3)
-        latest_version = opsInfo.get_latest_workshop_version(tab, level1, level2, level3)
+    elif os.path.isdir(curr_path):
+        w_name = prefs.get_pref("ops_wip", "workshop")
+        m_name = prefs.get_pref("ops_masterName", "master")
+        
+        num_versions = opsInfo.get_num_wips(tab, level1, level2, level3)
+        latest_version = opsInfo.get_latest_wip_version(tab, level1, level2, level3)
         revive_enabled = True if num_versions > 1 else False
         
         version_string = f"{w_name} version {curr_version}" if curr_type == "workshop" else m_name
         display_string = f"{level1}: {level2}  ({curr_cat.capitalize()})" if curr_cat in ["asset", "shot"] else f"{level1}: {level2}: {level3}  (Component)" if curr_cat in ["component", "shotComponent"] else ""
             
         prev_img = opsInfo.get_thumbnail(tab, level1, level2, level3)
-        if cmds.image("ops_currOpenPreview_img", exists=True): cmds.image("ops_currOpenPreview_img", edit=True, image=prev_img if os.path.isfile(prev_img) else no_preview)
+        ui.ops_currOpenPreview_img.setPixmap(QtGui.QPixmap(prev_img if os.path.isfile(prev_img) else no_preview))
             
         note_text = opsInfo.get_custom_notes(tab, level1, level2, level3)
-        if cmds.scrollField("ops_currOpen_scrollField", exists=True): cmds.scrollField("ops_currOpen_scrollField", edit=True, editable=True, text=note_text)
+        ui.ops_currOpen_scrollField.setReadOnly(False)
+        ui.ops_currOpen_scrollField.setPlainText(note_text)
+        
+        # Enable save button when notes are edited
+        try: ui.ops_currOpen_scrollField.textChanged.disconnect()
+        except Exception: pass
+        ui.ops_currOpen_scrollField.textChanged.connect(lambda: ui.ops_currOpenSaveNote_btn.setEnabled(True))
             
         load_current_history()
         
-        if cmds.button("ops_currOpenRevive_btn", exists=True): cmds.button("ops_currOpenRevive_btn", edit=True, enable=revive_enabled)
-        if cmds.button("ops_currOpenRecordPlayblast_btn", exists=True): cmds.button("ops_currOpenRecordPlayblast_btn", edit=True, enable=True)
-        if cmds.button("ops_currOpenViewPlayblast_btn", exists=True): cmds.button("ops_currOpenViewPlayblast_btn", edit=True, enable=opsInfo.has_playblast(tab, level1, level2, level3))
+        ui.ops_currOpenRevive_btn.setEnabled(revive_enabled)
+        ui.ops_currOpenRecordPlayblast_btn.setEnabled(True)
+        ui.ops_currOpenViewPlayblast_btn.setEnabled(opsInfo.has_playblast(tab, level1, level2, level3))
         
-        for btn in ["ops_currOpenClose_btn", "ops_currOpenSaveWorkshop_btn", "ops_currOpenMaster_btn", "ops_currOpenClearNote_btn", "ops_currOpenSnapshot_btn", "ops_currOpenExplore_btn"]:
-            if cmds.button(btn, exists=True): cmds.button(btn, edit=True, enable=True)
+        for btn in [ui.ops_currOpenClose_btn, ui.ops_currOpenSaveWorkshop_btn, ui.ops_currOpenMaster_btn, 
+                    ui.ops_currOpenClearNote_btn, ui.ops_currOpenSnapshot_btn, ui.ops_currOpenExplore_btn]:
+            btn.setEnabled(True)
             
-        if cmds.button("ops_currOpenSaveNote_btn", exists=True): cmds.button("ops_currOpenSaveNote_btn", edit=True, enable=False)
-        if cmds.textField("ops_currOpenLocation_txtField", exists=True): cmds.textField("ops_currOpenLocation_txtField", edit=True, text=curr_path)
+        ui.ops_currOpenSaveNote_btn.setEnabled(False)
+        ui.ops_currOpenLocation_txtField.setText(curr_path)
             
-        if cmds.text("ops_currOpenHeadingVersion_txt", exists=True):
-            bgc = (0.8, 0.6, 0.5) if latest_version == curr_version else (0.5, 0.7, 0.7)
-            if curr_type == "master": bgc = (0.9, 0.7, 0.4)
-            cmds.text("ops_currOpenHeadingVersion_txt", edit=True, backgroundColor=bgc, visible=True, label=version_string)
-            
-        if cmds.text("ops_currOpenHeading_txt", exists=True): cmds.text("ops_currOpenHeading_txt", edit=True, label=display_string)
+        bgc = "#cc9980" if latest_version == curr_version else "#80b3b3"
+        if curr_type == "master": bgc = "#e6b366"
+        
+        ui.ops_currOpenHeadingVersion_txt.setStyleSheet(f"font-weight: bold; background-color: {bgc}; color: black;")
+        ui.ops_currOpenHeadingVersion_txt.setText(version_string)
+        ui.ops_currOpenHeading_txt.setText(display_string)
             
         if curr_type == "master":
-            for btn in ["ops_currOpenSaveWorkshop_btn", "ops_currOpenMaster_btn"]:
-                if cmds.button(btn, exists=True): cmds.button(btn, edit=True, enable=False)
+            ui.ops_currOpenSaveWorkshop_btn.setEnabled(False)
+            ui.ops_currOpenMaster_btn.setEnabled(False)
     else:
         opsActions.close_file()
         remove_secondary_windows()
 
 
-def update_working_tab(*args):
-    if cmds.tabLayout("ops_mainTabs_tabLayout", exists=True):
-        tab = cmds.tabLayout("ops_mainTabs_tabLayout", query=True, selectTabIndex=True)
-        cmds.optionVar(intValue=("ops_currTab", tab))
-        if tab == 3: update_currently_open()
-        elif tab == 1: update_asset_type_list()
-        elif tab == 2: update_sequence_list()
+def update_working_tab(index=0, *args):
+    prefs.set_pref("ops_currTab", index + 1)
+    if index == 2: update_currently_open()
+    elif index == 0: update_asset_type_list()
+    elif index == 1: update_sequence_list()
 
 
 # --- Asset Inventory Updaters ---
 
 def update_asset_type_list(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(2, 1)
-    if cmds.textScrollList("ops_assetType_txtScrollList", exists=True):
-        cmds.textScrollList("ops_assetType_txtScrollList", edit=True, removeAll=True)
-        if cmds.optionVar(exists="ops_assetTypes"): cmds.optionVar(clearArray="ops_assetTypes")
-        types = sorted(opsInfo.get_children(2, "", "", ""))
-        for t in types:
-            cmds.optionVar(stringValueAppend=("ops_assetTypes", t))
-            cmds.textScrollList("ops_assetType_txtScrollList", edit=True, append=t)
-            if selected[0] == t: cmds.textScrollList("ops_assetType_txtScrollList", edit=True, selectItem=t)
+    ui.ops_assetType_txtScrollList.clear()
+    types = sorted(opsInfo.get_children(2, "", "", ""))
+    prefs.set_pref("ops_assetTypes", types)
+    for t in types:
+        ui.ops_assetType_txtScrollList.addItem(t)
+        if selected[0] == t:
+            items = ui.ops_assetType_txtScrollList.findItems(t, QtCore.Qt.MatchExactly)
+            if items: ui.ops_assetType_txtScrollList.setCurrentItem(items[0])
     update_asset_list(1)
 
 
 def update_asset_list(preserve_selection=1, *args):
+    ui = _get_ui()
+    if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
     selected = opsInfo.get_currently_selected_item(2, 2)
-    if cmds.textScrollList("ops_asset_scrollList", exists=True):
-        cmds.textScrollList("ops_asset_scrollList", edit=True, removeAll=True)
-        if cmds.optionVar(exists="ops_assets"): cmds.optionVar(clearArray="ops_assets")
-        active = False
-        if selected[0]:
-            assets = sorted(opsInfo.get_children(2, selected[0], "", ""))
-            for asset in assets:
-                active = True
-                cmds.optionVar(stringValueAppend=("ops_assets", asset))
-                post = " +" if opsInfo.has_master(2, selected[0], asset, "") else " -" if opsInfo.has_workshop(2, selected[0], asset, "") else ""
-                pre = "* " if opsInfo.get_file_name(2, selected[0], asset, "", "folder") == opsInfo.get_currently_open_path() else ""
-                post += " *" if pre else ""
-                display_str = f"{pre}{asset}{post}"
-                cmds.textScrollList("ops_asset_scrollList", edit=True, append=display_str)
-                if preserve_selection and selected[1] == asset:
-                    try: cmds.textScrollList("ops_asset_scrollList", edit=True, selectItem=display_str)
-                    except: pass
-        if cmds.button("ops_assetTypeRemove_btn", exists=True): cmds.button("ops_assetTypeRemove_btn", edit=True, enable=bool(selected[0]))
-        if cmds.button("ops_assetNew_btn", exists=True): cmds.button("ops_assetNew_btn", edit=True, enable=bool(selected[0]))
-        cmds.textScrollList("ops_asset_scrollList", edit=True, enable=active)
+    
+    ui.ops_asset_scrollList.clear()
+    active = False
+    assets_list = []
+    if selected[0]:
+        assets = sorted(opsInfo.get_children(2, selected[0], "", ""))
+        for asset in assets:
+            active = True
+            assets_list.append(asset)
+            post = " +" if opsInfo.has_master(2, selected[0], asset, "") else " -" if opsInfo.has_wip(2, selected[0], asset, "") else ""
+            pre = "* " if opsInfo.get_file_name(2, selected[0], asset, "", "folder") == opsInfo.get_currently_open_path() else ""
+            post += " *" if pre else ""
+            display_str = f"{pre}{asset}{post}"
+            ui.ops_asset_scrollList.addItem(display_str)
+            if preserve_selection and selected[1] == asset:
+                items = ui.ops_asset_scrollList.findItems(display_str, QtCore.Qt.MatchExactly)
+                if items: ui.ops_asset_scrollList.setCurrentItem(items[0])
+                    
+    prefs.set_pref("ops_assets", assets_list)
+    ui.ops_assetTypeRemove_btn.setEnabled(bool(selected[0]))
+    ui.ops_assetNew_btn.setEnabled(bool(selected[0]))
+    ui.ops_asset_scrollList.setEnabled(active)
     asset_selected(1)
 
 
 def asset_selected(preserve_selection=1, *args):
+    ui = _get_ui()
+    if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
     selected = opsInfo.get_currently_selected_item(2, 3)
-    if cmds.textScrollList("ops_componentScrollList", exists=True):
-        cmds.textScrollList("ops_componentScrollList", edit=True, removeAll=True)
-        if cmds.optionVar(exists="ops_components"): cmds.optionVar(clearArray="ops_components")
-        is_selected = bool(selected[1])
-        for item in ["ops_assetActions_EditAsset_menuItem", "ops_assetActions_OpenMaster_menuItem", "ops_assetActions_import_menuItem", 
-                     "ops_assetActions_reference_menuItem", "ops_assetPopUpMenu_editAsset_menuItem", "ops_assetPopUpMenu_openMaster_menuItem",
-                     "ops_assetPopUpMenu_import_menuItem", "ops_assetPopUpMenu_reference_menuItem", "ops_assetActions_archive_menuItem", "ops_assetPopUpMenu_archive_menuItem"]:
-            if cmds.menuItem(item, exists=True): cmds.menuItem(item, edit=True, enable=is_selected)
-        for btn in ["ops_assetRename_btn", "ops_assetRemove_btn", "ops_assetViewPlayblastAssetButton", "ops_componentNewButton"]:
-            if cmds.button(btn, exists=True): cmds.button(btn, edit=True, enable=is_selected)
-        active = False
-        if is_selected:
-            components = sorted(opsInfo.get_children(2, selected[0], selected[1], ""))
-            for comp in components:
-                active = True
-                cmds.optionVar(stringValueAppend=("ops_components", comp))
-                post = " +" if opsInfo.has_master(2, selected[0], selected[1], comp) else " -" if opsInfo.has_workshop(2, selected[0], selected[1], comp) else ""
-                pre = "* " if opsInfo.get_file_name(2, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path() else ""
-                post += " *" if pre else ""
-                display_str = f"{pre}{comp}{post}"
-                cmds.textScrollList("ops_componentScrollList", edit=True, append=display_str)
-                if preserve_selection and selected[2] == comp:
-                    try: cmds.textScrollList("ops_componentScrollList", edit=True, selectItem=display_str)
-                    except: pass
-        cmds.textScrollList("ops_componentScrollList", edit=True, enable=active)
+    
+    ui.ops_componentScrollList.clear()
+    is_selected = bool(selected[1])
+    
+    for btn in [ui.ops_assetRename_btn, ui.ops_assetRemove_btn, ui.ops_assetViewPlayblastAssetButton, ui.ops_componentNewButton]:
+        btn.setEnabled(is_selected)
+        
+    active = False
+    comp_list = []
+    if is_selected:
+        components = sorted(opsInfo.get_children(2, selected[0], selected[1], ""))
+        for comp in components:
+            active = True
+            comp_list.append(comp)
+            post = " +" if opsInfo.has_master(2, selected[0], selected[1], comp) else " -" if opsInfo.has_wip(2, selected[0], selected[1], comp) else ""
+            pre = "* " if opsInfo.get_file_name(2, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path() else ""
+            post += " *" if pre else ""
+            display_str = f"{pre}{comp}{post}"
+            ui.ops_componentScrollList.addItem(display_str)
+            if preserve_selection and selected[2] == comp:
+                items = ui.ops_componentScrollList.findItems(display_str, QtCore.Qt.MatchExactly)
+                if items: ui.ops_componentScrollList.setCurrentItem(items[0])
+                
+    prefs.set_pref("ops_components", comp_list)
+    ui.ops_componentScrollList.setEnabled(active)
     component_selected()
     
 
 def component_selected(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(2, 3)
     is_selected = bool(selected[2])
-    for item in ["ops_compMenuEdit", "ops_compMenuView", "ops_compMenuImport", "ops_compMenuReference", "ops_assetCompMenuArchive",
-                 "ops_compMenuEdit2", "ops_compMenuView2", "ops_compMenuImport2", "ops_compMenuReference2", "ops_assetCompMenuArchive2"]:
-        if cmds.menuItem(item, exists=True): cmds.menuItem(item, edit=True, enable=is_selected)
-    if cmds.button("ops_componentRemoveButton", exists=True): cmds.button("ops_componentRemoveButton", edit=True, enable=is_selected)
+    ui.ops_componentRemoveButton.setEnabled(is_selected)
     asset_information()
     load_asset_history()
 
@@ -209,81 +229,87 @@ def component_selected(*args):
 # --- Shot Inventory Updaters ---
 
 def update_sequence_list(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(3, 1)
-    if cmds.textScrollList("ops_sequenceScrollList", exists=True):
-        cmds.textScrollList("ops_sequenceScrollList", edit=True, removeAll=True)
-        if cmds.optionVar(exists="ops_sequences"): cmds.optionVar(clearArray="ops_sequences")
-        seqs = sorted(opsInfo.get_children(3, "", "", ""))
-        for seq in seqs:
-            cmds.optionVar(stringValueAppend=("ops_sequences", seq))
-            cmds.textScrollList("ops_sequenceScrollList", edit=True, append=seq)
-            if selected[0] == seq: cmds.textScrollList("ops_sequenceScrollList", edit=True, selectItem=seq)
+    ui.ops_sequenceScrollList.clear()
+    seqs = sorted(opsInfo.get_children(3, "", "", ""))
+    prefs.set_pref("ops_sequences", seqs)
+    for seq in seqs:
+        ui.ops_sequenceScrollList.addItem(seq)
+        if selected[0] == seq:
+            items = ui.ops_sequenceScrollList.findItems(seq, QtCore.Qt.MatchExactly)
+            if items: ui.ops_sequenceScrollList.setCurrentItem(items[0])
     update_shot_list(1)
 
 
 def update_shot_list(preserve_selection=1, *args):
+    ui = _get_ui()
+    if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
     selected = opsInfo.get_currently_selected_item(3, 2)
-    if cmds.textScrollList("ops_shotScrollList", exists=True):
-        cmds.textScrollList("ops_shotScrollList", edit=True, removeAll=True)
-        if cmds.optionVar(exists="ops_shots"): cmds.optionVar(clearArray="ops_shots")
-        active = False
-        if selected[0]:
-            shots = sorted(opsInfo.get_children(3, selected[0], "", ""))
-            for shot in shots:
-                active = True
-                cmds.optionVar(stringValueAppend=("ops_shots", shot))
-                post = " +" if opsInfo.has_master(3, selected[0], shot, "") else " -" if opsInfo.has_workshop(3, selected[0], shot, "") else ""
-                pre = "* " if opsInfo.get_file_name(3, selected[0], shot, "", "folder") == opsInfo.get_currently_open_path() else ""
-                post += " *" if pre else ""
-                display_str = f"{pre}{shot}{post}"
-                cmds.textScrollList("ops_shotScrollList", edit=True, append=display_str)
-                if preserve_selection and selected[1] == shot:
-                    try: cmds.textScrollList("ops_shotScrollList", edit=True, selectItem=display_str)
-                    except: pass
-        if cmds.button("ops_sequenceRemoveButton", exists=True): cmds.button("ops_sequenceRemoveButton", edit=True, enable=bool(selected[0]))
-        if cmds.button("ops_shotNewButton", exists=True): cmds.button("ops_shotNewButton", edit=True, enable=bool(selected[0]))
-        cmds.textScrollList("ops_shotScrollList", edit=True, enable=active)
+    ui.ops_shotScrollList.clear()
+    active = False
+    shots_list = []
+    if selected[0]:
+        shots = sorted(opsInfo.get_children(3, selected[0], "", ""))
+        for shot in shots:
+            active = True
+            shots_list.append(shot)
+            post = " +" if opsInfo.has_master(3, selected[0], shot, "") else " -" if opsInfo.has_wip(3, selected[0], shot, "") else ""
+            pre = "* " if opsInfo.get_file_name(3, selected[0], shot, "", "folder") == opsInfo.get_currently_open_path() else ""
+            post += " *" if pre else ""
+            display_str = f"{pre}{shot}{post}"
+            ui.ops_shotScrollList.addItem(display_str)
+            if preserve_selection and selected[1] == shot:
+                items = ui.ops_shotScrollList.findItems(display_str, QtCore.Qt.MatchExactly)
+                if items: ui.ops_shotScrollList.setCurrentItem(items[0])
+                
+    prefs.set_pref("ops_shots", shots_list)
+    ui.ops_sequenceRemoveButton.setEnabled(bool(selected[0]))
+    ui.ops_shotNewButton.setEnabled(bool(selected[0]))
+    ui.ops_shotScrollList.setEnabled(active)
     shot_selected(1)
 
 
 def shot_selected(preserve_selection=1, *args):
+    ui = _get_ui()
+    if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
     selected = opsInfo.get_currently_selected_item(3, 3)
-    if cmds.textScrollList("ops_shotComponentScrollList", exists=True):
-        cmds.textScrollList("ops_shotComponentScrollList", edit=True, removeAll=True)
-        if cmds.optionVar(exists="ops_shotComponents"): cmds.optionVar(clearArray="ops_shotComponents")
-        is_selected = bool(selected[1])
-        for item in ["ops_shotMenuEdit", "ops_shotMenuView", "ops_shotMenuImport", "ops_shotMenuReference", "ops_shotMenuArchive",
-                     "ops_shotMenuEdit2", "ops_shotMenuView2", "ops_shotMenuImport2", "ops_shotMenuReference2", "ops_shotMenuArchive2"]:
-            if cmds.menuItem(item, exists=True): cmds.menuItem(item, edit=True, enable=is_selected)
-        for btn in ["ops_shotRemoveButton", "ops_shotComponentNewButton", "ops_shotViewPlayblastButton"]:
-            if cmds.button(btn, exists=True): cmds.button(btn, edit=True, enable=is_selected)
-        active = False
-        if is_selected:
-            components = sorted(opsInfo.get_children(3, selected[0], selected[1], ""))
-            for comp in components:
-                active = True
-                cmds.optionVar(stringValueAppend=("ops_shotComponents", comp))
-                post = " +" if opsInfo.has_master(3, selected[0], selected[1], comp) else " -" if opsInfo.has_workshop(3, selected[0], selected[1], comp) else ""
-                pre = "* " if opsInfo.get_file_name(3, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path() else ""
-                post += " *" if pre else ""
-                display_str = f"{pre}{comp}{post}"
-                cmds.textScrollList("ops_shotComponentScrollList", edit=True, append=display_str)
-                if preserve_selection and selected[2] == comp:
-                    try: cmds.textScrollList("ops_shotComponentScrollList", edit=True, selectItem=display_str)
-                    except: pass
-        cmds.textScrollList("ops_shotComponentScrollList", edit=True, enable=active)
+    ui.ops_shotComponentScrollList.clear()
+    is_selected = bool(selected[1])
+    
+    for btn in [ui.ops_shotRemoveButton, ui.ops_shotComponentNewButton, ui.ops_shotViewPlayblastButton]:
+        btn.setEnabled(is_selected)
+        
+    active = False
+    s_comp_list = []
+    if is_selected:
+        components = sorted(opsInfo.get_children(3, selected[0], selected[1], ""))
+        for comp in components:
+            active = True
+            s_comp_list.append(comp)
+            post = " +" if opsInfo.has_master(3, selected[0], selected[1], comp) else " -" if opsInfo.has_wip(3, selected[0], selected[1], comp) else ""
+            pre = "* " if opsInfo.get_file_name(3, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path() else ""
+            post += " *" if pre else ""
+            display_str = f"{pre}{comp}{post}"
+            ui.ops_shotComponentScrollList.addItem(display_str)
+            if preserve_selection and selected[2] == comp:
+                items = ui.ops_shotComponentScrollList.findItems(display_str, QtCore.Qt.MatchExactly)
+                if items: ui.ops_shotComponentScrollList.setCurrentItem(items[0])
+                
+    prefs.set_pref("ops_shotComponents", s_comp_list)
+    ui.ops_shotComponentScrollList.setEnabled(active)
     shot_component_selected()
     
 
 def shot_component_selected(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(3, 3)
     is_selected = bool(selected[2])
-    for item in ["ops_shotcompMenuEdit", "ops_shotcompMenuView", "ops_shotcompMenuImport", "ops_shotcompMenuReference", "ops_shotcompMenuArchive",
-                 "ops_shotcompMenuEdit2", "ops_shotcompMenuView2", "ops_shotcompMenuImport2", "ops_shotcompMenuReference2", "ops_shotcompMenuArchive2"]:
-        if cmds.menuItem(item, exists=True): cmds.menuItem(item, edit=True, enable=is_selected)
-    if cmds.button("ops_shotComponentRemoveButton", exists=True): cmds.button("ops_shotComponentRemoveButton", edit=True, enable=is_selected)
+    ui.ops_shotComponentRemoveButton.setEnabled(is_selected)
     shot_information()
     load_shot_history()
 
@@ -291,6 +317,8 @@ def shot_component_selected(*args):
 # --- Information and History Blocks ---
 
 def asset_information(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(2, 3)
     ui_dir = os.path.dirname(__file__)
     preview_file = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
@@ -301,18 +329,19 @@ def asset_information(*args):
         if os.path.isfile(thumb): preview_file = thumb
         else: preview_file = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
         output_text = opsInfo.get_custom_notes(2, selected[0], selected[1], selected[2])
-        if cmds.button("ops_assetViewPlayblastAssetButton", exists=True):
-            cmds.button("ops_assetViewPlayblastAssetButton", edit=True, enable=opsInfo.has_playblast(2, selected[0], selected[1], selected[2]))
+        ui.ops_assetViewPlayblastAssetButton.setEnabled(opsInfo.has_playblast(2, selected[0], selected[1], selected[2]))
     else:
-        if cmds.button("ops_assetViewPlayblastAssetButton", exists=True): cmds.button("ops_assetViewPlayblastAssetButton", edit=True, enable=False)
+        ui.ops_assetViewPlayblastAssetButton.setEnabled(False)
         
     folder = opsInfo.get_file_name(2, selected[0], selected[1], selected[2], "folder")
-    if cmds.textField("ops_assetLocationField", exists=True): cmds.textField("ops_assetLocationField", edit=True, text=folder)
-    if cmds.scrollField("ops_assetNoteField", exists=True): cmds.scrollField("ops_assetNoteField", edit=True, text=output_text)
-    if cmds.image("ops_assetPreviewImage", exists=True): cmds.image("ops_assetPreviewImage", edit=True, image=preview_file)
+    ui.ops_assetLocationField.setText(folder)
+    ui.ops_assetNoteField.setPlainText(output_text)
+    ui.ops_assetPreviewImage.setPixmap(QtGui.QPixmap(preview_file))
 
 
 def shot_information(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(3, 3)
     ui_dir = os.path.dirname(__file__)
     preview_file = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
@@ -323,47 +352,54 @@ def shot_information(*args):
         if os.path.isfile(thumb): preview_file = thumb
         else: preview_file = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
         output_text = opsInfo.get_custom_notes(3, selected[0], selected[1], selected[2])
-        if cmds.button("ops_shotViewPlayblastButton", exists=True):
-            cmds.button("ops_shotViewPlayblastButton", edit=True, enable=opsInfo.has_playblast(3, selected[0], selected[1], selected[2]))
+        ui.ops_shotViewPlayblastButton.setEnabled(opsInfo.has_playblast(3, selected[0], selected[1], selected[2]))
     else:
-        if cmds.button("ops_shotViewPlayblastButton", exists=True): cmds.button("ops_shotViewPlayblastButton", edit=True, enable=False)
+        ui.ops_shotViewPlayblastButton.setEnabled(False)
         
     folder = opsInfo.get_file_name(3, selected[0], selected[1], selected[2], "folder")
-    if cmds.textField("ops_shotLocationField", exists=True): cmds.textField("ops_shotLocationField", edit=True, text=folder)
-    if cmds.scrollField("ops_shotInfoField", exists=True): cmds.scrollField("ops_shotInfoField", edit=True, text=output_text)
-    if cmds.image("ops_shotPreviewImage", exists=True): cmds.image("ops_shotPreviewImage", edit=True, image=preview_file)
+    ui.ops_shotLocationField.setText(folder)
+    ui.ops_shotInfoField.setPlainText(output_text)
+    ui.ops_shotPreviewImage.setPixmap(QtGui.QPixmap(preview_file))
 
 
 def load_asset_history(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(2, 3)
     history_text = opsInfo.get_event_notes(2, selected[0], selected[1], selected[2])
-    if cmds.scrollField("ops_commentField", exists=True): cmds.scrollField("ops_commentField", edit=True, text=history_text)
+    ui.ops_commentField.setPlainText(history_text)
     
 
 def load_shot_history(*args):
+    ui = _get_ui()
+    if not ui: return
     selected = opsInfo.get_currently_selected_item(3, 3)
     history_text = opsInfo.get_event_notes(3, selected[0], selected[1], selected[2])
-    if cmds.scrollField("ops_shotCommentField", exists=True): cmds.scrollField("ops_shotCommentField", edit=True, text=history_text)
+    ui.ops_shotCommentField.setPlainText(history_text)
     
 
 def load_current_history(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab") if cmds.optionVar(exists="ops_currOpenTab") else 0
-    level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
-    level2 = cmds.optionVar(query="ops_currOpenLevel2") if cmds.optionVar(exists="ops_currOpenLevel2") else ""
-    level3 = cmds.optionVar(query="ops_currOpenLevel3") if cmds.optionVar(exists="ops_currOpenLevel3") else ""
+    ui = _get_ui()
+    if not ui: return
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
     history_text = opsInfo.get_event_notes(tab, level1, level2, level3)
-    if cmds.scrollField("ops_currOpenAssetNote_scrollField", exists=True): cmds.scrollField("ops_currOpenAssetNote_scrollField", edit=True, text=history_text)
+    ui.ops_currOpenAssetNote_scrollField.setPlainText(history_text)
     
 
 def clear_current_history(*args):
-    if cmds.scrollField("ops_currOpenAssetNote_scrollField", exists=True): cmds.scrollField("ops_currOpenAssetNote_scrollField", edit=True, text="")
+    ui = _get_ui()
+    if not ui: return
+    ui.ops_currOpenAssetNote_scrollField.setPlainText("")
 
 
 def open_currently_selected(tab, level, item_type, version_offset=0, *args):
     levels = opsInfo.get_currently_selected_item(tab, level)
     if opsActions.open_item(item_type, tab, levels[0], levels[1], levels[2], version_offset):
-        if cmds.tabLayout("ops_mainTabs_tabLayout", exists=True):
-            cmds.tabLayout("ops_mainTabs_tabLayout", edit=True, selectTabIndex=3)
+        ui = _get_ui()
+        if ui: ui.ops_mainTabs_tabLayout.setCurrentIndex(2)
         refresh_ui()
 
 
@@ -389,10 +425,10 @@ def explore_selected(tab, *args):
 
 
 def explore_current(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
     opsActions.open_location(tab, level1, level2, level3)
 
 
@@ -402,45 +438,50 @@ def view_playblast_selected(tab, *args):
 
 
 def view_playblast_current(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
     opsActions.view_playblast(tab, level1, level2, level3)
 
 
 def record_current_playblast(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
     opsActions.record_playblast(tab, level1, level2, level3)
     refresh_ui()
 
 
 def take_snapshot(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
     img = opsActions.create_thumbnail(tab, level1, level2, level3)
     if os.path.isfile(img):
-        cmds.image("ops_currOpenPreview_img", edit=True, image=img)
+        ui = _get_ui()
+        if ui: ui.ops_currOpenPreview_img.setPixmap(QtGui.QPixmap(img))
 
 
 def save_note(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab")
-    level1 = cmds.optionVar(query="ops_currOpenLevel1")
-    level2 = cmds.optionVar(query="ops_currOpenLevel2")
-    level3 = cmds.optionVar(query="ops_currOpenLevel3")
-    text = cmds.scrollField("ops_currOpen_scrollField", query=True, text=True)
+    ui = _get_ui()
+    if not ui: return
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    text = ui.ops_currOpen_scrollField.toPlainText()
     opsActions.set_custom_notes(tab, level1, level2, level3, text)
-    cmds.button("ops_currOpenSaveNote_btn", edit=True, enable=False)
+    ui.ops_currOpenSaveNote_btn.setEnabled(False)
 
 
 def clear_note(*args):
-    cmds.scrollField("ops_currOpen_scrollField", edit=True, text="")
-    save_note()
+    ui = _get_ui()
+    if ui:
+        ui.ops_currOpen_scrollField.setPlainText("")
+        save_note()
 
 
 def close_current(*args):
@@ -453,234 +494,308 @@ def launch_help(*args):
 
 # --- UI Dialog Wrappers ---
 
+class ItemCreationDialog(QtWidgets.QDialog):
+    def __init__(self, parent, title, field_label, create_callback):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.create_callback = create_callback
+        
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(QtWidgets.QLabel(field_label))
+        
+        self.name_field = QtWidgets.QLineEdit()
+        layout.addWidget(self.name_field)
+        
+        self.radio_empty = QtWidgets.QRadioButton("Start with empty item")
+        self.radio_export_sel = QtWidgets.QRadioButton("Export current selection")
+        self.radio_export_all = QtWidgets.QRadioButton("Export current scene")
+        self.radio_empty.setChecked(True)
+        
+        layout.addWidget(self.radio_empty)
+        layout.addWidget(self.radio_export_sel)
+        layout.addWidget(self.radio_export_all)
+        
+        btn_layout = QtWidgets.QHBoxLayout()
+        create_btn = QtWidgets.QPushButton("Create")
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+        
+        create_btn.clicked.connect(self.on_create)
+        cancel_btn.clicked.connect(self.reject)
+        
+        btn_layout.addWidget(create_btn)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+        
+    def on_create(self):
+        mode = 1
+        if self.radio_export_sel.isChecked(): mode = 2
+        elif self.radio_export_all.isChecked(): mode = 3
+        self.create_callback(mode, self.name_field.text().strip())
+        self.accept()
+
 def prompt_new_asset_type(*args):
-    res = cmds.promptDialog(title="New Asset Type", message="Asset Type Name\n(no spaces or special characters):", button=["Create", "Cancel"], defaultButton="Create", cancelButton="Cancel", dismissString="Cancel")
-    if res == "Create":
-        name = cmds.promptDialog(query=True, text=True).strip()
-        if opsActions.create_new_item(2, name, "", "", 0): refresh_ui()
+    ui = _get_ui()
+    name, ok = QtWidgets.QInputDialog.getText(ui, "New Asset Type", "Asset Type Name\n(no spaces or special characters):")
+    if ok and name.strip():
+        if opsActions.create_new_item(2, name.strip(), "", "", 0): refresh_ui()
 
 
 def prompt_new_sequence(*args):
-    res = cmds.promptDialog(title="New Sequence", message="Sequence Name\n(no spaces or special characters):", button=["Create", "Cancel"], defaultButton="Create", cancelButton="Cancel", dismissString="Cancel")
-    if res == "Create":
-        name = cmds.promptDialog(query=True, text=True).strip()
-        if opsActions.create_new_item(3, name, "", "", 0): refresh_ui()
-
-
-def _item_creation_dialog(title, field_label, create_callback):
-    if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
-    cmds.window("ops_secondaryUI", title=title, widthHeight=(250, 180))
-    cmds.columnLayout(width=220, rowSpacing=5, columnOffset=("both", 10))
-    cmds.text(label=field_label)
-    cmds.textField("ops_newItemNameField", editable=True, width=220)
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(110, 110))
-    create_btn = cmds.button(label="Create", width=110)
-    cmds.button(label="Cancel", width=110, command=lambda x: cmds.deleteUI("ops_secondaryUI"))
-    cmds.setParent("..")
-    cmds.radioCollection()
-    cmds.radioButton(label="Start with empty item", select=True, onCommand=lambda x: cmds.button(create_btn, edit=True, command=lambda y: create_callback(1)))
-    cmds.radioButton(label="Export current selection", onCommand=lambda x: cmds.button(create_btn, edit=True, command=lambda y: create_callback(2)))
-    cmds.radioButton(label="Export current scene", onCommand=lambda x: cmds.button(create_btn, edit=True, command=lambda y: create_callback(3)))
-    cmds.button(create_btn, edit=True, command=lambda y: create_callback(1))
-    cmds.showWindow("ops_secondaryUI")
+    ui = _get_ui()
+    name, ok = QtWidgets.QInputDialog.getText(ui, "New Sequence", "Sequence Name\n(no spaces or special characters):")
+    if ok and name.strip():
+        if opsActions.create_new_item(3, name.strip(), "", "", 0): refresh_ui()
 
 
 def prompt_new_asset(*args):
-    def _create(mode):
-        name = cmds.textField("ops_newItemNameField", query=True, text=True).strip()
-        selected = opsInfo.get_currently_selected_item(2, 1)
-        if not selected[0]: cmds.confirmDialog(title="Error", message="No Asset Type selected.", button=["OK"])
-        elif opsActions.create_new_item(2, selected[0], name, "", mode):
+    ui = _get_ui()
+    selected = opsInfo.get_currently_selected_item(2, 1)
+    if not selected[0]:
+        QtWidgets.QMessageBox.warning(ui, "Error", "No Asset Type selected.")
+        return
+    def _create(mode, name):
+        if opsActions.create_new_item(2, selected[0], name, "", mode):
             refresh_ui()
-            cmds.deleteUI("ops_secondaryUI")
-    _item_creation_dialog("Create New Asset", "Asset Name (no spaces or special chars):", _create)
+    dlg = ItemCreationDialog(ui, "Create New Asset", "Asset Name (no spaces or special chars):", _create)
+    ui.active_dialog = dlg
+    dlg.exec()
 
 
 def prompt_new_asset_component(*args):
-    def _create(mode):
-        name = cmds.textField("ops_newItemNameField", query=True, text=True).strip()
-        selected = opsInfo.get_currently_selected_item(2, 2)
-        if not selected[1]: cmds.confirmDialog(title="Error", message="No Asset selected.", button=["OK"])
-        elif opsActions.create_new_item(2, selected[0], selected[1], name, mode):
+    ui = _get_ui()
+    selected = opsInfo.get_currently_selected_item(2, 2)
+    if not selected[1]:
+        QtWidgets.QMessageBox.warning(ui, "Error", "No Asset selected.")
+        return
+    def _create(mode, name):
+        if opsActions.create_new_item(2, selected[0], selected[1], name, mode):
             refresh_ui()
-            cmds.deleteUI("ops_secondaryUI")
-    _item_creation_dialog("Create New Component", "Component Name (no spaces or special chars):", _create)
+    dlg = ItemCreationDialog(ui, "Create New Component", "Component Name (no spaces or special chars):", _create)
+    ui.active_dialog = dlg
+    dlg.exec()
 
 
 def prompt_new_shot(*args):
-    def _create(mode):
-        name = cmds.textField("ops_newItemNameField", query=True, text=True).strip()
-        selected = opsInfo.get_currently_selected_item(3, 1)
-        if not selected[0]: cmds.confirmDialog(title="Error", message="No Sequence selected.", button=["OK"])
-        elif opsActions.create_new_item(3, selected[0], name, "", mode):
+    ui = _get_ui()
+    selected = opsInfo.get_currently_selected_item(3, 1)
+    if not selected[0]:
+        QtWidgets.QMessageBox.warning(ui, "Error", "No Sequence selected.")
+        return
+    def _create(mode, name):
+        if opsActions.create_new_item(3, selected[0], name, "", mode):
             refresh_ui()
-            cmds.deleteUI("ops_secondaryUI")
-    _item_creation_dialog("Create New Shot", "Shot Name (no spaces or special chars):", _create)
+    dlg = ItemCreationDialog(ui, "Create New Shot", "Shot Name (no spaces or special chars):", _create)
+    ui.active_dialog = dlg
+    dlg.exec()
 
 
 def prompt_new_shot_component(*args):
-    def _create(mode):
-        name = cmds.textField("ops_newItemNameField", query=True, text=True).strip()
-        selected = opsInfo.get_currently_selected_item(3, 2)
-        if not selected[1]: cmds.confirmDialog(title="Error", message="No Shot selected.", button=["OK"])
-        elif opsActions.create_new_item(3, selected[0], selected[1], name, mode):
+    ui = _get_ui()
+    selected = opsInfo.get_currently_selected_item(3, 2)
+    if not selected[1]:
+        QtWidgets.QMessageBox.warning(ui, "Error", "No Shot selected.")
+        return
+    def _create(mode, name):
+        if opsActions.create_new_item(3, selected[0], selected[1], name, mode):
             refresh_ui()
-            cmds.deleteUI("ops_secondaryUI")
-    _item_creation_dialog("Create New Shot Component", "Component Name (no spaces or special chars):", _create)
+    dlg = ItemCreationDialog(ui, "Create New Shot Component", "Component Name (no spaces or special chars):", _create)
+    ui.active_dialog = dlg
+    dlg.exec()
 
 
 def prompt_rename_asset(*args):
-    if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
-    cmds.window("ops_secondaryUI", title="Rename Asset", widthHeight=(280, 180))
-    cmds.columnLayout(width=220, rowSpacing=5, columnOffset=("both", 10))
-    cmds.text(label="New Asset Name (no spaces or special chars):")
-    cmds.textField("ops_newNameField", editable=True, width=220)
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(110, 110))
-    cmds.button(label="Rename", width=110, command=lambda x: _rename_asset_callback())
-    cmds.button(label="Cancel", width=110, command=lambda x: cmds.deleteUI("ops_secondaryUI"))
-    cmds.showWindow("ops_secondaryUI")
-
-
-def _rename_asset_callback():
-    import renameAsset
-    new_name = cmds.textField("ops_newNameField", query=True, text=True).strip()
+    ui = _get_ui()
     selected = opsInfo.get_currently_selected_item(2, 2)
-    asset_path = opsInfo.get_file_name(2, selected[0], selected[1], selected[2], "folder")
-    renameAsset.renameAsset(asset_path, new_name)
-    refresh_ui()
-    cmds.deleteUI("ops_secondaryUI")
+    if not selected[1]: return
+    name, ok = QtWidgets.QInputDialog.getText(ui, "Rename Asset", "New Asset Name (no spaces or special chars):")
+    if ok and name.strip():
+        import renameAsset
+        asset_path = opsInfo.get_file_name(2, selected[0], selected[1], selected[2], "folder")
+        renameAsset.renameAsset(asset_path, name.strip())
+        refresh_ui()
 
 
-def prompt_save_workshop(*args):
-    w_name = cmds.optionVar(query="ops_wip").capitalize()
-    if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
-    cmds.window("ops_secondaryUI", title=f"Save {w_name}", widthHeight=(300, 90))
-    cmds.columnLayout(rowSpacing=5, columnOffset=("both", 10))
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(60, 230), columnAlign2=("center", "center"))
-    cmds.text(label="comment: ", width=60)
-    cmds.textField("ops_saveWorkshopCommentField", width=190)
-    cmds.setParent("..")
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(125, 125), columnAlign2=("center", "center"))
-    cmds.button(label=f"SAVE {w_name}", width=125, backgroundColor=(0.8, 0.6, 0.5), command=lambda x: opsActions.save_workshop(cmds.textField("ops_saveWorkshopCommentField", query=True, text=True)) and cmds.deleteUI("ops_secondaryUI") and refresh_ui())
-    cmds.button(label="cancel", width=125, backgroundColor=(0.8, 0.4, 0.4), command=lambda x: cmds.deleteUI("ops_secondaryUI"))
-    cmds.showWindow("ops_secondaryUI")
+def prompt_save_wip(*args):
+    ui = _get_ui()
+    w_name = prefs.get_pref("ops_wip", "WIP").upper()
+    comment, ok = QtWidgets.QInputDialog.getText(ui, f"Save {w_name}", "Comment:")
+    if ok:
+        opsActions.save_wip(comment)
+        refresh_ui()
+
+
+class ReviveDialog(QtWidgets.QDialog):
+    def __init__(self, parent, w_name, workshops, tab, level1, level2, level3):
+        super().__init__(parent)
+        self.setWindowTitle(f"Revive {w_name}")
+        self.tab = tab
+        self.level1 = level1
+        self.level2 = level2
+        self.level3 = level3
+        
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(QtWidgets.QLabel(f"Select a previous {w_name} version to revive:"))
+        
+        self.list_widget = QtWidgets.QListWidget()
+        # Skip index 0 (the latest version)
+        for i in range(1, len(workshops)):
+            version = opsInfo.get_version_from_file(workshops[i])
+            item = QtWidgets.QListWidgetItem(f"Version {version:04d}")
+            item.setData(QtCore.Qt.UserRole, i)
+            self.list_widget.addItem(item)
+        layout.addWidget(self.list_widget)
+        
+        btn_layout = QtWidgets.QHBoxLayout()
+        revive_btn = QtWidgets.QPushButton("Revive")
+        revive_btn.setStyleSheet("background-color: #80b3b3; color: black;")
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+        
+        revive_btn.clicked.connect(self.on_revive)
+        cancel_btn.clicked.connect(self.reject)
+        
+        btn_layout.addWidget(revive_btn)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+        
+    def on_revive(self):
+        sel = self.list_widget.selectedItems()
+        if not sel: return
+        offset = sel[0].data(QtCore.Qt.UserRole)
+        if opsActions.open_item("workshop", self.tab, self.level1, self.level2, self.level3, offset):
+            opsActions.save_wip("Revived from an older version.")
+        self.accept()
+        refresh_ui()
 
 
 def prompt_revive(*args):
-    tab = cmds.optionVar(query="ops_currOpenTab") if cmds.optionVar(exists="ops_currOpenTab") else 0
-    level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
-    level2 = cmds.optionVar(query="ops_currOpenLevel2") if cmds.optionVar(exists="ops_currOpenLevel2") else ""
-    level3 = cmds.optionVar(query="ops_currOpenLevel3") if cmds.optionVar(exists="ops_currOpenLevel3") else ""
+    ui = _get_ui()
+    tab = prefs.get_pref("ops_currOpenTab", 0)
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
     
     if not level1:
         return
         
-    w_name = cmds.optionVar(query="ops_wip").capitalize() if cmds.optionVar(exists="ops_wip") else "Workshop"
+    w_name = prefs.get_pref("ops_wip", "WIP").upper()
     
-    workshops = opsInfo.get_workshops(tab, level1, level2, level3)
-    if not workshops or len(workshops) < 2:
-        cmds.warning(f"Not enough {w_name} files to revive.")
+    wips = opsInfo.get_wips(tab, level1, level2, level3)
+    if not wips or len(wips) < 2:
+        QtWidgets.QMessageBox.warning(ui, "Warning", f"Not enough {w_name} files to revive.")
         return
         
-    if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
-    cmds.window("ops_secondaryUI", title=f"Revive {w_name}", widthHeight=(280, 200))
-    cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=("both", 10))
-    cmds.text(label=f"Select a previous {w_name} version to revive:", align="left")
-    
-    cmds.textScrollList("ops_revive_scrollList", height=100)
-    
-    # Skip index 0 (the latest version) since you can't revive what is already current
-    for i in range(1, len(workshops)):
-        version = opsInfo.get_version_from_file(workshops[i])
-        cmds.textScrollList("ops_revive_scrollList", edit=True, append=f"Version {version:04d}")
-        
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(130, 130))
-    cmds.button(label="Revive", width=130, backgroundColor=(0.5, 0.7, 0.7), command=lambda x: _revive_callback(tab, level1, level2, level3))
-    cmds.button(label="Cancel", width=130, command=lambda x: cmds.deleteUI("ops_secondaryUI"))
-    
-    cmds.showWindow("ops_secondaryUI")
+    dlg = ReviveDialog(ui, w_name, wips, tab, level1, level2, level3)
+    ui.active_dialog = dlg
+    dlg.exec()
 
 
-def _revive_callback(tab, level1, level2, level3):
-    selected_idx = cmds.textScrollList("ops_revive_scrollList", query=True, selectIndexedItem=True)
-    if not selected_idx:
-        return
+class ArchiveDialog(QtWidgets.QDialog):
+    def __init__(self, parent, tab, levels):
+        super().__init__(parent)
+        self.tab = tab
+        self.levels = levels
         
-    # Because we skipped index 0 in the UI list, a UI index of 1 perfectly matches an offset of 1
-    offset = selected_idx[0]
-    
-    import opsActions
-    # Safely prompt to save current changes, then open the older file
-    if opsActions.open_item("workshop", tab, level1, level2, level3, offset):
-        # Save the old file back into the pipeline as the newest version
-        opsActions.save_workshop("Revived from an older version.")
+        w_name = prefs.get_pref("ops_wip", "WIP").upper()
+        m_name = prefs.get_pref("ops_masterName", "master").capitalize()
         
-    cmds.deleteUI("ops_secondaryUI")
-    refresh_ui()
+        item_name_str = f"{levels[0]}"
+        if levels[1]: item_name_str += f": {levels[1]}"
+        if levels[2]: item_name_str += f": {levels[2]}"
+        
+        self.setWindowTitle(f"Archive - {item_name_str}")
+        layout = QtWidgets.QVBoxLayout(self)
+        
+        # Archive Group
+        grp1 = QtWidgets.QGroupBox("Archive")
+        l1 = QtWidgets.QVBoxLayout(grp1)
+        l1.addWidget(QtWidgets.QLabel(f"Archiving the selected item will clean up its working directory\nby moving old {w_name} files and old {m_name} versions to the Archive\nfolder. The most recent files won't be affected."))
+        
+        chk_layout = QtWidgets.QHBoxLayout()
+        self.chk_w = QtWidgets.QCheckBox(f"Archive {w_name} Files")
+        self.chk_w.setChecked(True)
+        self.chk_m = QtWidgets.QCheckBox(f"Archive {m_name} Versions")
+        self.chk_m.setChecked(True)
+        chk_layout.addWidget(self.chk_w)
+        chk_layout.addWidget(self.chk_m)
+        l1.addLayout(chk_layout)
+        
+        spin_layout = QtWidgets.QHBoxLayout()
+        spin_layout.addWidget(QtWidgets.QLabel("Keep most recent:"))
+        self.spin_w = QtWidgets.QSpinBox()
+        self.spin_w.setMinimum(1)
+        spin_layout.addWidget(self.spin_w)
+        spin_layout.addStretch()
+        spin_layout.addWidget(QtWidgets.QLabel("Keep most recent:"))
+        self.spin_m = QtWidgets.QSpinBox()
+        self.spin_m.setMinimum(1)
+        spin_layout.addWidget(self.spin_m)
+        l1.addLayout(spin_layout)
+        
+        btn_arch = QtWidgets.QPushButton("Archive")
+        btn_arch.setStyleSheet("background-color: #99b3e6;")
+        btn_arch.clicked.connect(self.on_archive)
+        l1.addWidget(btn_arch)
+        layout.addWidget(grp1)
+        
+        # Retrieve Group
+        grp2 = QtWidgets.QGroupBox("Retrieve")
+        l2 = QtWidgets.QVBoxLayout(grp2)
+        l2.addWidget(QtWidgets.QLabel("Retrieving archived files for the current item will return them\nto their original working directories."))
+        r_chk_layout = QtWidgets.QHBoxLayout()
+        self.r_chk_w = QtWidgets.QCheckBox(f"Retrieve {w_name} Files")
+        self.r_chk_m = QtWidgets.QCheckBox(f"Retrieve {m_name} Versions")
+        r_chk_layout.addWidget(self.r_chk_w)
+        r_chk_layout.addWidget(self.r_chk_m)
+        l2.addLayout(r_chk_layout)
+        
+        btn_ret = QtWidgets.QPushButton("Retrieve")
+        btn_ret.clicked.connect(self.on_retrieve)
+        l2.addWidget(btn_ret)
+        layout.addWidget(grp2)
+        
+        # Delete Group
+        grp3 = QtWidgets.QGroupBox("Delete")
+        l3 = QtWidgets.QVBoxLayout(grp3)
+        l3.addWidget(QtWidgets.QLabel("This will move all archived files for this item to the 'deleted' folder."))
+        btn_del = QtWidgets.QPushButton("Delete Archive")
+        btn_del.setStyleSheet("background-color: #ffb399;")
+        btn_del.clicked.connect(self.on_delete)
+        l3.addWidget(btn_del)
+        layout.addWidget(grp3)
+        
+        btn_close = QtWidgets.QPushButton("Close")
+        btn_close.clicked.connect(self.reject)
+        layout.addWidget(btn_close)
+        
+    def on_archive(self):
+        w_val = self.spin_w.value() if self.chk_w.isChecked() else 0
+        m_val = self.spin_m.value() if self.chk_m.isChecked() else 0
+        opsActions.archive_item(self.tab, self.levels[0], self.levels[1], self.levels[2], w_val, m_val)
+        refresh_ui()
+        self.accept()
+        
+    def on_retrieve(self):
+        opsActions.retrieve_archive(self.tab, self.levels[0], self.levels[1], self.levels[2], self.r_chk_w.isChecked(), self.r_chk_m.isChecked())
+        refresh_ui()
+        self.accept()
+        
+    def on_delete(self):
+        opsActions.remove_archive(self.tab, self.levels[0], self.levels[1], self.levels[2])
+        self.accept()
 
 
 def prompt_archive(tab, level, *args):
+    ui = _get_ui()
     levels = opsInfo.get_currently_selected_item(tab, level)
     if not levels[0]: return
-    
-    w_name = cmds.optionVar(query="ops_wip").capitalize()
-    m_name = cmds.optionVar(query="ops_masterName").capitalize()
-    
-    item_name_str = f"{levels[0]}"
-    if levels[1]: item_name_str += f": {levels[1]}"
-    if levels[2]: item_name_str += f": {levels[2]}"
-    
-    if cmds.window("ops_secondaryUI", exists=True): cmds.deleteUI("ops_secondaryUI")
-    cmds.window("ops_secondaryUI", title=f"Archive - {item_name_str}", widthHeight=(400, 360))
-    
-    cmds.columnLayout(rowSpacing=5, columnOffset=("both", 10))
-    cmds.text(align="left", font="smallPlainLabelFont", label=f"ARCHIVE: Archiving the selected item will clean up its working directory\nby moving old {w_name} files and old {m_name} versions to the Archive\nfolder. The most recent files won't be affected.")
-    cmds.separator(height=5, width=370, style="none")
-    
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(190, 190))
-    chk_w = cmds.checkBox(label=f"Archive {w_name} Files", value=True)
-    chk_m = cmds.checkBox(label=f"Archive {m_name} Versions", value=True)
-    cmds.setParent("..")
-    
-    cmds.rowLayout(numberOfColumns=4, columnWidth4=(110, 80, 110, 80))
-    cmds.text(label="keep most recent")
-    int_w = cmds.intField(value=1, min=1, step=1, width=40)
-    cmds.text(label="keep most recent")
-    int_m = cmds.intField(value=1, min=1, step=1, width=40)
-    cmds.setParent("..")
-    
-    cmds.separator(height=5, width=370, style="none")
-    cmds.button(width=370, label="Archive", backgroundColor=(0.6, 0.7, 0.9), command=lambda x: opsActions.archive_item(tab, levels[0], levels[1], levels[2], cmds.intField(int_w, query=True, value=True) if cmds.checkBox(chk_w, query=True, value=True) else 0, cmds.intField(int_m, query=True, value=True) if cmds.checkBox(chk_m, query=True, value=True) else 0) and cmds.deleteUI("ops_secondaryUI") and refresh_ui())
-    
-    cmds.separator(height=10, width=370, style="out")
-    cmds.text(align="left", font="smallPlainLabelFont", label="RETRIEVE: Retrieving archived files for the current item will return them\nto their original working directories.")
-    cmds.separator(height=5, width=370, style="none")
-    
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(190, 190))
-    r_chk_w = cmds.checkBox(label=f"Retrieve {w_name} Files", value=False)
-    r_chk_m = cmds.checkBox(label=f"Retrieve {m_name} Versions", value=False)
-    cmds.setParent("..")
-    
-    cmds.separator(height=5, width=370, style="none")
-    cmds.button(width=370, label="Retrieve", backgroundColor=(1, 1, 1), command=lambda x: opsActions.retrieve_archive(tab, levels[0], levels[1], levels[2], cmds.checkBox(r_chk_w, query=True, value=True), cmds.checkBox(r_chk_m, query=True, value=True)) and cmds.deleteUI("ops_secondaryUI") and refresh_ui())
-    
-    cmds.separator(height=10, width=370, style="out")
-    cmds.text(align="left", font="smallPlainLabelFont", label="DELETE: This will move all archived files for this item to the 'deleted' folder.")
-    cmds.separator(height=5, width=370, style="none")
-    cmds.button(width=370, label="Delete Archive", backgroundColor=(1, 0.7, 0.6), command=lambda x: opsActions.remove_archive(tab, levels[0], levels[1], levels[2]) and cmds.deleteUI("ops_secondaryUI"))
-    cmds.separator(height=10, width=370, style="out")
-    cmds.button(width=370, label="Close", command=lambda x: cmds.deleteUI("ops_secondaryUI"))
-    
-    cmds.showWindow("ops_secondaryUI")
+    dlg = ArchiveDialog(ui, tab, levels)
+    ui.active_dialog = dlg
+    dlg.exec()
 
 
 def about_dialog(*args):
-    if cmds.window("infoWindow", exists=True): cmds.deleteUI("infoWindow")
-    cmds.window("infoWindow", title="About openPypeline Studio", widthHeight=(300, 250))
-    cmds.columnLayout(adjustableColumn=True)
     text = ("openPypeline Studio\n\nAn open source, free, and customizable pipeline for production (in Autodesk Maya).\n\n"
             "Originally created by Kickstand.\nModernized to Python 3 by the open-source community.\n\n"
             "More information may be found at:\nhttp://openpipeline.sourceforge.net/")
-    cmds.scrollField(wordWrap=True, width=300, height=200, text=text, editable=False)
-    cmds.button(label="Close", command=lambda x: cmds.deleteUI("infoWindow"))
-    cmds.showWindow("infoWindow")
+    ui = _get_ui()
+    QtWidgets.QMessageBox.about(ui, "About openPypeline Studio", text)

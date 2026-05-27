@@ -22,10 +22,10 @@ Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
 import sys
 import importlib
 import os
+from PySide6 import QtWidgets
 
 # TODO: Remember to run the end-to-end manual test for OpenUSD (.usd, .usda) 
 #       and Alembic (.abc) project creation and export using this diagnostic launcher!
@@ -49,15 +49,16 @@ class begin():
 
     def sourceFilesPath(self):
         """
-        Opens a Maya file dialog to let the user select the source directory.
+        Opens a PySide6 file dialog to let the user select the source directory.
 
         The selected path is stored in the instance variable `self.srcDir`.
         """
-        # Use the modern fileDialog2 for directory selection.
-        result = cmds.fileDialog2(fileMode=3, caption="Select the folder that contains the 'openpypeline' directory")
-        # Store the path if the user selected a folder.
-        if result and result[0]:
-            self.srcDir = result[0]
+        # Use the modern Qt QFileDialog for directory selection.
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(None, "Select the folder that contains the 'openpypeline' directory")
+        
+        if dir_path:
+            self.srcDir = dir_path.replace("\\", "/")
 
     def diagnostic(self):
         """

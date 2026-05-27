@@ -2,20 +2,24 @@
 File: opsLoader.py
 Description: Main initialization and setup script for openPypeline Studio in Maya.
              It provides a modern Python-based entry point to manage script
-             and project path configurations using Maya optionVars, sources 
+             and project path configurations using the DCC-agnostic prefs module, sources 
              necessary MEL and Python modules, and launches the main UI.
              
 Original Framework: OpenPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
-
 """
 
-import maya.cmds as cmds
 import os
 import sys
 import importlib
-from functools import partial
 import logging
+from PySide6 import QtWidgets, QtCore
+
+# Add the root openPypeline directory to sys.path to access core utilities
+_root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace("\\", "/")
+if _root_path not in sys.path:
+    sys.path.insert(0, _root_path)
+from openpypeline.core.util import prefs
 
 # --- Logger Setup ---
 logger = logging.getLogger("openPypeline")
@@ -25,16 +29,30 @@ if not logger.handlers:
     handler.setFormatter(logging.Formatter('[%(name)s] %(levelname)s: %(message)s'))
     logger.addHandler(handler)
 
-# --- Constants for UI element names ---
-SETUP_WINDOW = "ops_setupWindow"
-MAIN_PATH_TEXT_FIELD = "ops_mainPathTextField"
-PROJ_PATH_TEXT_FIELD = "ops_mainProjPathTextField"
-PROJ_PATH_TOGGLE_BUTTON = "ops_projPathToggleButton"
-PROJ_PATH_BROWSE_BUTTON = "ops_projPathBrowseButton"
+# Store the active dialog to prevent garbage collection
+_setup_dialog = None
 
-# --- Constants for optionVar keys ---
-SCRIPT_PATH_OPTION_VAR = "ops_scriptPath"
-PROJECT_PATH_OPTION_VAR = "ops_projectFilePath"
+# --- Constants for preference keys ---
+SCRIPT_PATH_PREF = "ops_scriptPath"
+PROJECT_PATH_PREF = "ops_projectFilePath"
+
+def _migrate_legacy_prefs():
+    """Migrates legacy Maya optionVars to the DCC-agnostic prefs system."""
+    try:
+        import maya.cmds as cmds
+        migrations = [
+            ("openPipeline_scriptPath", SCRIPT_PATH_PREF),
+            ("openPipeline_projectFilePath", PROJECT_PATH_PREF),
+            (SCRIPT_PATH_PREF, SCRIPT_PATH_PREF),
+            (PROJECT_PATH_PREF, PROJECT_PATH_PREF)
+        ]
+        for old_var, new_pref in migrations:
+            if cmds.optionVar(exists=old_var) and not prefs.has_pref(new_pref):
+                prefs.set_pref(new_pref, cmds.optionVar(query=old_var))
+                cmds.optionVar(remove=old_var)
+    except ImportError:
+        # Not running in Maya, no legacy optionVars to migrate
+        pass
 
 def source_python_module(path):
     """
@@ -47,7 +65,7 @@ def source_python_module(path):
         None
     """
     if not os.path.isdir(path):
-        cmds.warning(f"Cannot source Python modules from non-existent path: {path}")
+        logger.warning(f"Cannot source Python modules from non-existent path: {path}")
         return
 
     # Add path to sys.path if it's not already there
@@ -66,7 +84,7 @@ def source_python_module(path):
                 # Reload it to pick up any changes
                 importlib.reload(module)
             except Exception as e:
-                cmds.warning(f"Failed to load python module {module_name}: {e}")
+                logger.warning(f"Failed to load python module {module_name}: {e}")
 
 
 def is_valid_script_path(folder):
@@ -109,115 +127,135 @@ def is_valid_project_file_path(folder):
     return isinstance(folder, str) and os.path.isdir(folder)
 
 
-def set_text_field_path(field_name, path, *args):
-    """
-    Callback to set the text of a given text field.
+class OpsSetupDialog(QtWidgets.QDialog):
+    """PySide6 dialog for initializing openPypeline Studio paths."""
+    def __init__(self, script_path, project_path, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("openPypeline Studio Setup")
+        self.setMinimumSize(405, 350)
+        self.script_path_initial = script_path
+        self.project_path_initial = project_path
+        self._build_ui()
+        
+        # Post-init setup
+        root_folder = os.path.dirname(self.script_path_initial.rstrip("/\\"))
+        if self.project_path_initial and self.project_path_initial != os.path.join(root_folder, "openpypeline/").replace("\\", "/"):
+            self.toggle_project_path_field(force_custom=True, path=self.project_path_initial)
 
-    Note:
-        Called directly by the browse file dialog.
+    def _build_ui(self):
+        layout = QtWidgets.QVBoxLayout(self)
+        
+        # Script Path Setup
+        script_label = QtWidgets.QLabel("Script Path Setup:")
+        script_label.setStyleSheet("font-weight: bold;")
+        layout.addWidget(script_label)
+        
+        script_desc = QtWidgets.QLabel('Please specify the folder in which the "openpypeline" folder and loader scripts are located.')
+        script_desc.setWordWrap(True)
+        layout.addWidget(script_desc)
+        
+        script_layout = QtWidgets.QHBoxLayout()
+        self.script_field = QtWidgets.QLineEdit(self.script_path_initial)
+        script_browse_btn = QtWidgets.QPushButton("Browse...")
+        script_browse_btn.clicked.connect(self.browse_script_path)
+        script_layout.addWidget(self.script_field)
+        script_layout.addWidget(script_browse_btn)
+        layout.addLayout(script_layout)
+        
+        # Separator
+        frame = QtWidgets.QFrame()
+        frame.setFrameShape(QtWidgets.QFrame.HLine)
+        frame.setFrameShadow(QtWidgets.QFrame.Sunken)
+        layout.addWidget(frame)
+        
+        # Project File Setup
+        proj_label = QtWidgets.QLabel("Project File Setup:")
+        proj_label.setStyleSheet("font-weight: bold;")
+        layout.addWidget(proj_label)
+        
+        proj_desc = QtWidgets.QLabel('By default, the Project File will be located in the "openpypeline" folder.\nYou may set a different location for the Project File here.')
+        proj_desc.setWordWrap(True)
+        layout.addWidget(proj_desc)
+        
+        proj_layout = QtWidgets.QHBoxLayout()
+        self.proj_field = QtWidgets.QLineEdit("[Default]")
+        self.proj_field.setReadOnly(True)
+        self.proj_toggle_btn = QtWidgets.QPushButton("Edit")
+        self.proj_toggle_btn.clicked.connect(self.toggle_project_path_field)
+        self.proj_browse_btn = QtWidgets.QPushButton("Browse...")
+        self.proj_browse_btn.setEnabled(False)
+        self.proj_browse_btn.clicked.connect(self.browse_proj_path)
+        
+        proj_layout.addWidget(self.proj_field)
+        proj_layout.addWidget(self.proj_toggle_btn)
+        proj_layout.addWidget(self.proj_browse_btn)
+        layout.addLayout(proj_layout)
+        
+        layout.addStretch()
+        
+        # Buttons
+        btn_layout = QtWidgets.QHBoxLayout()
+        accept_btn = QtWidgets.QPushButton("Accept")
+        accept_btn.clicked.connect(self.setup_exec)
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        
+        btn_layout.addWidget(accept_btn)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
 
-    Args:
-        field_name (str): The UI name of the text field.
-        path (str): The path to set the field to.
-        *args: Catches any extra arguments passed by Maya UI commands.
+    def browse_script_path(self):
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
+        if dir_path:
+            self.script_field.setText(os.path.join(dir_path, "").replace("\\", "/"))
 
-    Returns:
-        None
-    """
-    cmds.textField(field_name, edit=True, text=path)
+    def browse_proj_path(self):
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
+        if dir_path:
+            self.proj_field.setText(os.path.join(dir_path, "").replace("\\", "/"))
 
+    def toggle_project_path_field(self, *args, force_custom=False, path=""):
+        if not self.proj_field.isReadOnly() and not force_custom:
+            self.proj_field.setReadOnly(True)
+            self.proj_field.setText("[Default]")
+            self.proj_toggle_btn.setText("Edit")
+            self.proj_browse_btn.setEnabled(False)
+        else:
+            project_path = path if force_custom else prefs.get_pref(PROJECT_PATH_PREF, "")
+            self.proj_field.setReadOnly(False)
+            self.proj_field.setText(project_path)
+            self.proj_toggle_btn.setText("Default")
+            self.proj_browse_btn.setEnabled(True)
 
-def browse_for_path(callback_func, *args):
-    """
-    Opens a directory browser and calls a callback function with the result.
+    def setup_exec(self):
+        script_path = self.script_field.text()
+        script_path = os.path.join(script_path, "").replace("\\", "/")
 
-    Args:
-        callback_func (callable): The function to call with the selected path.
-        *args: Catches any extra arguments passed by Maya UI commands.
+        if not self.proj_field.isReadOnly():
+            proj_file_path = self.proj_field.text()
+        else:
+            root_folder = os.path.dirname(script_path.rstrip("/\\"))
+            proj_file_path = os.path.join(root_folder, "openpypeline/").replace("\\", "/")
 
-    Returns:
-        None
-    """
-    result = cmds.fileDialog2(fileMode=3, caption="Select Folder")
-    if result and result[0]:
-        # Ensure path has a trailing slash
-        path = os.path.join(result[0], "").replace("\\", "/")
-        callback_func(path)
+        proj_file_path = os.path.join(proj_file_path, "").replace("\\", "/")
 
+        error = ""
+        if not is_valid_script_path(script_path):
+            error += f'Script path not valid. Make sure path "{script_path}" exists and contains the "openpypeline" folder and loader script.\n'
+        elif not is_valid_project_file_path(proj_file_path):
+            error += f'Project File path not valid. Make sure path "{proj_file_path}" exists.\n'
 
-def toggle_project_path_field(*args):
-    """
-    Toggles the project file path text field between 'Default' and custom input.
-
-    Args:
-        *args: Catches any extra arguments passed by Maya UI commands.
-
-    Returns:
-        None
-    """
-    is_editable = cmds.textField(PROJ_PATH_TEXT_FIELD, query=True, editable=True)
-    if is_editable:
-        cmds.textField(PROJ_PATH_TEXT_FIELD, edit=True, editable=False, text="[Default]")
-        cmds.button(PROJ_PATH_TOGGLE_BUTTON, edit=True, label="Edit")
-        cmds.button(PROJ_PATH_BROWSE_BUTTON, edit=True, enable=False)
-    else:
-        # Get the last known project path to populate the field
-        project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR)
-        if not isinstance(project_path, str): project_path = ""
-        cmds.textField(PROJ_PATH_TEXT_FIELD, edit=True, editable=True, text=project_path)
-        cmds.button(PROJ_PATH_TOGGLE_BUTTON, edit=True, label="Default")
-        cmds.button(PROJ_PATH_BROWSE_BUTTON, edit=True, enable=True)
-
-
-def setup_exec(*args):
-    """
-    Validates and saves the paths from the setup UI, then re-initializes the pipeline.
-
-    This method checks the user's input for validity, saves the configuration
-    to Maya optionVars for persistence, and then initializes the pipeline's paths.
-
-    Args:
-        *args: Catches any extra arguments passed by Maya UI commands.
-
-    Returns:
-        None
-    """
-    script_path = cmds.textField(MAIN_PATH_TEXT_FIELD, query=True, text=True)
-    # Ensure path has a trailing slash
-    script_path = os.path.join(script_path, "").replace("\\", "/")
-
-    if cmds.textField(PROJ_PATH_TEXT_FIELD, query=True, editable=True):
-        proj_file_path = cmds.textField(PROJ_PATH_TEXT_FIELD, query=True, text=True)
-    else:
-        root_folder = os.path.dirname(script_path.rstrip("/\\"))
-        proj_file_path = os.path.join(root_folder, "openpypeline/").replace("\\", "/")
-
-    # Ensure project path also has a trailing slash
-    proj_file_path = os.path.join(proj_file_path, "").replace("\\", "/")
-
-    error = ""
-    if not is_valid_script_path(script_path):
-        error += f'Script path not valid. Make sure path "{script_path}" exists and contains the "openpypeline" folder and loader script.\n'
-    elif not is_valid_project_file_path(proj_file_path):
-        error += f'Project File path not valid. Make sure path "{proj_file_path}" exists.\n'
-
-    if not error:
-        # Save paths to optionVars for persistence
-        cmds.optionVar(stringValue=(SCRIPT_PATH_OPTION_VAR, script_path))
-        cmds.optionVar(stringValue=(PROJECT_PATH_OPTION_VAR, proj_file_path))
-
-        if cmds.window(SETUP_WINDOW, exists=True):
-            cmds.deleteUI(SETUP_WINDOW)
-
-        # Re-run the main entry point to initialize with the new settings
-        openPypeline()
-    else:
-        cmds.confirmDialog(
-            title="openPypeline Studio - Project Setup Error",
-            message="Could not complete openPypeline Studio setup:\n" + error,
-            button=["Ok"],
-            defaultButton="Ok"
-        )
+        if not error:
+            prefs.set_pref(SCRIPT_PATH_PREF, script_path)
+            prefs.set_pref(PROJECT_PATH_PREF, proj_file_path)
+            self.accept()
+            openPypeline()
+        else:
+            QtWidgets.QMessageBox.critical(
+                self,
+                "openPypeline Studio - Project Setup Error",
+                "Could not complete openPypeline Studio setup:\n" + error
+            )
 
 
 def openPypelineSetup():
@@ -227,63 +265,15 @@ def openPypelineSetup():
     Returns:
         None
     """
-    if cmds.window(SETUP_WINDOW, exists=True):
-        cmds.deleteUI(SETUP_WINDOW)
-
+    global _setup_dialog
     # --- Backward Compatibility Migration ---
-    if cmds.optionVar(exists="openPipeline_scriptPath") and not cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR):
-        cmds.optionVar(stringValue=(SCRIPT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_scriptPath")))
-        cmds.optionVar(remove="openPipeline_scriptPath")
-    if cmds.optionVar(exists="openPipeline_projectFilePath") and not cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR):
-        cmds.optionVar(stringValue=(PROJECT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_projectFilePath")))
-        cmds.optionVar(remove="openPipeline_projectFilePath")
+    _migrate_legacy_prefs()
 
-    script_path = cmds.optionVar(query=SCRIPT_PATH_OPTION_VAR) if cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR) else ""
-    project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR) if cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR) else ""
-    
-    if not isinstance(script_path, str): script_path = ""
-    if not isinstance(project_path, str): project_path = ""
+    script_path = prefs.get_pref(SCRIPT_PATH_PREF, "")
+    project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
 
-    cmds.window(SETUP_WINDOW, title="openPypeline Studio Setup", widthHeight=(405, 350), sizeable=False)
-
-    cmds.columnLayout(adjustableColumn=True, rowSpacing=5, co=("both", 10))
-    cmds.text(label="Script Path Setup:", font="boldLabelFont", align="left")
-    cmds.text(label='Please specify the folder in which the "openpypeline" folder and loader scripts are located.', align="left")
-
-    cmds.textField(MAIN_PATH_TEXT_FIELD, text=script_path, height=20)
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(325, 60))
-    cmds.text(label="")
-    browse_cmd = partial(browse_for_path, partial(set_text_field_path, MAIN_PATH_TEXT_FIELD))
-    cmds.button(label="Browse...", width=60, command=browse_cmd)
-    cmds.setParent("..")
-
-    cmds.separator(style="none", height=10)
-
-    cmds.text(label="Project File Setup:", font="boldLabelFont", align="left")
-    cmds.text(label='By default, the Project File will be located in the "openpypeline" folder.\nYou may set a different location for the Project File here.', align="left")
-
-    cmds.textField(PROJ_PATH_TEXT_FIELD, editable=False, text="[Default]", height=20)
-    cmds.rowLayout(numberOfColumns=3, columnWidth3=(265, 60, 60))
-    cmds.text(label="")
-    cmds.button(PROJ_PATH_TOGGLE_BUTTON, label="Edit", width=60, command=toggle_project_path_field)
-    browse_cmd = partial(browse_for_path, partial(set_text_field_path, PROJ_PATH_TEXT_FIELD))
-    cmds.button(PROJ_PATH_BROWSE_BUTTON, label="Browse...", width=60, enable=False, command=browse_cmd)
-    cmds.setParent("..")
-
-    cmds.separator(style="none", height=10)
-
-    cmds.rowLayout(numberOfColumns=2, columnWidth2=(190, 190), columnAttach=[(1, 'both', 5), (2, 'both', 5)])
-    cmds.button(label="Accept", width=190, command=setup_exec)
-    cmds.button(label="Cancel", width=190, command=lambda *args: cmds.deleteUI(SETUP_WINDOW))
-    cmds.setParent("..")
-    cmds.setParent("..")
-
-    root_folder = os.path.dirname(script_path.rstrip("/\\"))
-    if project_path and project_path != os.path.join(root_folder, "openpypeline/").replace("\\", "/"):
-        toggle_project_path_field()
-        cmds.textField(PROJ_PATH_TEXT_FIELD, edit=True, text=project_path)
-
-    cmds.showWindow(SETUP_WINDOW)
+    _setup_dialog = OpsSetupDialog(script_path, project_path)
+    _setup_dialog.show()
 
 
 def openPypeline():
@@ -297,18 +287,10 @@ def openPypeline():
         None
     """
     # --- Backward Compatibility Migration ---
-    if cmds.optionVar(exists="openPipeline_scriptPath") and not cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR):
-        cmds.optionVar(stringValue=(SCRIPT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_scriptPath")))
-        cmds.optionVar(remove="openPipeline_scriptPath")
-    if cmds.optionVar(exists="openPipeline_projectFilePath") and not cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR):
-        cmds.optionVar(stringValue=(PROJECT_PATH_OPTION_VAR, cmds.optionVar(query="openPipeline_projectFilePath")))
-        cmds.optionVar(remove="openPipeline_projectFilePath")
+    _migrate_legacy_prefs()
 
-    script_path = cmds.optionVar(query=SCRIPT_PATH_OPTION_VAR) if cmds.optionVar(exists=SCRIPT_PATH_OPTION_VAR) else ""
-    project_path = cmds.optionVar(query=PROJECT_PATH_OPTION_VAR) if cmds.optionVar(exists=PROJECT_PATH_OPTION_VAR) else ""
-    
-    if not isinstance(script_path, str): script_path = ""
-    if not isinstance(project_path, str): project_path = ""
+    script_path = prefs.get_pref(SCRIPT_PATH_PREF, "")
+    project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
 
     scripts_folder_name = "openpypeline"
     error = ""

@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Untitled Document</title>
+</head>
+
+<body>
+<h1>Getting Started</h1>
+<div>
+  <p><a href="https://openpipeline.cc/tutorials/openpipeline-for-maya-getting-started/#install">Installing openPipeline</a><br><a href="https://openpipeline.cc/tutorials/openpipeline-for-maya-getting-started/#proj">Creating a Project Using the Project Manager</a><br><a href="https://openpipeline.cc/tutorials/openpipeline-for-maya-getting-started/#update">Updating openPipeline for Maya</a></p>
+  <h2><a name="install">Installing openPipeline</a></h2>
+  <ol>
+    <li>First, put the openPipeline.mel and the openPipeline folder inside your user scripts folder (below).
+      <p>On a PC, this folder will be similar to: <br>C:/Documents and Settings/USERNAME/My Documents/maya/2008/scripts/</p>
+      <p>On a Mac:<br>/Users/USERNAME/Library/Preferences/Autodesk/maya/2008/scripts/</p>
+      <p>You can also find this location by typing internalVar -usd in the MEL command line.</p>
+      <p>Take a note of the location that you place these in, as you will need it later in the setup process.</p>
+      <p><a href="http://kickstand.tv/wp-content/uploads/2010/01/1_PlaceFiles.jpg"><img decoding="async" fetchpriority="high" src="http://kickstand.tv/wp-content/uploads/2010/01/1_PlaceFiles-300x235.jpg" alt="" title="1_PlaceFiles" width="300" height="235"></a></p>
+    </li>
+    <li>Next, open Maya and run the script openPipeline (below). Do this by typing openPipeline in the MEL command line. You may also make a MEL button to perform this action using the icon included. Highlight the text openPipeline and middle-mouse drag it onto a shelf tab.<br>
+      <br>
+      <a href="http://kickstand.tv/wp-content/uploads/2010/01/2_RunScript.jpg">
+        <img decoding="async" src="http://kickstand.tv/wp-content/uploads/2010/01/2_RunScript-300x81.jpg" alt="" title="2_RunScript" width="300" height="81">
+      </a></li>
+    <li>The openPipeline setup will now begin, as seen below in (below). You&rsquo;ll only need to set this once, unless you uninstall and re-install openPipeline.<br>
+      <br>
+      <a href="http://kickstand.tv/wp-content/uploads/2010/01/3_Setup.jpg">
+        <img decoding="async" src="http://kickstand.tv/wp-content/uploads/2010/01/3_Setup-300x235.jpg" alt="" title="3_Setup" width="300" height="235">
+      </a></li>
+    <li>You&rsquo;ll now be asked to browse for the location of your scripts folder. As listed in the Product File Setup, you may want to select a new location for your Project File. You can edit these values later if you wish. Press Accept when you have finished setting these paths.<br>
+      <br>
+      <a href="http://kickstand.tv/wp-content/uploads/2010/01/4_ProjectManager.jpg">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/4_ProjectManager-300x251.jpg" alt="" title="4_ProjectManager" width="300" height="251">
+      </a></li>
+    <li>This is the main Project Manager window. As previously mentioned, you may change the locations of the script and Project File with the Edit Locations button. Your current projects can be added, removed, and changed in the window on the left. Detailed information regarding each project will be shown in the grey window on the right. </li>
+  </ol>
+  <p><a href="https://openpipeline.cc/tutorials/openpipeline-for-maya-getting-started/#top">Back to Top</a></p>
+  <h2><a name="proj">Creating a Project Using the Project Manager</a></h2>
+  <ol>
+    <li>To begin, select &ldquo;New.&rdquo; This will open the Create New Project window (below).<br>
+      <br>
+      <a href="http://kickstand.tv/wp-content/uploads/2010/01/5_NewProj.jpg">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/5_NewProj-246x300.jpg" alt="" title="5_NewProj" width="246" height="300">
+      </a></li>
+    <li>As part of this process, we can change several ways in which the eventual project will be created and sorted within the openPipeline structure.
+      <ul>
+        <li><strong>Project Name:</strong> Limited to 22 characters, this will appear in all project associated windows.</li>
+        <li><strong>Project Path:</strong> Determine the location of your project folders for this specific project. Be sure to allocate the necessary amount of space to the designated area, as this folder will contain all of your assets and other project related files. You will, however, be able to select a different location for archived and deleted items later in the process.</li>
+        <li><strong>Project Description: </strong>This will be displayed in the Project Info window within the Project Manager text box.</li>
+        <li><strong>Project Status: </strong>By selecting &ldquo;active,&rdquo; your project will appear in both the Project Manager list and the pulldown Project Name selector in the main openPipeline window. If you select &ldquo;inactive&rdquo; the project will only appear in the main Project Manager list and not the pulldown tab.</li>
+        <li><strong>Creation and Deadline Dates: </strong>This will allow you to set dates for view in the Project Manager informational screen. Note that projects in the white list box of the Project Manager are sorted by their order of creation, and not their due date.</li>
+        <li><strong>Master Files: </strong>A Master File is a finalized asset version. Here you can set the name of the master files for your usage, and decide on the type of file (.ma or .mb) you wish to have them saved as. It is important to note that these settings cannot be edited after the initial project creation.</li>
+        <li><strong>Workshop Files:</strong> A Workshop File is an unfinished or preliminary asset version. Here you may set the name of the workshop files for your usage, and change their file format (.ma or .mb). As with the Master File setting, this cannot be edited after the initial project creation.</li>
+        <li><strong>Sub Folder Names:</strong> You can change the names of the folders that openPipeline creates. You cannot edit these names once the project has been started.</li>
+        <li><strong>Archived and Deleted Item Locations:</strong> Here you may designate the folder name and location for archived and deleted items. </li>
+      </ul>
+    </li>
+    <li>Once the project is created, you can view the project in the openPipeline Project window, as seen on the right in the image below. </li>
+    <li>If you wish to change certain values of the project after its creation, highlight the project in the Project Manager and select the blue Edit button to bring back the Editing Project window. </li>
+    <li>You can create your own image to suit the project currently being worked on. Simply make a jpg file named &ldquo;openPipelineIcon.jpg&rdquo; and put it in the project folder.<br>
+      <a href="http://kickstand.tv/wp-content/uploads/2010/01/6_ProjOpen.jpg">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/6_ProjOpen-300x230.jpg" alt="" title="6_ProjOpen" width="300" height="230">
+      </a></li>
+  </ol>
+  <p><a href="https://openpipeline.cc/tutorials/openpipeline-for-maya-getting-started/#top">Back to Top</a></p>
+  <h2><a name="update">Updating openPipeline for Maya</a></h2>
+  <p>Since openPipeline for Maya is open-source, the team operates under a &ldquo;release early, release often&rdquo; ideology. Of course we test it to the best of our abilities but bugs crop up and more importantly we have a lot of things we want to add. As such, we release new versions often. As a general rule #.0.0 is for major (non-beta) releases, 0.#.0 is for large feature releases, and 0.0.# is for bug fixes.</p>
+  <p>New versions of openPipeline ask you to replace the .mel files that we have updated so the steps are as follows:</p>
+  <p>1. Back-up your installation of openPipeline including openPipeline.mel and the openPipeline folder. Most important to back-up is the openPipelineProjects.xml file which stores your project information.<br>2. Once backed-up, copy the files from the new openPipeline folder into the installed one. We have been restructuring the code and rearranging MEL files so for 0.9.x it is best to replace all the MEL files.<br>3. Only replace the openPipeline.mel file if you have changed the location of openPipeline or you are instructed to do so for that version (we try not to edit this file).<br>4. Place the openPipelineProjects.xml file back into the openPipeline folder.<br>5. Launch openPipeline as normal.</p>
+  <br>
+</div>
+</body>
+</html>

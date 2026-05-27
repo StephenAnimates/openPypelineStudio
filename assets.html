@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Untitled Document</title>
+</head>
+
+<body>
+<h1>Assets</h1>
+<div>
+  <p><a href="http://openpipeline.cc/tutorials/assets-master-files-and-master-scripts/#create">Asset Creation and Management</a><br><a href="http://openpipeline.cc/tutorials/assets-master-files-and-master-scripts/#master">Mastering an Asset</a><br><a href="http://openpipeline.cc/tutorials/assets-master-files-and-master-scripts/custom">Custom Master Scripts</a></p>
+  <p><a name="create"></a></p>
+  <a name="create">
+  <h2>Asset Creation and Management</h2>
+  </a>
+  <p><a name="create"></a></p>
+  <p>An asset is generally a building block within a shot or scene structure. An asset can contain many components or parts, or be entirely self-contained. With openPipeline, you can also sort your assets into categories, or Asset Types. For this tutorial and any others containing assets, we&rsquo;ll assume we have three asset types: characters, props, and sets.</p>
+  <p><a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-538"><img decoding="async" fetchpriority="high" src="http://kickstand.tv/wp-content/uploads/2010/01/01.asset1mainwindow-180x300.jpg" alt="" title="01.asset1mainwindow" width="180" height="300"></a></p>
+  <ol>
+    <li>In the openPipeline window (above), select the project name that you wish to work on and click on the Asset Browser tab (below).<br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-539">
+        <img decoding="async" src="http://kickstand.tv/wp-content/uploads/2010/01/02.asset1_assetwindow-180x300.jpg" alt="" title="02.asset1_assetwindow" width="180" height="300">
+      </a></li>
+    <li>In this window, you&rsquo;ll need to first set up an asset type by adding it to the list on the left. As stated above, we&rsquo;ll create characters, props, and sets. Click the green &ldquo;New&rdquo; button to proceed. You will be prompted to type the name of your asset type, as seen below. <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-540">
+        <img decoding="async" src="http://kickstand.tv/wp-content/uploads/2010/01/03.asset3_assetmaker-180x300.jpg" alt="" title="03.asset3_assetmaker" width="180" height="300">
+      </a></li>
+    <li>Once this is completed, you may go about adding the assets. For this example we will make a simple asset with no Components in our props Asset Type (below).<br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-541">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/04.asset4_assetmaker-300x195.jpg" alt="" title="04.asset4_assetmaker" width="300" height="195">
+      </a><br>
+      Components allow you to have a single Asset with multiple parts referenced into it. This is particularly useful if you have a character and wish to have the rig worked on separately from the model at this stage in the process. This process is detailed in depth in a later tutorial.<br>
+      When creating a new Asset, you&rsquo;re given the options of:
+      <ul>
+        <li>Start with empty Asset: This will create the Asset but nothing will be present within it. You may add to this Asset later on.</li>
+        <li>Export current selection into Asset: Whatever is selected in the view window will become the Asset.</li>
+        <li>Export current scene into Asset: The entire current scene in Maya will become the Asset. </li>
+      </ul>
+    </li>
+    <li>To start , we&rsquo;ll create a table within our &ldquo;props&rdquo; Asset Type and start with an empty Asset. Since we&rsquo;ve selected <strong>Start with empty Asset</strong> nothing exists in the asset file yet. I&rsquo;ve made a table (below).<br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-542">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/05.asset5_assetmaker_table-300x292.jpg" alt="" title="05.asset5_assetmaker_table" width="300" height="292">
+      </a></li>
+    <li>To add this model to the &ldquo;table&rdquo; Asset, double click on &ldquo;table&rdquo; in the Assets window. The Edit Asset box will appear (below).<br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-543">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/06.asset5b_openfirsttimeasset-300x47.jpg" alt="" title="06.asset5b_openfirsttimeasset" width="300" height="47">
+      </a><br>
+      The table that I made in my current Maya window will be added to the table Asset if I select <strong>Current Scene</strong>. If you wish to start with a blank scene file for your asset, you may select <strong>New Scene</strong> here. It can also be noted here that you can see asterisk (*) symbols around the asset in the Assets window when it is currently open. </li>
+    <li>Now that we&rsquo;ve finished our basic table asset and we currently have it open, we can click on the Currently Open tab in openPipeline. This will bring up a window (below).<br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-544">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/07.asset7_assetmaker_table-182x300.jpg" alt="" title="07.asset7_assetmaker_table" width="182" height="300">
+      </a></li>
+    <li>This view has changed significantly now that we have an asset open. You may at this point wish to take a quick picture of the open asset in its current form for the Preview window. Simply click the <strong>Take Snapshot </strong>button under the Preview display to capture your currently open Maya window. Click <strong>Save Workshop</strong>, and you&rsquo;ve got your asset for the time being.</li>
+  </ol>
+  <p>In the next section, you will find more information about Workshop and Master files, in addition to the Currently Open window for Assets.</p>
+  <p><a href="http://openpipeline.cc/tutorials/assets-master-files-and-master-scripts/#top">Back to Top</a></p>
+  <h2><a name="master">Mastering Assets: Workshop and Master Files</a></h2>
+  <p>In this tutorial, we&rsquo;ll discuss Workshop and Master files. Both are defined in the <a href="http://openpipeline.cc/tutorials/assets-master-files-and-master-scripts/#">Creating a New Project Tutorial</a>.</p>
+  <ol>
+    <li><strong>Saving a Workshop</strong><br>
+      <br>
+      To begin, I&rsquo;ll create a new asset. I think a lamp would look good next to the table (below).<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-546">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/01.master1-300x236.jpg" alt="" title="01.master1" width="300" height="236">
+      </a><br>
+      <br>
+      As before, this will add &ldquo;lamp&rdquo; to the <strong>Assets </strong>window. Note that because it is open, it has the asterisk icons on either side as seen below.<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-547">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/02.master2.jpg" alt="" title="02.master2" width="149" height="188">
+      </a><br>
+      <br>
+      Switching back out to the <strong>Currently Open</strong> tab, we can see that this file has not been saved (below).<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-548">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/03.master3-184x300.jpg" alt="" title="03.master3" width="184" height="300">
+      </a><br>
+      <br>
+      Let&rsquo;s save a<strong> Workshop</strong> of it now by clicking <strong>Save Workshop… </strong>This will allow us to add a comment, and will change the display to one as seen below.<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-549">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/04.master3-184x300.jpg" alt="" title="04.master3" width="184" height="300">
+      </a><br>
+      <br>
+      Note that the comment is listed in the file&rsquo;s History window, and that it now shows as &ldquo;workshop version 1.&rdquo;</li>
+    <li>Reviving an old <strong>Workshop</strong> As this is the first version, we cannot yet use the <strong>Revive…</strong> button to call fourth an earlier file. Saving the workshop file one more time, as seen below, will allow us to use this option.<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-550">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/05.master4-184x300.jpg" alt="" title="05.master4" width="184" height="300">
+      </a><br>
+      <br>
+      The <strong>Revive</strong> option is now active, and selecting it gives us a window as seen below.<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-551">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/07.master6-300x273.jpg" alt="" title="07.master6" width="300" height="273">
+      </a><br>
+      <br>
+      If you ever need to call an earlier version of your <strong>Asset</strong>, this is the way to do so. Now, back to the <strong>Asset Browser</strong> tab as seen below.<br>
+      <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-552">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/08.master7-242x300.jpg" alt="" title="08.master7" width="242" height="300">
+      </a><br>
+      <br>
+      Now that the lamp has a saved <strong>Workshop</strong>, you can see that openPipeline has added a minus (-) symbol to the right of the asset name. This denotes a saved <strong>Workshop</strong>.</li>
+    <li>Saving a Master As was discussed earlier, a <strong>Master File</strong> is what you will eventually call into your scene files. A <strong>Master file</strong> has the option of flattening its references, and should not be directly edited. Be aware that when you save a <strong>Master file </strong>that it will also create a new <strong>Workshop </strong>file. If you continue to work on this file, you will be doing so on the <strong>Workshop</strong> and not the <strong>Master.</strong> To update the <strong>Master</strong>, simply save another <strong>Master </strong>file. To create a <strong>Master File</strong>, go to the <strong>Currently Open</strong> tab and click <strong>Save Master… </strong>(below).<br>
+      <br>
+      <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/12/09.master81.jpg" alt="09.master8" title="09.master8" width="615" height="544">
+      <br>
+      <br>
+      This will open the<strong> Master File Switchboard</strong>. Here you have the option of Importing the References you&rsquo;ve made for your <strong>Asset</strong> (rigs, etc) and deleting any <strong>Display Layers</strong> you&rsquo;ve made. You&rsquo;re also given the option of opening the<strong> Master File </strong>directly, but this generally isn&rsquo;t necessary. You may also add a custom script command here, but details on this will be covered in a subsequent tutorial. I&rsquo;ve added a comment here denoting that this is where I created a <strong>Master File </strong>of the lamp. This will be viewable in all subsequent <strong>Workshop History</strong>. Click the<strong> Master </strong>button to finish and create the <strong>Master File</strong>. This will bring us back to the <strong>Currently Open</strong> tab in openPipeline, as seen below.<br>
+      <br>
+      <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/12/10.master91.jpg" alt="10.master9" title="10.master9" width="448" height="558">
+      <br>
+      <br>
+      As we can see, another workshop has been created as part of the mastering process. The <strong>History</strong>window also shows the comment we made as the <strong>Master File</strong> was created.<br>
+      <br>
+      <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/12/11.master11.jpg" alt="11.master11" title="11.master11" width="140" height="174">
+      <br>
+      <br>
+      If we go back to the <strong>Asset Browser</strong> tab, we can see that the &ldquo;lamp&rdquo; asset is now labeled as &ldquo;lamp+&rdquo; with the plus icon indicating a Mastered file (above)</li>
+  </ol>
+  <p><a href="http://openpipeline.cc/tutorials/assets-master-files-and-master-scripts/#top">Back to Top</a></p>
+  <p><a name="custom"></a></p>
+  <a name="custom">
+  <h2>Custom Master Scripts </h2>
+  </a>
+  <p><a name="custom"></a><br>At many times you will want to run a script at the moment of mastering a file. The reasons are numerous and could be to do a clean-up of a file, or to run special functions on the file that are critical to its mastered version. Custom master scripts are just MEL scripts that are run when the master button is pressed, after the workshop is saved and right before the master is saved. The add a powerful step to the openPipeline workflow and allow users to customize the mastering step for their needs.</p>
+  <ol>
+    <li><strong>Custom Master Command</strong><br>
+      The &ldquo;Custom Master Command&rdquo; field on the Master File Switchboard (below) is a place where you could place the name of a MEL command to be run. This command must be sourced already and ready to be run by Maya. <br>
+      <a href="http://openpipeline.cc/?attachment_id=" rel="attachment wp-att-553">
+        <img decoding="async" loading="lazy" src="http://kickstand.tv/wp-content/uploads/2010/01/09.master82-300x265.jpg" alt="" title="09.master82" width="300" height="265">
+      </a></li>
+    <li><strong>Sample Custom Master Script</strong><br>
+      As a simple example of a Custom Master Script, say you would like to make sure that your models have their transforms frozen and/or their history deleted before they are mastered in the pipeline. The following script could take care of that at the mastering stage. This leaves the transforms and history in the workshop file so that the modeler still has access to them when they make edits.
+      <pre>global proc preMasterFreezeModel(int $freeze, int $history) { 	string $allPolygons[] = `ls -tr -type "mesh"` 	for($eachMesh in $allPolygons) 	{ 		if($freeze) 		{ 			// freeze transformation 			makeIdentity -apply true -t 1 -r 1 -s 1 $eachMesh; 		} 		if($history) 		{ 			// delete history 			delete -ch $eachMesh; 		} 	} } </pre>
+      <p>In the &ldquo;Custom Master Command&rdquo; field you would enter:</p>
+      <ul>
+        <li>preMasterFreezeModel(1,1) to freeze transformations and delete history.</li>
+        <li>preMasterFreezeModel(1,0) to freeze transformations but not delete history.</li>
+        <li>preMasterFreezeModel(0,1) to delete history but not freeze transformations. </li>
+      </ul>
+    </li>
+    <li>A master step provides a non-destructive point to run this script as it does not impact the workshop file which is the only file edits should be made on. Said another way, you should never hand edit the master file.</li>
+  </ol>
+  <p>If you have a custom master script that you would like to share please send them over or send us a link to your website or post on Highend3D.</p>
+</div>
+</body>
+</html>

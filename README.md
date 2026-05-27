@@ -7,7 +7,7 @@ Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio*
 ## ✨ Features
 * **Automated Directory Structures:** Ensures all project files are strictly organized and standardized across your team.
 * **Strict Naming Conventions:** Eliminates messy file names; the framework handles naming and versioning automatically.
-* **Revision Control:** Built-in system for managing `Workshop` (work-in-progress) and `Master` (approved) files.
+* **Revision Control:** Built-in system for managing `Work-in-Progress` (formerly Workshop) and `Master` (approved) files.
 * **Asset & Shot Browsers:** Dedicated UI tabs for managing Assets, Sequences, Shots, and their respective components.
 * **Playblast & Notes Management:** Integrated tools for taking snapshots, recording playblasts, and leaving notes for artists.
 * **Modern Python API:** Extensible and fully accessible via Python 3.
@@ -27,8 +27,8 @@ Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framew
 * Python 3.11+ (Native to modern Maya)
 
 ## 🚀 Installation & Setup
-1. Clone or download this repository to your local machine or network drive.
-2. Open Autodesk Maya.
+1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory.
+2. Open **Autodesk Maya**.
 3. Open the **Script Editor** (Python tab).
 4. Run the following code to initialize the setup UI, replacing the path with your actual installation directory:
 

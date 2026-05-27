@@ -1,0 +1,349 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Untitled Document</title>
+</head>
+
+<body>
+<h1>Documentation</h1>
+<div>
+  <p><a name="top"><strong>OpenPipeline for Maya MEL Procedure Documentation (Nov. 19, 2007)</strong></a></p>
+  <p><a href="https://openpipeline.cc/documentation/#openPipelineUtility.mel">openPipelineUtility.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipelineInit.mel">openPipelineInit.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipelineFile.mel">openPipelineFile.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipelineSceneInv.mel">openPipelineSceneInv.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipeline.mel">openPipeline.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipelineUI.mel">openPipelineUI.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipelineNotes.mel">openPipelineNotes.mel</a><br><a href="https://openpipeline.cc/documentation/#openPipelineProject.mel">openPipelineProject.mel</a><br><a name="openPipelineUtility.mel"></a></p>
+  <a name="openPipelineUtility.mel">
+  <h2>openPipelineUtility.mel</h2>
+  </a>
+  <p><a name="openPipelineUtility.mel"></a></p>
+  <h2>openPipelineIsValidFolder</h2>
+  <p>Description: Returns whether a folder exists and doesn&rsquo;t have a period &ldquo;.&rdquo; at the start of its name<br>Input: path – the path to be tested (string)<br>Returns: 1 of valid, 0 if not<br>Note: This proc was created to prevent oP from mistaking folders like &ldquo;.svn&rdquo; for project folders</p>
+  <h2>openPipelineNumWorkshops</h2>
+  <p>Description: Returns the number of workshops that exist for a shot, asset or component<br>Input: path – the full path of the shot, asset, component to check (string)<br>Returns: The number of workshops (int)</p>
+  <h2>openPipelineGetLatestWorkshopVersion</h2>
+  <p>Description: Returns the version of the latest workshop for a given asset, component or shot<br>Input: path – the full path of the shot/asset/component to check (string)<br>Returns: The latest workshop version number (int)</p>
+  <h2>openPipelineGetXmlTop</h2>
+  <p>Description: Returns all the xml data which is a child to the root element specific by &ldquo;$tag&rdquo;<br>Input: xml – The input xml with tags and data as separate entries in a string array (string array)<br>tag – the root element tag in the xml file (string)<br>Returns: A string array with each entry holding either an xml tag or data</p>
+  <h2>openPipelineComponentHasMaster</h2>
+  <p>Description: Checks if a given component has been mastered<br>Input: path – the full path of the component to check (string)<br>Returns: 0 if no master exists, non-zero integer otherwise.</p>
+  <h2>openPipelineGetXmlAll</h2>
+  <p>Description: Parses an xml file and returns each tag and entry as a separate array entry<br>Input: xmlFile – the file to be evaluated (string)<br>Returns: A string array with each entry holding either an xml tag or data</p>
+  <h2>openPipelineNumVersions</h2>
+  <p>Description: Returns the number of old mastered versions that exist for a shot, asset or component<br>Input: path – the full path of the shot, asset, component to check (string)<br>Returns: The number of versions (int)</p>
+  <h2>openPipelineGetLibFiles</h2>
+  <p>Description: Returns all maya files in the asset library of the current project<br>Input: none<br>Returns: string array of filenames with full paths<br>Note: This procedure is only used by the &ldquo;openPipelineUtilityUpdatePadding&rdquo; proc</p>
+  <h2>openPipelinePad</h2>
+  <p>Description: Returns a non-negative integer as a string with padding<br>Input: num – input integer (int) <br>padding – the padding to apply (int)<br>Returns: The number as a padded string (an input of 12 and 4 yields &ldquo;0012&rdquo;)<br>Note: If the padding specified doesn&rsquo;t exceed the number of digits in the number, no leading zeroes are addded</p>
+  <h2>openPipelineGetDate</h2>
+  <p>Description: Returns the current date<br>Input: none<br>Returns: The current date in the format MM/DD/YY (string)</p>
+  <h2>openPipelineGetFolderFromPath</h2>
+  <p>Description: Returns the folder name at a given depth of a path<br>Input: path – the full path (string) <br>offsetFromLast – the depth of the folder, counting backwards from the deepest (string)<br>Returns: The name of the folder<br>Note: passing in 0 as the second parameter has the same function as the &ldquo;basename&rdquo; mel command</p>
+  <h2>openPipelineAssetHasWorkshop</h2>
+  <p>Description: Checks if a given asset has at least one workshop<br>Input: path – the full path of the asset to check (string)<br>Returns: 0 if no workshops exist, non-zero integer otherwise.</p>
+  <h2>openPipelineIsXmlOutTag</h2>
+  <p>Description: XML tool<br>Input: xml – xml data (string) <br>tag – the tag to be searched for (string)<br>Returns: 1 if the string is the correct closing tag, 0 if not</p>
+  <h2>openPipelineUtilityUpdatePadding</h2>
+  <p>Description: Updates filename padding for users upgrading from version 0.3 or below<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineIsXmlInTag</h2>
+  Description: Checks if a string is a specific opening xml tag<br>
+  Input: xml – the string to be evaluated (string) <br>
+  tag – the name of the tag being tested (string)<br>
+  Returns: 1 if the string is the correct opening tag, 0 if not
+  <h2>openPipelineGetVersions</h2>
+  <p>Description: Returns all of the version files for a given asset, component or shot<br>Input: path – the full path of the shot, asset, component to check (string)<br>Returns: A string array of the full paths to the version files</p>
+  <h2>openPipelineComponentHasWorkshop</h2>
+  <p>Description: Checks if a given component has at least one workshop<br>Input: path – the full path of the component to check (string)<br>Returns: 0 if no workshops exist, non-zero integer otherwise.</p>
+  <h2>openPipelineGetVersionFromFile</h2>
+  <p>Description: Returns the version of an ma or mb file, assuming a padding of 4<br>Input: file – the filename (string) <br>Returns: The version of the file (int)<br>Note: This proc is designed to work with files that adhere to the numbering convention of openPipeline (e.g. &ldquo;filename0034.mb&rdquo;)</p>
+  <h2>openPipelineUnpad</h2>
+  <p>Description: Returns an integer from a padded string representation of a number<br>Input: numString – string to be &ldquo;unpadded&rdquo;<br>Returns: The number as an integer (an input of &ldquo;00304&rdquo; yields the integer 304)</p>
+  <h2>openPipelineAssetHasMaster</h2>
+  <p>Description: Checks if a given asset has been mastered<br>Input: path – the full path of the asset to check (string)<br>Returns: 0 if no master exists, non-zero integer otherwise.</p>
+  <h2>openPipelineGetShotFiles</h2>
+  <p>Description: Returns all maya files in the shot library of the current project<br>Input: none<br>Returns: string array of filenames with full paths<br>Note: This procedure is only used by the &ldquo;openPipelineUtilityUpdatePadding&rdquo; proc</p>
+  <h2>openPipelineGetXmlData</h2>
+  <p>Description: XML tool – returns the data encapsulated by the opening and closing tags of an xml element<br>Input: xml – xml data (string) <br>tag – the tag to be searched for (string)<br>Returns: The data found (string)</p>
+  <h2>openPipelineGetXmlSecondary</h2>
+  <p>Description: XML tool<br>Input: xml – xml data (string array)<br>tag – the tag to be searched for (string)<br>Returns: 1 if the string is the correct closing tag, 0 if not</p>
+  <h2>openPipelineGetWorkshops</h2>
+  <p>Description: Returns all of the workshop files for a given asset, component or shot<br>Input: path – the full path of the shot, asset, component to check (string)<br>Returns: A string array of the full paths to the workshop files</p>
+  <h2>openPipelineGetTime</h2>
+  <p>Description: Returns the current time<br>Input: none<br>Returns: The current time (string)</p>
+  <h2>openPipelineUtilityUpdateSceneStructure</h2>
+  <p>Description: Updates the folder structure when updating from an oP version without Shot-&gt;Sequence functionality<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineShotHasMaster</h2>
+  <p>Description: Checks if a given shot has been mastered<br>Input: path – the full path of the shot to check (string)<br>Returns: 0 if no master exists, non-zero integer otherwise.</p>
+  <h2>openPipelineGetLatestMasterVersion</h2>
+  <p>Description: Returns the version of the most recent previously mastered version for a given asset, component or shot<br>Input: path – the full path of the shot, asset, component to check (string)<br>Returns: The latest master version number (int)</p>
+  <h2>openPipelineGetNotePath</h2>
+  <p>Description: Returns a note file for the asset/component/scene specified by &ldquo;$inputMode&rdquo; (see below)<br>Input: inputMode – &lsquo;note&rsquo; (currently selected), &lsquo;openednote'(currently open) or &lsquo;newnote&rsquo; (newly created) (string) <br>Returns: The full path and filename for the appropriate note file (string)</p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a><br><a name="openPipelineInit.mel"></a></p>
+  <a name="openPipelineInit.mel">
+  <h2>openPipelineInit.mel</h2>
+  </a>
+  <p><a name="openPipelineInit.mel"></a></p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a><br><a name="openPipelineFile.mel"></a></p>
+  <a name="openPipelineFile.mel">
+  <h2>openPipelineFile.mel</h2>
+  </a>
+  <p><a name="openPipelineFile.mel"></a></p>
+  <h2>openPipelineImportRefs</h2>
+  <p>Description: Flattens the scene by importing all the referenced files<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineShotAssetAction</h2>
+  <p>Description: Performs an action on the Asset currently selected in<br>&ldquo;Available Assets&rdquo; in the Shot Management tab (import, or reference)<br>Input: action – action to perform (&lsquo;reference&rsquo; or &lsquo;import&rsquo;) (string)<br>Returns: 1 if successful, 0 if not<br>Notes: The Action is always performed on the latest mastered version of the Asset</p>
+  <h2>openPipelineNewAssetProcess</h2>
+  <p>Description: Creates a new Asset under the currently selected Asset Type<br>Input: name – the name of the new Asset (string)<br>Returns: none</p>
+  <h2>openPipelineRemoveFolder</h2>
+  <p>Description: Moves the files and folders under the selected item to the &ldquo;deleted&rdquo; folder<br>Input: category – the category of the item to be deleted: (&lsquo;type&rsquo;,<br>&lsquo;asset&rsquo;, &lsquo;component&rsquo;, &lsquo;sequence&rsquo;, &lsquo;shot&rsquo;, &lsquo;shotComponent&rsquo;) (string)<br>Returns: none</p>
+  <h2>openPipelineNewSequenceProcess</h2>
+  <p>Description: Creates a new Sequence under the currently selected project<br>Input: name – the name of the new Sequence (string)<br>Returns: none</p>
+  <h2>openPipelineArchiveFolder</h2>
+  <p>Description: Moves the files and folders under the selected item to the archive<br>Input: path – path of asset/component/shot (string)<br>Returns: none</p>
+  <h2>openPipelineShotAction</h2>
+  <p>Description: Performs an action on a Shot (open, import, or reference)<br>Input: type – &lsquo;master&rsquo; or &lsquo;workshop&rsquo; (string),<br>versionOffset – for opening previous workshop versions. 0 means latest version (int),<br>action – action to perform (&lsquo;open&rsquo;, &lsquo;import&rsquo;, or &lsquo;reference&rsquo;) (string),<br>currentlyOpen – 1 to perform action on currently open Shot, 0 for currently selected Shot (int)<br>Returns: 1 if successful, 0 if not</p>
+  <h2>openPipelineSaveMaster</h2>
+  <p>Description: Saves a master for the currently open asset/component/shot/shot component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineSaveWorkshop</h2>
+  <p>Description: Saves a workshop for the currently open asset / component / shot / shot component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewShotComponentProcess</h2>
+  <p>Description: Creates a new Shot Component under the currently selected Shot<br>Input: name – the name of the new Component (string)<br>Returns: none</p>
+  <h2>openPipelineCleanMaster</h2>
+  <p>Description: Performs optional clean-up steps prior to mastering (flattens references, removes display layers)<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewComponentProcess</h2>
+  <p>Description: Creates a new Component under the currently selected Asset<br>Input: name – the name of the new Component (string)<br>Returns: none</p>
+  <h2>openPipelineNewAssetTypeProcess</h2>
+  <p>Description: Creates a new Asset Type under the currently selected project<br>Input: name – the name of the new Asset Type (string)<br>Returns: none</p>
+  <h2>openPipelineAssetAction</h2>
+  <p>Description: Performs an action on an Asset (open, import, or reference)<br>Input: type – &lsquo;master&rsquo; or &lsquo;workshop&rsquo; (string),<br>versionOffset – for opening previous workshop versions. 0 means latest version (int),<br>action – action to perform (&lsquo;open&rsquo;, &lsquo;import&rsquo;, or &lsquo;reference&rsquo;) (string),<br>currentlyOpen – 1 to perform action on currently open Asset, 0 for currently selected Asset (int)<br>Returns: 1 if successful, 0 if not</p>
+  <h2>openPipelineNewShotProcess</h2>
+  <p>Description: Creates a new Asset Shot under the currently selected Sequence<br>Input: name – the name of the new Asset Type (string)<br>Returns: none</p>
+  <h2>openPipelineProcessSave</h2>
+  <p>Description: Saves the currently open Asset, Component, Shot or Shot Component<br>Input: saveType – &lsquo;workshop&rsquo; or &lsquo;master&rsquo; (string)<br>Returns: none<br>Notes: this procedure will: <br>-call &ldquo;openPipelineSaveWorkshop&rdquo; and/or &ldquo;openPipelineSaveMaster&rdquo; for actual file operations<br>-call &ldquo;openPipelineAssetNoteWriter&rdquo; for updating the appropriate note file<br>-call &ldquo;openPipelineLoadCurrentAssetNote&rdquo; for displaying the updated notes<br>-call &ldquo;openPipeline____Action&rdquo; to open the file which was just saved</p>
+  <h2>openPipelineRetrieveFolder</h2>
+  <p>Description: Moves files and folders back from the archive<br>Input: path – path of asset/component/shot (string)<br>Returns: none</p>
+  <h2>openPipelineShotComponentAction</h2>
+  <p>Description: Performs an action on a Shot Component(open, import, or reference)<br>Input: type – &lsquo;master&rsquo; or &lsquo;workshop&rsquo; (string),<br>versionOffset – for opening previous workshop versions. 0 means latest version (int),<br>action – action to perform (&lsquo;open&rsquo;, &lsquo;import&rsquo;, or &lsquo;reference&rsquo;) (string),<br>currentlyOpen – 1 to perform action on currently open Shot Component, 0 for currently selected Shot Component (int)<br>Returns: 1 if successful, 0 if not</p>
+  <h2>openPipelineComponentAction</h2>
+  <p>Description: Performs an action on a Component (open, import, or reference)<br>Input: type – &lsquo;master&rsquo; or &lsquo;workshop&rsquo; (string),<br>versionOffset – for opening previous workshop versions. 0 means latest version (int),<br>action – action to perform (&lsquo;open&rsquo;, &lsquo;import&rsquo;, or &lsquo;reference&rsquo;) (string),<br>currentlyOpen – 1 to perform action on currently open Component, 0 for currently selected Component (int)<br>Returns: 1 if successful, 0 if not</p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a><br><a name="openPipelineSceneInv.mel"></a></p>
+  <a name="openPipelineSceneInv.mel">
+  <h2>openPipelineSceneInv.mel</h2>
+  </a>
+  <p><a name="openPipelineSceneInv.mel"></a></p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a></p>
+  <p><a name="openPipeline.mel"></a></p>
+  <a name="openPipeline.mel">
+  <h2>openPipeline.mel</h2>
+  </a>
+  <p><a name="openPipeline.mel"></a></p>
+  <h2>sourceModule</h2>
+  <p>Description: Finds all the mel files in a path (and potentially subpath) and sources them <br>Input: path – The path to look in (string)<br>Returns: none</p>
+  <h2>openPipelineSetProjPathField</h2>
+  <p>Description: Sets the text for the script path text field<br>Input: path – The path to set the field to (string)<br>type – Not used (string)<br>Returns: none<br>Note: Called directly by the browse file dialog</p>
+  <h2>openPipelineSetupExec</h2>
+  <p>Description: Sets up the Project File Path and the Script Path depending on user input<br>This method checks the user&rsquo;s input for validity <br>and then edits the &lsquo;openPipeline.mel&rsquo; script to reflect the changes <br>to global variables $openPipeline_projectFilePath and $openPipeline_scriptPath<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineSetMainPath</h2>
+  <p>Description: Sets the text for the project file path text field<br>Input: path – The path to set the field to (string)<br>type – Not used (string)<br>Returns: none<br>Note: Called directly by the browse file dialog</p>
+  <h2>openPipelineIsValidScriptPath</h2>
+  <p>Description: Checks if the given folder is a valid script path<br>a valid script path contains the file &lsquo;openPipeline.mel&rsquo;<br>and contains a folder name &lsquo;openPipeline&rsquo;<br>Input: folder – The path to be checked (string)<br>Returns: 1 if path is a valid script path, 0 if not (int)</p>
+  <h2>openPipeline</h2>
+  <p>Description: Main openPipeline procedure<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineSetup</h2>
+  <p>Description: Creates the openPipeline Setup UI<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineIsValidProjFilePath</h2>
+  <p>Description: Checks if the given folder is a valid project path<br>The path needs to be an existing path.<br>Input: folder – The path to be checked (string)<br>Returns: 1 if path is valid, 0 if not (int)</p>
+  <h2>openPipelineProjPathFieldToggle</h2>
+  <p>Description: Toggles the text field for setting the project file path between Default and Custom<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineIsEditableFile</h2>
+  <p>Description: Checks of the given file is readable and writeable<br>This is used to check if the openPipeline.mel file can be read and edited.<br>Input: filename – Full path to the file to be checked (string)<br>Returns: 1 if file is readable and writeable, 0 if not (int)</p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a></p>
+  <p><a name="openPipelineUI.mel"></a></p>
+  <a name="openPipelineUI.mel">
+  <h2>openPipelineUI.mel</h2>
+  </a>
+  <p><a name="openPipelineUI.mel"></a></p>
+  <h2>openPipelineUpdateAssetMenus</h2>
+  <p>Description: Updates the Pop-up menus of the Asset list<br>Input: assetPath – the path of the currently selected Asset (string)<br>Returns: none</p>
+  <h2>openPipelineAssetInformation</h2>
+  <p>Description: Updates the Description box in the Asset Management tab<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetSelectedComponent</h2>
+  <p>Description: Returns the currently selected Component<br>Input: none<br>Returns: A full path to the Component selected. An empty string is returned if none is selected. (string)</p>
+  <h2>openPipelineClearAssetInfo</h2>
+  <p>Description: Clears the description of the currently selected Asset or Component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateShotAssetTypeList</h2>
+  <p>Description: Updates list of asset types in the &ldquo;Available Assets&rdquo; section of the Shot Management Tab<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetSelectedSequence</h2>
+  <p>Description: Returns the currently selected Sequence<br>Input: none<br>Returns: A full path to the Sequence selected. An empty string is returned if none is selected. (string)</p>
+  <h2>openPipelineGetSelectedShotAssetTypes</h2>
+  <p>Description: Returns the Asset selected under the Available Assets list of the Shot Management tab<br>Input: none<br>Returns: A string representing the full path to the Asset selected. Empty string is returned if no Asset is selected.</p>
+  <h2>openPipelineReviveWorkshopCallback</h2>
+  <p>Description: Reads the user input from the Revive window and calls the appropriate file operation to revive an old Workshop.<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineSaveMasterFileGUI</h2>
+  <p>Description: Launches the UI for Mastering<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateAssetTypeList</h2>
+  <p>Description: Updates the list of Asset Types in the UI<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineHelpLaunch</h2>
+  <p>Description: Launches the online Help for oP<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineClearShotInfo</h2>
+  <p>Description: Clears the description of the currently selected Shot or Shot Component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineProjSelected</h2>
+  <p>Description: This proc is run whenever a new Project is selected. In<br>turn, it updates all UI elements below the project level. <br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateSequenceList</h2>
+  <p>Description: Updates the list of Sequences in the UI<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetSelectedShotComponent</h2>
+  <p>Description: Returns the currently selected Shot Component<br>Input: none<br>Returns: A full path to the Shot Component selected. An empty string is returned if none is selected. (string)</p>
+  <h2>openPipelineComponentSelected</h2>
+  <p>Description: This proc is called whenever a Component is selected. It<br>updates all the UI affected by what Component is currently selected.<br>Input: preserveSelection – none<br>Returns: none</p>
+  <h2>openPipelineUpdateShotMenus</h2>
+  <p>Description: Updates the Pop-up menus of the Shot list<br>Input: shotPath – the path of the currently selected Shot (string)<br>Returns: none</p>
+  <h2>openPipelineRemoveSecondaryWindows</h2>
+  <p>Description: Closes secondary oP windows<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewAssetUI</h2>
+  <p>Description: Launches the UI for creating a new Asset<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetSelectedAsset</h2>
+  <p>Description: Returns the currently selected Asset<br>Input: none<br>Returns: A full path to the Asset selected. An empty string is returned if none is selected. (string)</p>
+  <h2>openPipelineShotAssetTypeSelected</h2>
+  <p>Description: This proc is called whenever an Asset Type is selected<br>from the Available Assets section of the Shot Managment Tab. <br>Input: none<br>Returns: none</p>
+  <h2>openPipelineShotSelected</h2>
+  <p>Description: This proc is called whenever a Shot is selected in the UI.<br>In turn, it updates all the UI elements affected by what Shot is<br>selected.<br>Input: preserveSelection – whether currently selected items should still be selected after updating (int)<br>Returns: none</p>
+  <h2>openPipelineGetSelectedShot</h2>
+  <p>Description: Returns the currently selected Shot <br>Input: none<br>Returns: A full path to the Shot selected. An empty string is returned if none is selected. (string)</p>
+  <h2>openPipelineUpdateShotList</h2>
+  <p>Description: Updates list of shots in the UI<br>Input: preserveSelection – whether the current selected item in the list should still be selected after updating (int)<br>Returns: none</p>
+  <h2>openPipelineSaveWorkshopGUI</h2>
+  <p>Description: Launches the UI for Saving a Workshop<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewAssetTypeUI</h2>
+  <p>Description: Launches the UI for creating a new Asset Type<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewShotUI</h2>
+  <p>Description: Launches the UI for creating a new Shot<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineShotComponentSelected</h2>
+  <p>Description: This proc is called whenever a Shot Component is selected.<br>It updates all the UI affected by what Shot Component is currently<br>selected.<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineAssetTypeSelected</h2>
+  <p>Description: This proc is called whenever an Asset Type is selected. It updates all the UI elements below the Asset Type level.<br>Input: preserveSelection – whether previously selected items should still be selected after the update (int)<br>Returns: none</p>
+  <h2>openPipelineCloseUI</h2>
+  <p>Description: Closes all oP-related windows<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateCustomUI</h2>
+  <p>Description: Updates the UI to reflect user-defined names for &ldquo;workshop&rdquo; and &ldquo;master&rdquo;<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineSaveShotDescription</h2>
+  <p>Description: Saves the user-specified description of the currently selected Shot or Shot Component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateComponentMenus</h2>
+  <p>Description: Updates the Pop-up menus of the Component list<br>Input: componentPath – the path of the currently selected Component (string)<br>Returns: none</p>
+  <h2>openPipelineSaveAssetDescription</h2>
+  <p>Description: Saves the user-specified description of the currently selected Asset or Component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetSelectedAssetTypes</h2>
+  <p>Description: Returns the currently selected Asset Types <br>Input: none<br>Returns: A string array, with each entry representing a full path to<br>the Asset Type selected. Empty array is returned if no Asset Type is<br>selected.</p>
+  <h2>openPipelineArchiveDialog</h2>
+  <p>Description: Creates the Archive UI<br>Input: type – the type of the item being archived (&lsquo;asset&rsquo;, &lsquo;component&rsquo;, &lsquo;shotComponent&rsquo;, &lsquo;shot&rsquo;) (string)<br>Returns: none</p>
+  <h2>openPipelineNewAssetComponentUI</h2>
+  <p>Description: Launches the UI for creating a new Component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewShotComponentUI</h2>
+  <p>Description: Launches the UI for creating a new Shot Component<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateCurrentlyOpen</h2>
+  <p>Description: Updates the &ldquo;Currently Open&rdquo; displays on both &ldquo;Asset Management&rdquo; and &ldquo;Shot Management&rdquo; tabs<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateWorkingTab</h2>
+  <p>Description: Updates the optionVar which keeps track of which tab is currently active<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewSequenceUI</h2>
+  <p>Description: Launches the UI for creating a new Sequence<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineAboutDialog</h2>
+  <p>Description: Shows the &ldquo;About&rdquo; window, with information and credits<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineShotInformation</h2>
+  <p>Description: Updates the Description box in the Shot Management tab<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineShotAssetSelected</h2>
+  <p>Description: This proc is called whenever an Asset is selected from the Available Assets section of the Shot Managment Tab. <br>Input: none<br>Returns: none</p>
+  <h2>openPipelineAssetSelected</h2>
+  <p>Description: This proc is called whenever an Asset is selected. It updates all the UI elements below the Asset level.<br>Input: preserveSelection – Whether previously selected items should still be selected after the update (int)<br>Returns: none</p>
+  <h2>openPipelineReviveGUI</h2>
+  <p>Description: Launches the UI for Reviving an old Workshop<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineUpdateShotComponentMenus</h2>
+  <p>Description: Updates the Pop-up menus of the ShotComponent list<br>Input: componentPath – the path of the currently selected Shot Component (string)<br>Returns: none</p>
+  <h2>openPipelineUI</h2>
+  <p>Description: Builds the main oP UI<br>Input: none<br>Returns: none</p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a><br><a name="openPipelineNotes.mel"></a></p>
+  <a name="openPipelineNotes.mel">
+  <h2>openPipelineNotes.mel</h2>
+  </a>
+  <p><a name="openPipelineNotes.mel"></a></p>
+  <h2>openPipelineReviveWorkshopNotesCallback</h2>
+  <p>Description: Refreshes the notes in the Revive Workshop dialog depending on the version the user has selected.<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineCountNotes</h2>
+  <p>Description: Counts the number of note entries for a specific item<br>Input: inputPath – the path of the item to query<br>Returns: The number of note entries (int)</p>
+  <h2>openPipelineReadAllNotes</h2>
+  <p>Description: Read all notes of a specified item<br>Input: inputPath – The note path of the item to be queried (string)<br>Returns: A string array with each entry representing a note</p>
+  <h2>openPipelineCullNotesByVersion</h2>
+  <p>Description: Read all notes that match a particular version<br>Input: allTheNotes – All the notes to be considered (string array)<br>version – The version to look for (int)<br>Returns: A string array with the notes that match the given version (in XML format)<br>Note: This proc has the same functionality as &ldquo;openPipelineReadNotesByVersion&rdquo; <br>but it takes in the actual notes as an input rather than a path to the note file.</p>
+  <h2>openPipelineClearCurrentShotNote</h2>
+  <p>Description: Clears the &ldquo;Most Recent Action&rdquo; section of the Shot Management tab<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineLoadAssetNote</h2>
+  <p>Description: Updates the &ldquo;History&rdquo; section of the Asset Management tab, depending on what item is currently selected<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineCreateDescription</h2>
+  <p>Description: Create a description file for an item<br>Input: path – The path of the item for which to create the description (string)<br>Returns: none</p>
+  <h2>openPipelineGetCleanLineXML</h2>
+  <p>Description: Removes the white space from a string and adds escape characters to <br>Input: nextLine – The line to clean (string)<br>Returns: The cleaned line as a string</p>
+  <h2>openPipelineGetDescription</h2>
+  <p>Description: Gets the description for an item<br>Input: path – The path of the item to query (string)<br>Returns: The description (string)</p>
+  <h2>openPipelineReadNotesByEvent</h2>
+  <p>Description: Read all notes that describe a particular event<br>Input: inputPath – The note path for the item to be queried (string)<br>type – The type of event to look for (created, workshop, etc.) (string)<br>Returns: A string array with the notes that match the given event (in XML format)</p>
+  <h2>openPipelineReadXML</h2>
+  <p>Description: Formats notes in XML format to be displayed<br>Input: inputPath – the path of the notes<br>Returns: A string array with each entry representing a Note in display format</p>
+  <h2>openPipelineReadLatestNote</h2>
+  <p>Description: Get the latest note for a specific asset/component/shot<br>Input: inputPath – the path to the item (string)<br>Returns: A string array with entry 0 containing the appropriate note</p>
+  <h2>openPipelineReadNotesByType</h2>
+  <p>Description: Read all notes that match a particular type<br>Input: inputPath – The note path for the item to be queried (string)<br>type – The type to look for (creation, workshop, master, etc.) (string)<br>Returns: A string array with the notes that match the given type (in XML format)</p>
+  <h2>openPipelineNoteWriter</h2>
+  <p>Description: Creates a new note<br>Input: inputMode – The mode of the note to be created (creation, missing, etc.) (string)<br>Returns: 1 if successful (int)</p>
+  <h2>openPipelineClearCurrentAssetNote</h2>
+  <p>Description: Clears the &ldquo;Most Recent Action&rdquo; section of the Asset Management tab<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineFilePermisson</h2>
+  <p>Description: Change the file permission in Windows<br>Input: inputMode – + set, – clean, R read-Only, H hidden (string)<br>inputPath – The path to apply the permission on (string)<br>Returns: none</p>
+  <h2>openPipelineReadNotesByVersion</h2>
+  <p>Description: Read all notes that match a particular version<br>Input: inputPath – The note path for the item to be queried (string)<br>version – The version to look for (int)<br>Returns: A string array with the notes that match the given version (in XML format)</p>
+  <h2>openPipelineFormatXML</h2>
+  <p>Description: Formats an XML note to be displayed<br>Input: line – the note in XML(string)<br>Returns: A string with the note in display mode</p>
+  <h2>openPipelineSetDescription</h2>
+  <p>Description: Set the description of an item<br>Input: path – The path of the item for which to set the description (string)<br>newDescription – The new description (string)<br>Returns: none</p>
+  <h2>openPipelineReadIndividualNote</h2>
+  <p>Description: Reads an individual note<br>Input: inputPath – the note path of the item (string)<br>index – the index of the individual note to return<br>Returns: A string with the specified note</p>
+  <h2>openPipelineLoadCurrentShotNote</h2>
+  <p>Description: Updates the &ldquo;Most Recent Action&rdquo; section of the Shot Management tab, depending on what item is currently open<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineLoadShotNote</h2>
+  <p>Description: Updates the &ldquo;History&rdquo; section of the Shot Management tab, depending on what item is currently selected<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineLoadCurrentAssetNote</h2>
+  <p>Description: Updates the &ldquo;Most Recent Action&rdquo; section of the Asset Management tab, depending on what item is currently open<br>Input: none<br>Returns: none</p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a></p>
+  <p><a name="openPipelineProject.mel"></a></p>
+  <a name="openPipelineProject.mel">
+  <h2>openPipelineProject.mel</h2>
+  </a>
+  <p><a name="openPipelineProject.mel"></a></p>
+  <h2>openPipelineSetProjDialogPath</h2>
+  <p>Description: This proc is<br>called by the file browser dialog. It sets the appropriate text field<br>to the path the user has chosen.<br>Input: path – the path chosen by the user (string)<br>type – not used (string)<br>Returns: none</p>
+  <h2>openPipelineEditProject</h2>
+  <p>Description: Opens the Edit Project Dialog<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetProjectList</h2>
+  <p>Description: Returns the the names and paths of all existing projects<br>Input: none<br>Returns: A string array with even entries containing project names and odd entries containing their corresponding paths</p>
+  <h2>openPipelineGetProjectsData</h2>
+  <p>Description: Returns the data for a single project in XML<br>Input: projName – the name of the project to query (string)<br>Returns: A string containing the full data of a project in XML</p>
+  <h2>openPipelineProjDialogCallback</h2>
+  <p>Description: Performs the actions specified by the project dialog box<br>Input: mode – 0 for creating a new project, 1 for editing an existing project (int)<br>editProjName – the new project name (if in edit mode) (string)<br>Returns: none</p>
+  <h2>openPipelineRemoveProject</h2>
+  <p>Description: Removes the currently selected project<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineGetProjFile</h2>
+  <p>Description: Returns the full path of the Project File<br>Input: none<br>Returns: The full path of the Project File (string)</p>
+  <h2>openPipelineProjectUISelection</h2>
+  <p>Description: This proc is called whenever a project is selected in the<br>Project UI. It queries and displays the appropriate info.<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineSetProjLocationDialogPath</h2>
+  <p>Description: This proc is called by the file browser dialog. It sets<br>the appropriate text field to the path the user has chosen.<br>Input: path – the path chosen by the user (string)<br>type – not used (string)<br>Returns: none</p>
+  <h2>openPipelineCloseProjUI</h2>
+  <p>Description: Closes the Project UI<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineProjectUI</h2>
+  <p>Description: Opens the oP Project UI<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineNewProject</h2>
+  <p>Description: Opens the New Project Dialog<br>Input: none<br>Returns: none</p>
+  <h2>openPipelineProjDialogWindow</h2>
+  <p>Description: Opens the Project Dialog Window. This is used either for creating a new project or editing an existing project.<br>Input: mode – 0 for creating a new project, 1 for editing an existing project (int)<br>Returns: none</p>
+  <h2>openPipelineRewriteProjFile</h2>
+  <p>Description: Rewrites the project xml file with the data it is passed as a string array<br>Input: A string array, with each entry containing the data of the project in an xml file<br>Returns: none</p>
+  <p><a href="https://openpipeline.cc/documentation/#top">back to top</a></p>
+  <p><em>This file was created by the openPipelineCreateProcDoc.py script.</em></p>
+</div>
+
+</body>
+</html>

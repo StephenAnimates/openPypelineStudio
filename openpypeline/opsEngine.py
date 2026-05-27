@@ -79,8 +79,8 @@ class OpsEngine:
         from core.file import master
         importlib.reload(master)
 
-        from core.file import workshop
-        importlib.reload(workshop)
+        from openpypeline.core.file import wip
+        importlib.reload(wip)
         
         from core.notes import notes
         importlib.reload(notes)
@@ -143,7 +143,7 @@ class OpsEngine:
             # Finally, find the latest workshop version and attempt to open it in the host DCC
             getLatestWorkshopNumber = Version.Version().latest(fullpath)
             if getLatestWorkshopNumber is not None:
-                latestWorkshop = workshop.Workshop().open(fullpath, item, getLatestWorkshopNumber)
+                latestWorkshop = wip.WIP().open(fullpath, item, getLatestWorkshopNumber)
                 if self.file_handler and hasattr(self.file_handler, 'open'):
                     self.file_handler.open(latestWorkshop)
                 else:

@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Untitled Document</title>
+</head>
+
+<body>
+<h1>OpenPipeline Specification</h1>
+<div>
+  <h3>Preface</h3>
+  <p>This work-in-progress document is version 0.1 of the openPipeline Specification, issued August, 2007. It represents the official technical specification for openPipeline.</p>
+  <h3>Overview</h3>
+  <p>The inherent complexity of the production of digital content places high demands on artists in terms of time and attention which can significantly lower the quality and increase the cost of delivering the final product. Organization, standardization, and efficiency of the pipeline takes a large amount of the burden off the artists. The level of sophistication previously associated with large scale projects such as 3D animated films and blockbuster effects sequences are now becoming commonplace in the production of television commercials and games. The depth of production pipelines, numbers of artists required, and sheer data size and complexity of all digital productions continues to increase. The openPipeline project is a community-based, open-source, specification for a production pipeline and a collection of tools which implement this into existing production applications all in an effort to alieviate these issues.</p>
+  <h3>Definition of an Animation Production Pipeline</h3>
+  <p>An animation pipeline handles the flow of data as it travels through the stages of production. They are based upon the interplay of tasks associated with assets and shots. Abstractly, a pipeline is both an established set of decisions and a collection of tools developed before production and managed throughout so that the focus for the artist is on the creative and technical challenges not the nuts and bolts of production. By laying this foundation, the pipeline sets the ground rules so that individual work is integrated into the bigger picture of production. openPipeline is a specification for a production pipeline.</p>
+  <h3>Element Description</h3>
+  <p>openPipeline is based on the notion of the asset library and the shot collection. The asset library is the repository of production elements that are developed, managed, and reused throughout the project. The shot collection is the container of data files which store the composed assets as defined by the production. The terminology for the key production elements is below:</p>
+  <li><strong>Task:</strong> A defined process that connects a process to an discrete aspect of production usually involving dependencies and a time frame. This process can be carried out by an artist or procedurally by the system depending on the nature of the task.</li>
+  <li><strong>Workflow:</strong> A series of tasks strung together in a procedural node-network execution order.</li>
+  <li><strong>Asset:</strong> A unit of production such as characters, props, environments, which can be made up of components.</li>
+  <li><strong>Component:</strong> Pieces required to build the asset. For example, a character is made up of a model, rig, and shading.</li>
+  <li><strong>Sequence:</strong> A logical collection of shots.</li>
+  <li><strong>Shot:</strong> The composed collection of assets that are animated, lit, and may be rendered.</li>
+  <p>—</p>
+  <h3>Directory Structure</h3>
+  <p>A proposed directory structure would be as follows:</p>
+  <pre>ProjectName     3d     ---------------------------         lib             assetType01                 asset01                     components                     workshop                     versions                     notes                     asset01_masterFile             assetType02             assetType03             ...         scene             sequence01             sequence02             sequence03             ...           archive       concept     ---------------------------       composite     --------------------------- </pre>
+  <h3>openPipeline Workflow</h3>
+  <p>Projects are defined by name and file path. Attributes such as folder naming, data filetypes, deadline, and project status are available. The project file is stored as XML.<br>Project Attributes</p>
+  <ul>
+    <li>Name</li>
+    <li>Path</li>
+    <li>Deadline</li>
+  </ul>
+  <p>Create Asset Types</p>
+  <ul>
+    <li>&ldquo;character&rdquo;</li>
+    <li>&ldquo;prop&rdquo;</li>
+    <li>Create an Asset for type: &ldquo;character&rdquo; named &ldquo;bob&rdquo;</li>
+    <li>Save workshop files through openPipeline for &ldquo;bob&rdquo; until done.</li>
+    <li>Publish asset &ldquo;bob&rdquo;.</li>
+  </ul>
+  <p>Publishing (also know as Mastering) strips a file of all its dependencies, procedurally cleans it up, and puts it into a public place in the production tree with a clear name like: bob_asset.mb. Every time a file is mastered, this file is replaced. Dependencies downstream from it get the updated file for free because the file they reference remains the same. Assets and Shots and their components all work this way.</p>
+  <p>A workshop file is where insulated artist work is carried out. When the asset is ready to be released into active production, it is mastered. So in the end, editing an asset means editing the latest workshop.<br>The directory structure that it creates is also easy to work with but most users never need to search for files or use the standard File Open commands. When they want to edit an asset they select it by name and openPipeline does the rest. The modularity inherent in the openPipeline workflow allows objects created in one project can easily be ported to another.</p>
+  <p>Create Sequence: sq01<br>Create Shot: shot001<br>Reference in Asset &ldquo;bob&rdquo;<br>Animate (save Workshops)<br>Master<br>Mastering and flattening references along the way ensures that upstream changes are dealt with properly.</p>
+  <h3>Rules</h3>
+  <p>1) No spaces in any names.<br>2) All descriptive information is stored in generic XML files.<br>3) Incremental saves are the default form of revision control.</p>
+</div>
+</body>
+</html>

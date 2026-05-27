@@ -3,15 +3,28 @@ File: opsInfo.py
 Description: Info Retrieval functions for openPypeline Studio.
              Handles fetching the current state of the pipeline, reading 
              paths, versions, UI states, etc.
-             Refactored from openPipelineInfo.mel to Python 3.
+             Refactored from openPipelineInfo.mel to Python 3. 
+                
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
 import os
+import sys
 import glob
 import datetime
 import re
+import logging
+from openpypeline.core.util import prefs
 
+logger = logging.getLogger("openPypeline.info")
+
+# --- UI Index Constants ---
+TAB_ASSET = 2
+TAB_SHOT = 3
+LEVEL_1 = 1  # Asset Type / Sequence
+LEVEL_2 = 2  # Asset / Shot
+LEVEL_3 = 3  # Component
 
 def get_project_list():
     """Returns the names of all existing projects."""
@@ -49,18 +62,18 @@ def get_custom_notes(tab, level1, level2, level3):
 
 def get_date():
     """Returns the current date using the user's preferred format."""
-    date_fmt = cmds.optionVar(query="ops_dateFormat") if cmds.optionVar(exists="ops_dateFormat") else "%m/%d/%Y"
+    date_fmt = prefs.get_pref("ops_dateFormat", "%m/%d/%Y")
     return datetime.datetime.now().strftime(date_fmt)
 
 
 def get_time():
     """Returns the current time using the user's preferred format."""
-    time_fmt = cmds.optionVar(query="ops_timeFormat") if cmds.optionVar(exists="ops_timeFormat") else "%H:%M:%S"
+    time_fmt = prefs.get_pref("ops_timeFormat", "%H:%M:%S")
     return datetime.datetime.now().strftime(time_fmt)
 
 
-def has_workshop(tab, level1, level2, level3):
-    """Returns whether an item has at least one workshop."""
+def has_wip(tab, level1, level2, level3):
+    """Returns whether an item has at least one WIP."""
     return bool(get_file_name(tab, level1, level2, level3, "workshop"))
 
 
@@ -76,11 +89,11 @@ def has_playblast(tab, level1, level2, level3):
     return bool(pb_file and os.path.isfile(pb_file))
 
 
-def get_workshops(tab, level1, level2, level3, archive=0):
-    """Returns the workshop files for a given item, from newest to oldest."""
+def get_wips(tab, level1, level2, level3, archive=0):
+    """Returns the WIP files for a given item, from newest to oldest."""
     folder = get_file_name(tab, level1, level2, level3, "workshopFolder", 0, archive)
-    w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
-    w_ext = cmds.optionVar(query="ops_workshopFormat") if cmds.optionVar(exists="ops_workshopFormat") else "ma"
+    w_name = prefs.get_pref("ops_wip", "workshop")
+    w_ext = prefs.get_pref("ops_wipFormat", "ma")
     
     if os.path.isdir(folder):
         files = sorted(glob.glob(os.path.join(folder, f"*{w_name}_*.{w_ext}").replace("\\", "/")), reverse=True)
@@ -91,7 +104,7 @@ def get_workshops(tab, level1, level2, level3, archive=0):
 def get_versions(tab, level1, level2, level3, archive=0):
     """Returns all of the version files for a given item, from newest to oldest."""
     folder = get_file_name(tab, level1, level2, level3, "versionFolder", 0, archive)
-    m_ext = cmds.optionVar(query="ops_masterFormat") if cmds.optionVar(exists="ops_masterFormat") else "ma"
+    m_ext = prefs.get_pref("ops_masterFormat", "ma")
     
     if os.path.isdir(folder):
         files = sorted(glob.glob(os.path.join(folder, f"*version_*.{m_ext}").replace("\\", "/")), reverse=True)
@@ -99,9 +112,9 @@ def get_versions(tab, level1, level2, level3, archive=0):
     return []
 
 
-def get_num_workshops(tab, level1, level2, level3, archive=0):
-    """Returns the number of workshops an item has."""
-    return len(get_workshops(tab, level1, level2, level3, archive))
+def get_num_wips(tab, level1, level2, level3, archive=0):
+    """Returns the number of WIPs an item has."""
+    return len(get_wips(tab, level1, level2, level3, archive))
 
 
 def get_num_versions(tab, level1, level2, level3, archive=0):
@@ -117,11 +130,11 @@ def get_version_from_file(filepath):
     return 0
 
 
-def get_latest_workshop_version(tab, level1, level2, level3):
-    """Returns the version of the latest workshop for a given item."""
-    latest_ws = get_file_name(tab, level1, level2, level3, "workshop")
-    if latest_ws:
-        return get_version_from_file(latest_ws)
+def get_latest_wip_version(tab, level1, level2, level3):
+    """Returns the version of the latest WIP for a given item."""
+    latest_wip = get_file_name(tab, level1, level2, level3, "workshop")
+    if latest_wip:
+        return get_version_from_file(latest_wip)
     return 0
 
 
@@ -132,27 +145,27 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
     """
     depth = sum(1 for lvl in [level1, level2, level3] if lvl)
     file_name = ""
-    w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "workshop"
-    w_ext = cmds.optionVar(query="ops_workshopFormat") if cmds.optionVar(exists="ops_workshopFormat") else "ma"
-    m_name = cmds.optionVar(query="ops_masterName") if cmds.optionVar(exists="ops_masterName") else "master"
-    m_ext = cmds.optionVar(query="ops_masterFormat") if cmds.optionVar(exists="ops_masterFormat") else "ma"
+    w_name = prefs.get_pref("ops_wip", "workshop")
+    w_ext = prefs.get_pref("ops_wipFormat", "ma")
+    m_name = prefs.get_pref("ops_masterName", "master")
+    m_ext = prefs.get_pref("ops_masterFormat", "ma")
 
     if mode == "parentFolder":
-        if depth == 3: return get_file_name(tab, level1, level2, "", "folder", 0, 0)
-        elif depth == 2: return get_file_name(tab, level1, "", "", "folder", 0, 0)
-        elif depth == 1: return cmds.optionVar(query="ops_currProjectPath") if cmds.optionVar(exists="ops_currProjectPath") else ""
+        if depth == LEVEL_3: return get_file_name(tab, level1, level2, "", "folder", 0, 0)
+        elif depth == LEVEL_2: return get_file_name(tab, level1, "", "", "folder", 0, 0)
+        elif depth == LEVEL_1: return prefs.get_pref("ops_currProjectPath", "")
         else: return ""
 
-    if tab == 2:
-        file_name = cmds.optionVar(query="ops_libPath") if cmds.optionVar(exists="ops_libPath") else ""
-    elif tab == 3:
-        file_name = cmds.optionVar(query="ops_shotPath") if cmds.optionVar(exists="ops_shotPath") else ""
+    if tab == TAB_ASSET:
+        file_name = prefs.get_pref("ops_libPath", "")
+    elif tab == TAB_SHOT:
+        file_name = prefs.get_pref("ops_shotPath", "")
     else:
         return ""
 
     if archive:
-        proj_path = cmds.optionVar(query="ops_currProjectPath") if cmds.optionVar(exists="ops_currProjectPath") else ""
-        arch_path = cmds.optionVar(query="ops_archivePath") if cmds.optionVar(exists="ops_archivePath") else ""
+        proj_path = prefs.get_pref("ops_currProjectPath", "")
+        arch_path = prefs.get_pref("ops_archivePath", "")
         if proj_path and arch_path:
             file_name = file_name.replace(proj_path, arch_path)
 
@@ -172,16 +185,16 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
             elif mode == "noteFolder":
                 file_name = os.path.join(file_name, "notes", "").replace("\\", "/")
             elif mode == "playblastFile":
-                ext = "mov" if cmds.about(os=True) == "mac" else "avi"
+                ext = "mov" if sys.platform == "darwin" else "avi"
                 file_name = os.path.join(file_name, f"playblast.{ext}").replace("\\", "/")
             elif mode == "previewFile":
                 file_name = os.path.join(file_name, "preview.jpg").replace("\\", "/")
             elif mode == "notesFile":
                 file_name = os.path.join(file_name, "notes", "info.xml").replace("\\", "/")
             elif mode == "workshop":
-                ws_dir = os.path.join(file_name, w_name)
-                if os.path.isdir(ws_dir):
-                    files = sorted(glob.glob(os.path.join(ws_dir, f"*{w_name}_*.{w_ext}").replace("\\", "/")))
+                wip_dir = os.path.join(file_name, w_name)
+                if os.path.isdir(wip_dir):
+                    files = sorted(glob.glob(os.path.join(wip_dir, f"*{w_name}_*.{w_ext}").replace("\\", "/")))
                     if files and len(files) > offset:
                         file_name = files[-(1 + offset)].replace("\\", "/")
                     else:
@@ -190,12 +203,12 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
             elif mode == "nextWorkshop":
                 item_name = level3 if level3 else level2
                 parent_name = level2 if level3 else level1
-                ws_dir = os.path.join(file_name, w_name).replace("\\", "/")
-                files = sorted(glob.glob(os.path.join(ws_dir, f"*{w_name}_*.{w_ext}").replace("\\", "/"))) if os.path.isdir(ws_dir) else []
+                wip_dir = os.path.join(file_name, w_name).replace("\\", "/")
+                files = sorted(glob.glob(os.path.join(wip_dir, f"*{w_name}_*.{w_ext}").replace("\\", "/"))) if os.path.isdir(wip_dir) else []
                 latest_version = get_version_from_file(files[-1]) if files else 0
                 suffix = str(latest_version + 1).zfill(4)
                 prefix = f"{parent_name}_{item_name}" if level3 else item_name
-                file_name = os.path.join(ws_dir, f"{prefix}_{w_name}_{suffix}.{w_ext}").replace("\\", "/")
+                file_name = os.path.join(wip_dir, f"{prefix}_{w_name}_{suffix}.{w_ext}").replace("\\", "/")
             elif mode == "version":
                 v_dir = os.path.join(file_name, "version")
                 if os.path.isdir(v_dir):
@@ -219,27 +232,27 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
                 parent_name = level2 if level3 else level1
                 if level3:
                     file_name = os.path.join(file_name, f"{parent_name}_{item_name}.{m_ext}").replace("\\", "/")
-                elif tab == 2:
+                elif tab == TAB_ASSET:
                     file_name = os.path.join(file_name, f"{item_name}_asset.{m_ext}").replace("\\", "/")
-                elif tab == 3:
+                elif tab == TAB_SHOT:
                     file_name = os.path.join(file_name, f"{item_name}_shot.{m_ext}").replace("\\", "/")
             elif mode == "historyFile":
                 item_name = level3 if level3 else level2
                 parent_name = level2 if level3 else level1
                 if level3:
                     file_name = os.path.join(file_name, "notes", f"{parent_name}_{item_name}_ComponentNote.xml").replace("\\", "/")
-                elif tab == 2:
+                elif tab == TAB_ASSET:
                     file_name = os.path.join(file_name, "notes", f"{item_name}_AssetNote.xml").replace("\\", "/")
-                elif tab == 3:
+                elif tab == TAB_SHOT:
                     file_name = os.path.join(file_name, "notes", f"{item_name}_SceneNote.xml").replace("\\", "/")
             elif mode == "childFolder":
-                if depth == 2:
+                if depth == LEVEL_2:
                     file_name = os.path.join(file_name, "components", "").replace("\\", "/")
                 else:
                     file_name = ""
             elif mode != "folder":
                 file_name = ""
-                cmds.warning(f"openPypeline Studio (get_file_name) unrecognized file mode: {mode}")
+                logger.warning(f"unrecognized file mode: {mode}")
 
     return file_name
 
@@ -255,11 +268,11 @@ def get_children(tab, level1, level2, level3):
 
 def get_category(tab, level1, level2, level3):
     """Returns the category of a given item (shot, asset, component, etc.)"""
-    if tab == 2:
+    if tab == TAB_ASSET:
         if level3: return "component"
         elif level2: return "asset"
         elif level1: return "assetType"
-    elif tab == 3:
+    elif tab == TAB_SHOT:
         if level3: return "shotComponent"
         elif level2: return "shot"
         elif level1: return "sequence"
@@ -268,10 +281,10 @@ def get_category(tab, level1, level2, level3):
 
 def get_currently_open_path():
     """Returns the path of the currently open item."""
-    level1 = cmds.optionVar(query="ops_currOpenLevel1") if cmds.optionVar(exists="ops_currOpenLevel1") else ""
-    level2 = cmds.optionVar(query="ops_currOpenLevel2") if cmds.optionVar(exists="ops_currOpenLevel2") else ""
-    level3 = cmds.optionVar(query="ops_currOpenLevel3") if cmds.optionVar(exists="ops_currOpenLevel3") else ""
-    tab = cmds.optionVar(query="ops_currOpenTab") if cmds.optionVar(exists="ops_currOpenTab") else 0
+    level1 = prefs.get_pref("ops_currOpenLevel1", "")
+    level2 = prefs.get_pref("ops_currOpenLevel2", "")
+    level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    tab = prefs.get_pref("ops_currOpenTab", 0)
     
     if tab:
         return get_file_name(tab, level1, level2, level3, "folder")
@@ -299,37 +312,49 @@ def get_event_notes(tab, level1, level2, level3):
 def get_currently_selected_item(tab, depth):
     """Get the currently selected item under the given tab in the UI."""
     level1 = level2 = level3 = ""
+    import UIObjects
+    ui_obj = UIObjects.UIObjects()
+    ui = ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
     
-    if tab == 2:
-        if depth > 0 and cmds.optionVar(exists="ops_assetTypes") and cmds.textScrollList("ops_assetType_txtScrollList", exists=True):
-            types = cmds.optionVar(query="ops_assetTypes") or []
-            selected = cmds.textScrollList("ops_assetType_txtScrollList", query=True, selectIndexedItem=True) or []
-            if selected: level1 = types[selected[0] - 1]
+    if not ui:
+        return [level1, level2, level3]
+    
+    if tab == TAB_ASSET:
+        if depth >= LEVEL_1 and hasattr(ui, "ops_assetType_txtScrollList"):
+            types = prefs.get_pref("ops_assetTypes", [])
+            if isinstance(types, str): types = [types]
+            idx = ui.ops_assetType_txtScrollList.currentRow()
+            if 0 <= idx < len(types): level1 = types[idx]
             
-        if depth > 1 and cmds.optionVar(exists="ops_assets") and cmds.textScrollList("ops_asset_scrollList", exists=True):
-            assets = cmds.optionVar(query="ops_assets") or []
-            selected = cmds.textScrollList("ops_asset_scrollList", query=True, selectIndexedItem=True) or []
-            if selected: level2 = assets[selected[0] - 1]
+        if depth >= LEVEL_2 and hasattr(ui, "ops_asset_scrollList"):
+            assets = prefs.get_pref("ops_assets", [])
+            if isinstance(assets, str): assets = [assets]
+            idx = ui.ops_asset_scrollList.currentRow()
+            if 0 <= idx < len(assets): level2 = assets[idx]
             
-        if depth > 2 and cmds.optionVar(exists="ops_components") and cmds.textScrollList("ops_componentScrollList", exists=True):
-            components = cmds.optionVar(query="ops_components") or []
-            selected = cmds.textScrollList("ops_componentScrollList", query=True, selectIndexedItem=True) or []
-            if selected: level3 = components[selected[0] - 1]
+        if depth >= LEVEL_3 and hasattr(ui, "ops_componentScrollList"):
+            components = prefs.get_pref("ops_components", [])
+            if isinstance(components, str): components = [components]
+            idx = ui.ops_componentScrollList.currentRow()
+            if 0 <= idx < len(components): level3 = components[idx]
             
-    elif tab == 3:
-        if depth > 0 and cmds.optionVar(exists="ops_sequences") and cmds.textScrollList("ops_sequenceScrollList", exists=True):
-            sequences = cmds.optionVar(query="ops_sequences") or []
-            selected = cmds.textScrollList("ops_sequenceScrollList", query=True, selectIndexedItem=True) or []
-            if selected: level1 = sequences[selected[0] - 1]
+    elif tab == TAB_SHOT:
+        if depth >= LEVEL_1 and hasattr(ui, "ops_sequenceScrollList"):
+            sequences = prefs.get_pref("ops_sequences", [])
+            if isinstance(sequences, str): sequences = [sequences]
+            idx = ui.ops_sequenceScrollList.currentRow()
+            if 0 <= idx < len(sequences): level1 = sequences[idx]
             
-        if depth > 1 and cmds.optionVar(exists="ops_shots") and cmds.textScrollList("ops_shotScrollList", exists=True):
-            shots = cmds.optionVar(query="ops_shots") or []
-            selected = cmds.textScrollList("ops_shotScrollList", query=True, selectIndexedItem=True) or []
-            if selected: level2 = shots[selected[0] - 1]
+        if depth >= LEVEL_2 and hasattr(ui, "ops_shotScrollList"):
+            shots = prefs.get_pref("ops_shots", [])
+            if isinstance(shots, str): shots = [shots]
+            idx = ui.ops_shotScrollList.currentRow()
+            if 0 <= idx < len(shots): level2 = shots[idx]
             
-        if depth > 2 and cmds.optionVar(exists="ops_shotComponents") and cmds.textScrollList("ops_shotComponentScrollList", exists=True):
-            components = cmds.optionVar(query="ops_shotComponents") or []
-            selected = cmds.textScrollList("ops_shotComponentScrollList", query=True, selectIndexedItem=True) or []
-            if selected: level3 = components[selected[0] - 1]
+        if depth >= LEVEL_3 and hasattr(ui, "ops_shotComponentScrollList"):
+            components = prefs.get_pref("ops_shotComponents", [])
+            if isinstance(components, str): components = [components]
+            idx = ui.ops_shotComponentScrollList.currentRow()
+            if 0 <= idx < len(components): level3 = components[idx]
             
     return [level1, level2, level3]

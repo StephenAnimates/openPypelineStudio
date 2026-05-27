@@ -9,39 +9,71 @@ Description:
     
     This UI serves as the central hub for artists to interact with the 
     openPypeline Studio framework, manage their files, and navigate the project hierarchy.
-    
-    TODO: Phase 2 Modernization - Migrate UI to PySide6 / PyQt6.
-    Once the core Python 3 refactoring and backend `maya.cmds` stabilization 
-    is complete, this module should be entirely rewritten using Qt widgets.
+        
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
+
+    (Phase 2 Modernization Complete: Fully migrated to PySide6 and DCC-agnostic preferences.)
 """
 
-import maya.cmds as cmds
 import os
-import importlib
+import logging
+from PySide6 import QtWidgets, QtCore, QtGui
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
-import window as window
-importlib.reload(window)
-
-import UIObjects as UIObjects
+import UIObjects
 import opsUIWrappers
 import opsProject
 import opsActions
 
-class opsMainUI(window.window):
+logger = logging.getLogger(__name__)
 
-    def __init__(self):
-        
+# --- UI Index Constants ---
+TAB_ASSET = 2
+TAB_SHOT = 3
+LEVEL_1 = 1  # Asset Type / Sequence
+LEVEL_2 = 2  # Asset / Shot
+LEVEL_3 = 3  # Component
+
+# --- UI Stylesheet ---
+OPS_STYLESHEET = """
+    QLabel[styleClass="headingBold"] {
+        font-weight: bold;
+    }
+    QPushButton[styleClass="positiveAction"] {
+        background-color: #99cc80; 
+        color: black;
+    }
+    QPushButton[styleClass="negativeAction"] {
+        background-color: #cc4d4d; 
+        color: white;
+    }
+    QPushButton[styleClass="saveWipBtn"] {
+        background-color: #cc9980; 
+        color: black;
+    }
+    QPushButton[styleClass="masterBtn"] {
+        background-color: #e6b366; 
+        color: black;
+    }
+    QPushButton[styleClass="reviveBtn"] {
+        background-color: #80b3b3; 
+        color: black;
+    }
+    QPushButton[styleClass="neutralAction"] {
+        background-color: #cccccc; 
+        color: black;
+    }
+"""
+
+class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
         self.UIObjects = UIObjects.UIObjects()
-        
-        self.width=450
-        self.height=780
-        self.displayName = "openPypeline Studio"
-        self.name = "openPypelineUI"
-        self.dockable=1
-        self.scriptLocation = cmds.optionVar(query="ops_scriptPath") if cmds.optionVar(exists="ops_scriptPath") else "Not Set"
-        
-        self.lfMargin = 5
-        self.rtMargin = 5
+        self.setWindowTitle("openPypeline Studio")
+        self.setObjectName("openPypelineUI")
+        self.setMinimumSize(450, 780)
         
         ui_dir = os.path.dirname(__file__)
         self.ops_icon_filePath = os.path.join(ui_dir, 'opsIcon.png').replace("\\", "/")
@@ -50,7 +82,7 @@ class opsMainUI(window.window):
         
         self.anno_projectList="Select from the available Projects."
         self.anno_projectManager="Open the Project Manager, where you can add or remove Projects."
-        self.anno_saveWorkshop="Save a workshop file for the current Asset/Shot/Component."
+        self.anno_saveWorkshop="Save a WIP file for the current Asset/Shot/Component."
         self.anno_master="Save a master file for the current Asset/Shot/Component."
         self.anno_revive="Revive an old version of the current Asset/Shot/Component."
         self.anno_closeFile="Close the currently open file."
@@ -60,17 +92,17 @@ class opsMainUI(window.window):
         self.anno_removeAsset="Remove the selected Asset from the inventory."
         self.anno_editAsset="Open the Asset for editing."
         self.anno_viewAsset="Open the master file for the Asset."
-        self.anno_importAssetWorkshop="Import the Asset's latest workshop file into the current scene."
+        self.anno_importAssetWorkshop="Import the Asset's latest WIP file into the current scene."
         self.anno_importAssetMaster="Import the Asset's master file into the current scene."
-        self.anno_referenceAssetWorkshop="Reference the Asset's latest workshop file into the current scene."
+        self.anno_referenceAssetWorkshop="Reference the Asset's latest WIP file into the current scene."
         self.anno_referenceAssetMaster="Reference the Asset's master file into the current scene."
         self.anno_assetList="Double-click to edit Asset. Hold right mouse button for more options."
         self.anno_renameAsset="Rename the selected Asset."
         self.anno_editComponent="Open the Component for editing."
         self.anno_viewComponent="Open the master file for the Component."
-        self.anno_importComponentWorkshop="Import the Component's latest workshop file into the current scene."
+        self.anno_importComponentWorkshop="Import the Component's latest WIP file into the current scene."
         self.anno_importComponentMaster="Import the Component's master file into the current scene."
-        self.anno_referenceComponentWorkshop="Reference the Component's latest workshop file into the current scene."
+        self.anno_referenceComponentWorkshop="Reference the Component's latest WIP file into the current scene."
         self.anno_referenceComponentMaster="Reference the Component's master file into the current scene."
         self.anno_componentList="Double-click to edit Component. Hold down right mouse button for more options."
         self.anno_newComponent="Create a new Component for the selected Asset."
@@ -81,795 +113,527 @@ class opsMainUI(window.window):
         self.anno_removeSequence="Remove the selected Sequence from the inventory."
         self.anno_editShotComponent="Open the Component for editing."
         self.anno_viewShot="Open the master file for the Shot."
-        self.anno_importShotWorkshop="Import the Shot's latest workshop file into the current scene."
+        self.anno_importShotWorkshop="Import the Shot's latest WIP file into the current scene."
         self.anno_editShot="Open the Shot for editing."
         self.anno_importShotMaster="Import the Shot's master file into the current scene."
-        self.anno_referenceShotWorkshop="Reference the Shot's latest workshop file into the current scene."
+        self.anno_referenceShotWorkshop="Reference the Shot's latest WIP file into the current scene."
         self.anno_referenceShotMaster="Reference the Shot's master file into the current scene."
         self.anno_shotList="Double-click to Edit Shot. Hold down right mouse button for more options."
         self.anno_newShot="Create a new Shot."
         self.anno_removeShot="Remove the selected Shot."
         self.anno_viewShotComponent="Open the master file for the Component."
-        self.anno_importShotComponentWorkshop="Import the Component's latest workshop file into the current scene."
+        self.anno_importShotComponentWorkshop="Import the Component's latest WIP file into the current scene."
         self.anno_importShotComponentMaster="Import the Component's master file into the current scene."
-        self.anno_referenceShotComponentWorkshop="Reference the Component's latest workshop file into the current scene."
+        self.anno_referenceShotComponentWorkshop="Reference the Component's latest WIP file into the current scene."
         self.anno_referenceShotComponentMaster="Reference the Component's master file into the current scene."
         self.anno_shotComponentList="Double-click to edit Component. Hold down right mouse button for more options."
         self.anno_newShotComponent="Create a new Component for the selected Asset."
         self.anno_removeShotComponent="Remove the selected Component from the inventory."
     
-    def content(self):
-        """
-        Builds and returns the main form layout for the UI.
-        """
-        self.ops_form1 = cmds.formLayout(numberOfDivisions=100)
-        
+        self._build_ui()
+
+    def showWindow(self):
+        """Shows the window as a dockable panel."""
+        self.show(dockable=True, floating=True)
+        # Safely try to refresh the UI in case the wrappers are still using cmds
+        try:
+            opsUIWrappers.refresh_ui()
+        except Exception as e:
+            logger.warning(f"Could not automatically refresh UI on show: {e}")
+
+    def _build_ui(self):
+        """Constructs the UI using PySide widgets and layouts."""
+        self.setStyleSheet(OPS_STYLESHEET)
         self._build_top_menu()
-        self._build_basic_info()
-        self._build_project_image()
         
-        self.ops_mainTabs_tabLayout = cmds.tabLayout('ops_mainTabs_tabLayout', parent=self.ops_form1, scr=0, innerMarginWidth=0, innerMarginHeight=0)
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        self.main_layout = QtWidgets.QVBoxLayout(central_widget)
+        self.main_layout.setContentsMargins(5, 5, 5, 5)
+        self.main_layout.setSpacing(5)
         
-        self._build_currently_open_tab()
+        self._build_basic_info(self.main_layout)
+        
+        self.ops_mainTabs_tabLayout = QtWidgets.QTabWidget()
+        self.ops_mainTabs_tabLayout.currentChanged.connect(opsUIWrappers.update_working_tab)
+        self.main_layout.addWidget(self.ops_mainTabs_tabLayout)
+        
         self._build_asset_browser_tab()
         self._build_shot_browser_tab()
-        
-        cmds.tabLayout(self.ops_mainTabs_tabLayout, edit=True, tabLabel=[
-            (self.ops_assetBrowser_formLayout, "Asset Browser"), 
-            (self.ops_shotFormLayout, "Shot Browser"), 
-            (self.ops_currOpen_formLayout, "Currently Open")
-        ])
-        
-        self._build_bottom_buttons()
-        self._attach_main_form_elements()
-        
-        return [self.ops_form1]
+        self._build_currently_open_tab()
+        self._build_bottom_buttons(self.main_layout)
 
     def _build_top_menu(self):
-        self.ops_topDropDown_menuBarLayout = cmds.menuBarLayout('ops_topDropDown_menuBarLayout', parent=self.ops_form1)
+        menubar = self.menuBar()
         
-        self.ops_topDropDownMayaTools_menu = cmds.menu('ops_topDropDownMayaTools_menu', parent=self.ops_topDropDown_menuBarLayout, label="Maya Tools")
-        self.ops_topDropDownMayaTools_menuItem1 = cmds.menuItem('ops_topDropDownMayaTools_menuItem1', parent=self.ops_topDropDownMayaTools_menu, label="Maya Reference Editor", command="ReferenceEditor")
-        self.ops_topDropDownMayaTools_menuItem2 = cmds.menuItem('ops_topDropDownMayaTools_menuItem2', parent=self.ops_topDropDownMayaTools_menu, label="Maya Project Manager", command="projectSetup 2")
+        tools = menubar.addMenu("Tools")
+        tools.addAction("Scene Inventory", self.on_open_scene_inventory)
         
-        self.ops_topDropDownAddOns_menu = cmds.menu(label="Add-ons", parent=self.ops_topDropDown_menuBarLayout)
-        self.ops_topDropDownAddOns_menuItem2 = cmds.menuItem('ops_topDropDownAddOns_menuItem2', parent=self.op_topDropDownAddOns_menu, label="How to add to this menu...", c=lambda *args: cmds.confirmDialog(title='Add-ons', message='Add Python plugins directly to the addons folder.', button=['OK']))
+        # Conditionally add Maya tools only if running inside Maya
+        import opsEngine
+        engine = opsEngine.OpsEngine()
+        if engine.host_app == 'maya':
+            import maya.cmds as cmds
+            maya_tools = menubar.addMenu("Maya Tools")
+            maya_tools.addAction("Maya Reference Editor", lambda: cmds.ReferenceEditor())
+            maya_tools.addAction("Maya Project Manager", lambda: cmds.projectSetup(2))
         
-        self.ops_topDropDownSettings_menu = cmds.menu(label="Settings", parent=self.ops_topDropDown_menuBarLayout)
-        self.ops_topDropDownSettings_menuItem1 = cmds.menuItem('ops_topDropDownSettings_menuItem1', parent=self.ops_topDropDownSettings_menu, label="Preferences...", command=self.on_open_settings)
+        addons = menubar.addMenu("Add-ons")
+        addons.addAction("How to add to this menu...", lambda: QtWidgets.QMessageBox.information(self, 'Add-ons', 'Add Python plugins directly to the addons folder.'))
         
-        self.ops_topDropDownHelp_menu = cmds.menu(label="Help", parent=self.ops_topDropDown_menuBarLayout, helpMenu=1)
-        self.ops_topDropDown_menuItem1 = cmds.menuItem('ops_topDropDown_menuItem1', parent=self.op_topDropDownHelp_menu, label="About openPipeline...", command=opsUIWrappers.about_dialog)
-        self.ops_topDropDown_menuItem2 = cmds.menuItem('ops_topDropDown_menuItem2', parent=self.op_topDropDownHelp_menu, label="Help...", command=opsUIWrappers.launch_help)
+        settings = menubar.addMenu("Settings")
+        settings.addAction("Preferences...", self.on_open_settings)
+        
+        help_menu = menubar.addMenu("Help")
+        help_menu.addAction("About openPipeline...", opsUIWrappers.about_dialog)
+        help_menu.addAction("Help...", opsUIWrappers.launch_help)
+        
+        # --- Main Toolbar ---
+        toolbar = QtWidgets.QToolBar("openPypeline Tools")
+        toolbar.setMovable(False)
+        self.addToolBar(toolbar)
+        toolbar.addAction("Scene Inventory", self.on_open_scene_inventory)
 
-    def _build_basic_info(self):
-        self.ops_userName_txt = cmds.text('ops_userName_txt', parent=self.ops_form1, al="right", label="User Name : ", w=150)
-        self.ops_userName_optionMenu = cmds.optionMenu('ops_userName_optionMenu', parent=self.ops_form1, cc=lambda *args: None, enable=0)
+    def _build_basic_info(self, parent_layout):
+        header_layout = QtWidgets.QHBoxLayout()
+        info_layout = QtWidgets.QFormLayout()
         
-        self.ops_projName_txt = cmds.text('ops_projName_txt', parent=self.ops_form1, al="right", label="Project Name : ", w=150)
-        self.ops_projManager_btn = cmds.button('ops_projManager_btn', parent=self.ops_form1, label="Project Manager...", c=lambda *args: getattr(self.UIObjects, 'opsProjectManagerGUI').showWindow(), ann=self.anno_projectManager, h=30)
-        self.ops_projName_optionMenu = cmds.optionMenu('ops_projName_optionMenu', parent=self.ops_form1, cc=lambda *args: opsActions.activate_project(cmds.optionMenu('ops_projName_optionMenu', q=True, v=True)) or opsUIWrappers.refresh_ui(), ann=self.anno_projectList)
+        self.ops_userName_optionMenu = QtWidgets.QComboBox()
+        self.ops_userName_optionMenu.setEnabled(False)
+        info_layout.addRow("User Name:", self.ops_userName_optionMenu)
         
-        self.ops_projPath_txt = cmds.text('ops_projPath_txt', parent=self.ops_form1, al="right", label="Project Path : ", w=150)
-        self.ops_projPath_txtField = cmds.textField('ops_projPath_txtField', parent=self.ops_form1, editable=0)
+        proj_layout = QtWidgets.QHBoxLayout()
+        self.ops_projName_optionMenu = QtWidgets.QComboBox()
+        self.ops_projName_optionMenu.currentTextChanged.connect(self._on_project_changed)
+        
+        self.ops_projManager_btn = QtWidgets.QPushButton("Project Manager...")
+        self.ops_projManager_btn.clicked.connect(lambda: getattr(self.UIObjects, 'opsProjectManagerGUI').showWindow())
+        
+        proj_layout.addWidget(self.ops_projName_optionMenu)
+        proj_layout.addWidget(self.ops_projManager_btn)
+        info_layout.addRow("Project Name:", proj_layout)
+        
+        self.ops_projPath_txtField = QtWidgets.QLineEdit()
+        self.ops_projPath_txtField.setReadOnly(True)
+        info_layout.addRow("Project Path:", self.ops_projPath_txtField)
+        header_layout.addLayout(info_layout)
+        
+        self.ops_icon_image = QtWidgets.QLabel()
+        self.ops_icon_image.setPixmap(QtGui.QPixmap(self.ops_icon_filePath))
+        self.ops_icon_image.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        header_layout.addWidget(self.ops_icon_image)
+        
+        parent_layout.addLayout(header_layout)
 
-    def _build_project_image(self):
-        self.ops_icon_image = cmds.image('ops_icon_image', parent=self.ops_form1, i=self.ops_icon_filePath, h=50, w=415, bgc=(0, 0, 0))
+    def _on_project_changed(self, text):
+        opsActions.activate_project(text)
+        try:
+            opsUIWrappers.refresh_ui()
+        except Exception as e:
+            logger.warning(f"Could not refresh UI after project change: {e}")
 
     def _build_currently_open_tab(self):
+        tab = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(tab)
         
-        self.op_currOpenPreview_txt = cmds.text('op_currOpenPreview_txt', parent=self.op_currOpen_formLayout, fn="smallBoldLabelFont", l="Preview", w=164, al="left")
-
-        self.op_currOpenPreview_img = cmds.image('op_currOpenPreview_img', parent=self.op_currOpen_formLayout, i=self.op_currOpenPreview_filePath, h=105, w=164, bgc=(0, 0, 0))
-        self.op_currOpenSnapshot_btn = cmds.button('op_currOpenSnapshot_btn', parent=self.op_currOpen_formLayout, l="Take Snapshot", w=164, c=opsUIWrappers.take_snapshot)
+        header_lyt = QtWidgets.QHBoxLayout()
+        self.ops_currOpenHeading_txt = QtWidgets.QLabel("CURRENTLY OPEN:")
+        self.ops_currOpenHeading_txt.setProperty("styleClass", "headingBold")
+        self.ops_currOpenHeadingVersion_txt = QtWidgets.QLabel(" ")
+        self.ops_currOpenHeadingVersion_txt.setProperty("styleClass", "headingBold")
+        header_lyt.addWidget(self.ops_currOpenHeading_txt)
+        header_lyt.addWidget(self.ops_currOpenHeadingVersion_txt)
+        header_lyt.addStretch()
+        layout.addLayout(header_lyt)
         
-        self.op_currOpenRecordPlayblast_btn = cmds.button('op_currOpenRecordPlayblast_btn', parent=self.op_currOpen_formLayout, w=82, h=20, l="Rec Playblast", c=opsUIWrappers.record_current_playblast)
-        self.op_currOpenViewPlayblast_btn = cmds.button('op_currOpenViewPlayblast_btn', parent=self.op_currOpen_formLayout, w=82, h=20, l="View Playblast", c=opsUIWrappers.view_playblast_current)
+        top_row = QtWidgets.QHBoxLayout()
+        actions_group = QtWidgets.QGroupBox("Actions")
+        actions_layout = QtWidgets.QGridLayout(actions_group)
         
-        self.op_currOpenNotes_txt = cmds.text('op_currOpenNotes_txt', parent=self.op_currOpen_formLayout, fn="smallBoldLabelFont", l="Notes", w=220, al="left")
-        self.op_currOpen_scrollField = cmds.scrollField('op_currOpen_scrollField', parent=self.op_currOpen_formLayout, w=220, h=125, enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="", kpc="button -e -en 1 op_saveNoteButton")
+        self.ops_currOpenSaveWorkshop_btn = QtWidgets.QPushButton("Save WIP...")
+        self.ops_currOpenSaveWorkshop_btn.setProperty("styleClass", "saveWipBtn")
+        self.ops_currOpenSaveWorkshop_btn.clicked.connect(opsUIWrappers.prompt_save_wip)
         
-        self.op_currOpenSubRegion1_formLayout = cmds.formLayout('op_currOpenSubRegion1_formLayout', parent=self.op_currOpen_formLayout, numberOfDivisions=100)
+        self.ops_currOpenMaster_btn = QtWidgets.QPushButton("MASTER...")
+        self.ops_currOpenMaster_btn.setProperty("styleClass", "masterBtn")
+        self.ops_currOpenMaster_btn.clicked.connect(lambda: getattr(self.UIObjects, 'opsSaveMasterGUI').showWindow())
         
-        self.op_currOpenClearNote_btn = cmds.button('op_currOpenClearNote_btn', parent=self.op_currOpenSubRegion1_formLayout, w=110, h=20, l="Clear", c=opsUIWrappers.clear_note)
-        self.op_currOpenSaveNote_btn = cmds.button('op_currOpenSaveNote_btn', parent=self.op_currOpenSubRegion1_formLayout, w=110, h=20, l="Save", c=opsUIWrappers.save_note, en=0)
+        self.ops_currOpenRevive_btn = QtWidgets.QPushButton("Revive...")
+        self.ops_currOpenRevive_btn.setProperty("styleClass", "reviveBtn")
+        self.ops_currOpenRevive_btn.clicked.connect(opsUIWrappers.prompt_revive)
         
-        cmds.formLayout(self.op_currOpenSubRegion1_formLayout,
-            e=1,
-            attachPosition=[
-            (self.op_currOpenSaveNote_btn, "right", 0, 100),
-            (self.op_currOpenSaveNote_btn, "left", 0, 50),
-            (self.op_currOpenClearNote_btn, "left", 0, 0),
-            (self.op_currOpenClearNote_btn, "right", 0, 50),
-            ]
-            )
+        self.ops_currOpenClose_btn = QtWidgets.QPushButton("Close")
+        self.ops_currOpenClose_btn.setProperty("styleClass", "neutralAction")
+        self.ops_currOpenClose_btn.clicked.connect(opsUIWrappers.close_current)
         
-        self.op_currOpenLocation_txt = cmds.text('op_currOpenLocation_txt', parent=self.op_currOpen_formLayout, fn="smallBoldLabelFont", l="Location", w=395, al="center")
-        self.op_currOpenLocation_txtField = cmds.textField('op_currOpenLocation_txtField', parent=self.op_currOpen_formLayout, editable=0, w=345)
-        self.op_currOpenExplore_btn = cmds.button('op_currOpenExplore_btn', parent=self.op_currOpen_formLayout, w=50, align="center", label="explore...", c=opsUIWrappers.explore_current)
+        actions_layout.addWidget(self.ops_currOpenSaveWorkshop_btn, 0, 0, 1, 2)
+        actions_layout.addWidget(self.ops_currOpenMaster_btn, 1, 0, 1, 2)
+        actions_layout.addWidget(self.ops_currOpenRevive_btn, 2, 0)
+        actions_layout.addWidget(self.ops_currOpenClose_btn, 2, 1)
+        top_row.addWidget(actions_group)
         
-        cmds.formLayout(self.op_currOpen_formLayout,
-            edit=1,
-            attachPosition=[
-                
-                (self.op_currOpenSeperator01, "right", 0, 100),
-                (self.op_currOpenSeperator03, "right", 0, 100),
-                
-                (self.op_currOpenAssetNote_scrollField, "right", 0, 100),
-                (self.op_currOpen_scrollField, "right", 0, 100),
-                (self.op_currOpenExplore_btn, "right", 0, 100),
-                (self.op_currOpenExplore_btn, "left", 0, 80),
-                
-                (self.op_currOpenSubRegion1_formLayout, "right", 0, 100),
-                
-                ],
-            attachForm=[
-                
-                (self.op_currOpenSeperator01, "top", 5),
-                
-                (self.op_currOpenSeperator01, "right", 10),
-                (self.op_currOpenSeperator01, "left", 0),
-                (self.op_currOpenHeadingVersion_txt, "right", 10),
-                (self.op_currOpenHeadingVersion_txt, "left", 0),
-                (self.op_currOpenSeperator03, "right", 10),
-                (self.op_currOpenSeperator03, "left", 0),
-                
-                (self.op_currOpenLocation_txt, "right", 10),
-                (self.op_currOpenLocation_txt, "left", 10),
-                
-                (self.op_currOpenLocation_txtField, "left", 0),
-                
-            ],
-            attachControl=[
-                
-                (self.op_currOpenTitle_txt, "top", 5, self.op_currOpenSeperator01),
-                (self.op_currOpenHeading_txt, "top", 5, self.op_currOpenTitle_txt),
-                (self.op_currOpenHeadingVersion_txt, "top", 5, self.op_currOpenHeading_txt),
-                (self.op_currOpenSeperator03, "top", 5,self.op_currOpenHeadingVersion_txt),
-            
-                (self.op_currOpenActions_txt, "top", 5, self.op_currOpenSeperator03),
-                (self.ops_currOpenSaveWorkshop_btn, "top", 5, self.op_currOpenActions_txt),
-                (self.ops_currOpenMaster_btn, "top", 5, self.ops_currOpenSaveWorkshop_btn),
-                (self.ops_currOpenMaster_btn, "top", 5, self.ops_currOpenSaveWorkshop_btn),
-                (self.ops_currOpenRevive_btn, "top", 5, self.ops_currOpenMaster_btn),
-                (self.ops_currOpenClose_btn, "left", 5, self.ops_currOpenRevive_btn),
-                (self.op_currOpenClose_btn, "right", 20, self.op_currOpenAssetNote_scrollField),
-                (self.op_currOpenClose_btn, "top", 5, self.op_currOpenMaster_btn),
-                
-                (self.op_currOpenHistory_txt, "top", 5, self.op_currOpenSeperator03),
-                (self.op_currOpenHistory_txt, "left", 20, self.op_currOpenSaveWorkshop_btn),
-                (self.op_currOpenAssetNote_scrollField, "left", 20,self.op_currOpenMaster_btn),
-                (self.op_currOpenAssetNote_scrollField, "top", 5, self.op_currOpenHistory_txt),
-                
-                (self.op_currOpenPreview_txt, "top", 5, self.op_currOpenAssetNote_scrollField),
-                (self.op_currOpenPreview_img, "top", 5, self.op_currOpenPreview_txt),
-                (self.op_currOpenSnapshot_btn, "top", 0, self.op_currOpenPreview_img),
-                (self.op_currOpenRecordPlayblast_btn, "top", 0, self.op_currOpenSnapshot_btn),
-                (self.op_currOpenViewPlayblast_btn, "top", 0, self.op_currOpenSnapshot_btn),
-                (self.op_currOpenViewPlayblast_btn, "right", 20, self.op_currOpenAssetNote_scrollField),
-                (self.op_currOpenViewPlayblast_btn, "left", 5, self.op_currOpenRecordPlayblast_btn),
-                
-                (self.op_currOpenNotes_txt, "top", 5, self.op_currOpenAssetNote_scrollField),
-                (self.op_currOpenNotes_txt, "left", 20, self.op_currOpenPreview_txt),
-                (self.op_currOpen_scrollField, "top", 5, self.op_currOpenPreview_txt),
-                (self.op_currOpen_scrollField, "left", 20, self.op_currOpenPreview_img),
-                
-                (self.op_currOpenLocation_txt, "top", 5, self.op_currOpenViewPlayblast_btn),
-                (self.op_currOpenLocation_txtField, "top", 5, self.op_currOpenLocation_txt),
-                (self.op_currOpenLocation_txtField, "right", 5, self.op_currOpenExplore_btn),
-                (self.op_currOpenExplore_btn, "top", 5, self.op_currOpenLocation_txt),
-
-                (self.op_currOpenSubRegion1_formLayout, "top", 0, self.op_currOpen_scrollField),
-                (self.op_currOpenSubRegion1_formLayout, "left", 20, self.op_currOpenViewPlayblast_btn),
-                
-            ],
-            )
+        history_group = QtWidgets.QGroupBox("History")
+        history_layout = QtWidgets.QVBoxLayout(history_group)
+        self.ops_currOpenAssetNote_scrollField = QtWidgets.QTextEdit()
+        self.ops_currOpenAssetNote_scrollField.setReadOnly(True)
+        history_layout.addWidget(self.ops_currOpenAssetNote_scrollField)
+        top_row.addWidget(history_group)
+        layout.addLayout(top_row)
+        
+        mid_row = QtWidgets.QHBoxLayout()
+        preview_group = QtWidgets.QGroupBox("Preview")
+        preview_layout = QtWidgets.QVBoxLayout(preview_group)
+        self.ops_currOpenPreview_img = QtWidgets.QLabel()
+        self.ops_currOpenPreview_img.setPixmap(QtGui.QPixmap(self.ops_currOpenPreview_filePath))
+        preview_layout.addWidget(self.ops_currOpenPreview_img)
+        
+        self.ops_currOpenSnapshot_btn = QtWidgets.QPushButton("Take Snapshot")
+        self.ops_currOpenSnapshot_btn.clicked.connect(opsUIWrappers.take_snapshot)
+        preview_layout.addWidget(self.ops_currOpenSnapshot_btn)
+        
+        pb_row = QtWidgets.QHBoxLayout()
+        self.ops_currOpenRecordPlayblast_btn = QtWidgets.QPushButton("Rec Playblast")
+        self.ops_currOpenRecordPlayblast_btn.clicked.connect(opsUIWrappers.record_current_playblast)
+        self.ops_currOpenViewPlayblast_btn = QtWidgets.QPushButton("View Playblast")
+        self.ops_currOpenViewPlayblast_btn.clicked.connect(opsUIWrappers.view_playblast_current)
+        pb_row.addWidget(self.ops_currOpenRecordPlayblast_btn)
+        pb_row.addWidget(self.ops_currOpenViewPlayblast_btn)
+        preview_layout.addLayout(pb_row)
+        mid_row.addWidget(preview_group)
+        
+        notes_group = QtWidgets.QGroupBox("Notes")
+        notes_layout = QtWidgets.QVBoxLayout(notes_group)
+        self.ops_currOpen_scrollField = QtWidgets.QTextEdit()
+        notes_layout.addWidget(self.ops_currOpen_scrollField)
+        
+        note_btn_row = QtWidgets.QHBoxLayout()
+        self.ops_currOpenClearNote_btn = QtWidgets.QPushButton("Clear")
+        self.ops_currOpenClearNote_btn.clicked.connect(opsUIWrappers.clear_note)
+        self.ops_currOpenSaveNote_btn = QtWidgets.QPushButton("Save")
+        self.ops_currOpenSaveNote_btn.clicked.connect(opsUIWrappers.save_note)
+        note_btn_row.addWidget(self.ops_currOpenClearNote_btn)
+        note_btn_row.addWidget(self.ops_currOpenSaveNote_btn)
+        notes_layout.addLayout(note_btn_row)
+        mid_row.addWidget(notes_group)
+        layout.addLayout(mid_row)
+        
+        loc_layout = QtWidgets.QFormLayout()
+        loc_row = QtWidgets.QHBoxLayout()
+        self.ops_currOpenLocation_txtField = QtWidgets.QLineEdit()
+        self.ops_currOpenLocation_txtField.setReadOnly(True)
+        self.ops_currOpenExplore_btn = QtWidgets.QPushButton("explore...")
+        self.ops_currOpenExplore_btn.clicked.connect(opsUIWrappers.explore_current)
+        loc_row.addWidget(self.ops_currOpenLocation_txtField)
+        loc_row.addWidget(self.ops_currOpenExplore_btn)
+        loc_layout.addRow("Location:", loc_row)
+        layout.addLayout(loc_layout)
+        
+        self.ops_mainTabs_tabLayout.addTab(tab, "Currently Open")
 
     def _build_asset_browser_tab(self):
-        self.op_assetBrowser_formLayout = cmds.formLayout('op_assetBrowser_formLayout', parent=self.op_mainTabs_tabLayout, width=410, numberOfDivisions=100)
+        tab = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(tab)
+        cols_layout = QtWidgets.QHBoxLayout()
         
-        self.op_assetSeperator01 = cmds.separator('op_assetSeperator01', parent=self.op_assetBrowser_formLayout, style="double", w=410)
-        self.op_assetAssetBrowser_txt = cmds.text('op_assetAssetBrowser_txt', parent=self.op_assetBrowser_formLayout, fn="boldLabelFont", label="ASSET BROWSER", w=410, al="left")
-        self.op_assetSeperator02 = cmds.separator('op_assetSeperator02', parent=self.op_assetBrowser_formLayout, style="double", w=410)
+        self._build_asset_types_column(cols_layout)
+        self._build_assets_column(cols_layout)
+        self._build_asset_components_column(cols_layout)
+        
+        layout.addLayout(cols_layout)
+        self._build_asset_info_section(layout)
+        
+        self.ops_mainTabs_tabLayout.addTab(tab, "Asset Browser")
 
-        self.op_shotSequence_formLayout = cmds.formLayout('op_shotSequence_formLayout', parent=self.op_assetBrowser_formLayout, numberOfDivisions=100)
+    def _build_asset_types_column(self, parent_layout):
+        col1 = QtWidgets.QGroupBox("Asset Types")
+        col1_layout = QtWidgets.QVBoxLayout(col1)
+        self.ops_assetType_txtScrollList = QtWidgets.QListWidget()
+        self.ops_assetType_txtScrollList.itemSelectionChanged.connect(lambda: opsUIWrappers.update_asset_list(preserve_selection=0))
+        col1_layout.addWidget(self.ops_assetType_txtScrollList)
+        
+        btn_lyt1 = QtWidgets.QHBoxLayout()
+        self.ops_assetTypeNew_btn = QtWidgets.QPushButton("New...")
+        self.ops_assetTypeNew_btn.setProperty("styleClass", "positiveAction")
+        self.ops_assetTypeNew_btn.clicked.connect(opsUIWrappers.prompt_new_asset_type)
+        self.ops_assetTypeRemove_btn = QtWidgets.QPushButton("Delete")
+        self.ops_assetTypeRemove_btn.setProperty("styleClass", "negativeAction")
+        self.ops_assetTypeRemove_btn.clicked.connect(lambda: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_1))
+        btn_lyt1.addWidget(self.ops_assetTypeNew_btn)
+        btn_lyt1.addWidget(self.ops_assetTypeRemove_btn)
+        col1_layout.addLayout(btn_lyt1)
+        parent_layout.addWidget(col1)
 
-        self.op_assetAssetTypes_txt = cmds.text('op_assetAssetTypes_txt', parent=self.op_shotSequence_formLayout, l="Asset Types", w=125, fn="smallBoldLabelFont", al="left")
-        self.op_assetType_txtScrollList = cmds.textScrollList('op_assetType_txtScrollList', parent=self.op_shotSequence_formLayout, h=119, ams=0, sc=lambda *args: opsUIWrappers.update_asset_list(0), fn="smallPlainLabelFont", ann=self.anno_assetTypeList)
-        self.op_assetTypeNew_btn = cmds.button('op_assetTypeNew_btn', parent=self.op_shotSequence_formLayout, l="New...", bgc=(.6, .8, .5), c=opsUIWrappers.prompt_new_asset_type, ann=self.anno_newAssetType)
-        self.op_assetTypeRemove_btn = cmds.button('op_assetTypeRemove_btn', parent=self.op_shotSequence_formLayout, l="Delete", bgc=(.8, .3, .3), c=lambda *args: opsUIWrappers.remove_process(2, 1), ann=self.anno_removeAssetType)
+    def _build_assets_column(self, parent_layout):
+        col2 = QtWidgets.QGroupBox("Assets")
+        col2_layout = QtWidgets.QVBoxLayout(col2)
+        self.ops_asset_scrollList = QtWidgets.QListWidget()
+        self.ops_asset_scrollList.itemSelectionChanged.connect(lambda: opsUIWrappers.asset_selected(preserve_selection=0))
+        self.ops_asset_scrollList.itemDoubleClicked.connect(lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
+        self.ops_asset_scrollList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ops_asset_scrollList.customContextMenuRequested.connect(self._asset_context_menu)
+        col2_layout.addWidget(self.ops_asset_scrollList)
         
-        cmds.formLayout(
-            self.op_shotSequence_formLayout,
-            e=1,
-            attachPosition=[
-                (self.op_assetAssetTypes_txt, "left", 0, 0),
-                (self.op_assetType_txtScrollList, "right", 0, 100),
-                (self.op_assetType_txtScrollList, "left", 0, 0),
-                (self.op_assetTypeNew_btn, "left", 0, 0),
-                (self.op_assetTypeNew_btn, "right", 0, 50),
-                (self.op_assetTypeRemove_btn, "right", 0, 100),
-                (self.op_assetTypeRemove_btn, "left", 0, 50),
-                (self.op_assetTypeRemove_btn, "left", 0, 50),
-            ],
-            attachControl=[
-                (self.op_assetType_txtScrollList, "top", 5, self.op_assetAssetTypes_txt),
-                (self.op_assetTypeNew_btn, "top", 5, self.op_assetType_txtScrollList),
-                (self.op_assetTypeRemove_btn, "top", 5, self.op_assetType_txtScrollList),
-            ],
-            )
-        
-        self.op_assetAssets_formLayout = cmds.formLayout('op_assetAssets_formLayout', parent=self.op_assetBrowser_formLayout, numberOfDivisions=100)
+        btn_lyt2 = QtWidgets.QGridLayout()
+        self.ops_assetNew_btn = QtWidgets.QPushButton("New...")
+        self.ops_assetNew_btn.setProperty("styleClass", "positiveAction")
+        self.ops_assetNew_btn.clicked.connect(opsUIWrappers.prompt_new_asset)
+        self.ops_assetRemove_btn = QtWidgets.QPushButton("Delete")
+        self.ops_assetRemove_btn.setProperty("styleClass", "negativeAction")
+        self.ops_assetRemove_btn.clicked.connect(lambda: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_2))
+        self.ops_assetRename_btn = QtWidgets.QPushButton("Rename...")
+        self.ops_assetRename_btn.setProperty("styleClass", "positiveAction")
+        self.ops_assetRename_btn.clicked.connect(opsUIWrappers.prompt_rename_asset)
+        btn_lyt2.addWidget(self.ops_assetNew_btn, 0, 0)
+        btn_lyt2.addWidget(self.ops_assetRemove_btn, 0, 1)
+        btn_lyt2.addWidget(self.ops_assetRename_btn, 1, 0, 1, 2)
+        col2_layout.addLayout(btn_lyt2)
+        parent_layout.addWidget(col2)
 
-        self.op_assetAssetsTxt = cmds.text('op_assetAssetsTxt', parent=self.op_assetAssets_formLayout, fn="smallBoldLabelFont", l="Assets", w=125, al="left")
+    def _build_asset_components_column(self, parent_layout):
+        col3 = QtWidgets.QGroupBox("Components")
+        col3_layout = QtWidgets.QVBoxLayout(col3)
+        self.ops_componentScrollList = QtWidgets.QListWidget()
+        self.ops_componentScrollList.itemSelectionChanged.connect(opsUIWrappers.component_selected)
+        self.ops_componentScrollList.itemDoubleClicked.connect(lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
+        self.ops_componentScrollList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ops_componentScrollList.customContextMenuRequested.connect(self._asset_comp_context_menu)
+        col3_layout.addWidget(self.ops_componentScrollList)
         
-        self.op_assetMenuBarLayout01 = cmds.menuBarLayout('op_assetMenuBarLayout01', parent=self.op_assetAssets_formLayout, w=125, h=175)
-        
-        self.op_assetActions_menu = cmds.menu('op_assetActions_menu', parent=self.op_assetMenuBarLayout01, label="ACTIONS...", aob=1)
-        self.op_assetActions_editAsset_menuItem = cmds.menuItem('op_assetActions_EditAsset_menuItem', parent=self.op_assetActions_menu, label="Edit Asset", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(2, 2, 'workshop', 0), ann=self.anno_editAsset)
-        self.op_assetActions_openMaster_menuItem = cmds.menuItem('op_assetActions_OpenMaster_menuItem', parent=self.op_assetActions_menu, label="Open Master", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(2, 2, 'master', 0), ann=self.anno_viewAsset)
-        
-        self.op_assetActions_import_menuItem = cmds.menuItem('op_assetActions_import_menuItem', parent=self.op_assetActions_menu, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_assetActions_importWorkshop_menuItem = cmds.menuItem('op_assetActions_workshop_menuItem', parent=self.op_assetActions_import_menuItem, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(2, 2, 'workshop'), ann=self.anno_importAssetWorkshop)
-        self.op_assetActions_importWorkshop_opBox = cmds.menuItem('op_assetActions_workshop_opBox', parent=self.op_assetActions_import_menuItem, ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 2, 'workshop'))
-        self.op_assetActions_importMaster_menuItem = cmds.menuItem('op_assetActions_importMaster_menuItem', parent=self.op_assetActions_import_menuItem, label="Master", command=lambda *args: opsUIWrappers.import_selected(2, 2, 'master'), ann=self.anno_importAssetMaster)
-        self.op_assetActions_importMaster_opBox = cmds.menuItem('op_assetActions_importMaster_opBox', parent=self.op_assetActions_import_menuItem, ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 2, 'master'))
+        btn_lyt3 = QtWidgets.QHBoxLayout()
+        self.ops_componentNewButton = QtWidgets.QPushButton("New...")
+        self.ops_componentNewButton.setProperty("styleClass", "positiveAction")
+        self.ops_componentNewButton.clicked.connect(opsUIWrappers.prompt_new_asset_component)
+        self.ops_componentRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_componentRemoveButton.setProperty("styleClass", "negativeAction")
+        self.ops_componentRemoveButton.clicked.connect(lambda: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_3))
+        btn_lyt3.addWidget(self.ops_componentNewButton)
+        btn_lyt3.addWidget(self.ops_componentRemoveButton)
+        col3_layout.addLayout(btn_lyt3)
+        parent_layout.addWidget(col3)
 
+    def _build_asset_info_section(self, parent_layout):
+        info_layout = QtWidgets.QHBoxLayout()
+        prev_group = QtWidgets.QGroupBox("Preview")
+        prev_layout = QtWidgets.QVBoxLayout(prev_group)
+        self.ops_assetPreviewImage = QtWidgets.QLabel()
+        self.ops_assetPreviewImage.setPixmap(QtGui.QPixmap(self.ops_defaultPreview_filePath))
+        prev_layout.addWidget(self.ops_assetPreviewImage)
+        self.ops_assetViewPlayblastAssetButton = QtWidgets.QPushButton("View Playblast")
+        self.ops_assetViewPlayblastAssetButton.clicked.connect(lambda: opsUIWrappers.view_playblast_selected(TAB_ASSET))
+        prev_layout.addWidget(self.ops_assetViewPlayblastAssetButton)
+        info_layout.addWidget(prev_group)
+        
+        hist_group = QtWidgets.QGroupBox("History & Notes")
+        hist_layout = QtWidgets.QVBoxLayout(hist_group)
+        self.ops_commentField = QtWidgets.QTextEdit()
+        self.ops_commentField.setReadOnly(True)
+        hist_layout.addWidget(QtWidgets.QLabel("History:"))
+        hist_layout.addWidget(self.ops_commentField)
+        self.ops_assetNoteField = QtWidgets.QTextEdit()
+        self.ops_assetNoteField.setReadOnly(True)
+        self.ops_assetNoteField.setMaximumHeight(60)
+        hist_layout.addWidget(QtWidgets.QLabel("Notes:"))
+        hist_layout.addWidget(self.ops_assetNoteField)
+        info_layout.addWidget(hist_group)
+        parent_layout.addLayout(info_layout)
+        
+        loc_layout = QtWidgets.QFormLayout()
+        loc_row = QtWidgets.QHBoxLayout()
+        self.ops_assetLocationField = QtWidgets.QLineEdit()
+        self.ops_assetLocationField.setReadOnly(True)
+        self.ops_exploreAssetsButton = QtWidgets.QPushButton("explore...")
+        self.ops_exploreAssetsButton.clicked.connect(lambda: opsUIWrappers.explore_selected(TAB_ASSET))
+        loc_row.addWidget(self.ops_assetLocationField)
+        loc_row.addWidget(self.ops_exploreAssetsButton)
+        loc_layout.addRow("Location:", loc_row)
+        parent_layout.addLayout(loc_layout)
 
-        self.op_assetActions_reference_menuItem = cmds.menuItem('op_assetActions_reference_menuItem', parent=self.op_assetActions_menu, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_assetActions_referenceWorkshop_menuItem = cmds.menuItem('op_assetActions_referenceWorkshop_menuItem', parent=self.op_assetActions_reference_menuItem, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(2, 2, 'workshop'), ann=self.anno_referenceAssetWorkshop)
-        self.op_assetActions_referenceWorkshop_opBox = cmds.menuItem('op_assetActions_referenceWorkshop_opBox', parent=self.op_assetActions_reference_menuItem, ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 2, 'workshop'))
-        self.op_assetActions_referenceMaster_menuItem = cmds.menuItem('op_assetActions_referenceMaster_menuItem', parent=self.op_assetActions_reference_menuItem, label="Master", command=lambda *args: opsUIWrappers.reference_selected(2, 2, 'master'), ann=self.anno_referenceAssetMaster)
-        self.op_assetActions_referenceMaster_opBox = cmds.menuItem('op_assetActions_referenceMaster_opBox', parent=self.op_assetActions_reference_menuItem, ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 2, 'master'))
+    def _asset_context_menu(self, position):
+        menu = QtWidgets.QMenu()
+        menu.addAction("Edit Asset", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
+        menu.addAction("Open Master", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'master', version_offset=0))
+        imp = menu.addMenu("Import")
+        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'workshop'))
+        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'master'))
+        ref = menu.addMenu("Reference")
+        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'workshop'))
+        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'master'))
+        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_2))
+        menu.exec(self.ops_asset_scrollList.mapToGlobal(position))
 
-        self.op_assetActions_archive_menuItem = cmds.menuItem('op_assetActions_archive_menuItem', parent=self.op_assetActions_menu, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(2, 2))
-
-
-        self.op_assetColumnLayout01 = cmds.columnLayout('op_assetColumnLayout01', adj=1)
-        self.op_asset_scrollList = cmds.textScrollList(w=125, h=100, dcc=lambda *args: opsUIWrappers.open_currently_selected(2, 2, 'workshop', 0), sc=lambda *args: opsUIWrappers.asset_selected(0), fn="smallPlainLabelFont", ann=self.anno_assetList)
-        self.op_assetpopUpMenu = cmds.popupMenu(p=self.op_asset_scrollList, b=3, mm=1, pmc=lambda *args: opsUIWrappers.asset_selected(1))
-        self.op_assetPopUpMenu_editAsset_menuItem = cmds.menuItem(parent=self.op_assetpopUpMenu, label="Edit Asset", command=lambda *args: opsUIWrappers.open_currently_selected(2, 2, 'workshop', 0), ann=self.anno_editAsset)
-        
-        self.op_assetPopUpMenu_openMaster_menuItem = cmds.menuItem(parent=self.op_assetpopUpMenu, label="Open Master", command=lambda *args: opsUIWrappers.open_currently_selected(2, 2, 'master', 0), ann=self.anno_viewAsset)
-        self.op_assetPopUpMenu_import_menuItem = cmds.menuItem(parent=self.op_assetpopUpMenu, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_assetPopUpMenu_workshop_menuItem = cmds.menuItem(parent=self.op_assetPopUpMenu_import_menuItem, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(2, 2, 'workshop'), ann=self.anno_importAssetWorkshop)
-        self.op_assetPopUpMenu_workshop_opBox = cmds.menuItem(parent=self.op_assetPopUpMenu_import_menuItem, ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 2, 'workshop'))
-        self.op_assetPopUpMenu_master_menuItem = cmds.menuItem(parent=self.op_assetPopUpMenu_import_menuItem, label="Master", command=lambda *args: opsUIWrappers.import_selected(2, 2, 'master'), ann=self.anno_importAssetMaster)
-        self.op_assetPopUpMenu_master_opBox = cmds.menuItem(parent=self.op_assetPopUpMenu_import_menuItem, ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 2, 'master'))
-        
-        self.op_assetPopUpMenu_reference_menuItem = cmds.menuItem(label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_assetPopUpMenu_referenceWorkshop_menuItem = cmds.menuItem(parent=self.op_assetPopUpMenu_reference_menuItem, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(2, 2, 'workshop'), ann=self.anno_referenceAssetWorkshop)
-        self.op_assetPopUpMenu_referenceWorkshop_opBox = cmds.menuItem(parent=self.op_assetPopUpMenu_reference_menuItem, ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 2, 'workshop'))
-        self.op_assetPopUpMenu_referenceMaster_menuItem = cmds.menuItem(parent=self.op_assetPopUpMenu_reference_menuItem, label="Master", command=lambda *args: opsUIWrappers.reference_selected(2, 2, 'master'), ann=self.anno_referenceAssetMaster)
-        self.op_assetPopUpMenu_referenceMaster_opBox = cmds.menuItem(parent=self.op_assetPopUpMenu_reference_menuItem, ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 2, 'master'))
-
-        self.op_assetPopUpMenu_archive_menuItem = cmds.menuItem(parent=self.op_assetPopUpMenu_reference_menuItem, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(2, 2))
-        self.op_assetSeparator03 = cmds.separator(style="none", w=125, h=5)
-        
-        self.op_assetAssetTypes_formLayout = cmds.formLayout(numberOfDivisions=100)
-        self.op_assetNew_btn = cmds.button(parent=self.op_assetAssetTypes_formLayout, l="New...", bgc=(.6, .8, .5), w=65, c=opsUIWrappers.prompt_new_asset, ann=self.anno_editAsset)
-        self.op_assetRemove_btn = cmds.button(parent=self.op_assetAssetTypes_formLayout, l="Delete", bgc=(.8, .3, .3), w=60, c=lambda *args: opsUIWrappers.remove_process(2, 2), ann=self.anno_removeAsset)
-        self.op_assetRename_btn = cmds.button(parent=self.op_assetAssetTypes_formLayout, l="Rename...", bgc=(.6, .8, .5), w=65, c=opsUIWrappers.prompt_rename_asset, ann=self.anno_renameAsset)
-
-        cmds.formLayout(
-            self.op_assetAssetTypes_formLayout,
-            e=1,
-            attachPosition=[
-                (self.op_assetNew_btn, "left", 0, 0),
-                (self.op_assetNew_btn, "right", 0, 50),
-                (self.op_assetRemove_btn, "left", 0, 50),
-                (self.op_assetRemove_btn, "right", 0, 100),
-                (self.op_assetRename_btn, "left", 0, 0),
-                (self.op_assetRename_btn, "right", 0, 100),
-            ],
-            attachControl=[
-                (self.op_assetRename_btn, "top", 0, self.op_assetNew_btn),
-            ],
-            )
-        
-        cmds.formLayout(
-            self.op_assetAssets_formLayout, 
-            e=1,
-            attachForm=[
-                (self.op_assetAssetsTxt, "left", 0),
-                (self.op_assetMenuBarLayout01, "left", 0),
-            ],
-            attachControl=[
-                (self.op_assetMenuBarLayout01, "top", 5, self.op_assetAssetsTxt),
-            ],
-            attachPosition=[
-                (self.op_assetMenuBarLayout01, "right", 0, 100),
-            ],
-        )
-
-        self.op_assetsComponents_formLayout = cmds.formLayout(parent=self.op_assetBrowser_formLayout, numberOfDivisions=100)
-        
-        self.op_assetsComponents_txt = cmds.text(parent=self.op_assetsComponents_formLayout, fn="smallBoldLabelFont", l="Components", w=125, al="left")
-        
-        self.op_assets_components_menuBarLayout = cmds.menuBarLayout(parent=self.op_assetsComponents_formLayout, w=125, h=175)
-        
-        self.op_assetComponentMenu = cmds.menu(label="ACTIONS...")
-        self.op_compMenuEdit = cmds.menuItem(parent=self.op_assetComponentMenu, label="Edit Component", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(2, 3, 'workshop', 0), ann=self.anno_editComponent)
-        self.op_compMenuView = cmds.menuItem(parent=self.op_assetComponentMenu, label="View Master", command=lambda *args: opsUIWrappers.open_currently_selected(2, 3, 'master', 0) , ann=self.anno_viewComponent)
-        
-        self.op_compMenuImport = cmds.menuItem(parent=self.op_assetComponentMenu, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_compMenuImportWorkshop = cmds.menuItem(parent=self.op_compMenuImport, label="Workshop",command=lambda *args: opsUIWrappers.import_selected(2, 3, 'workshop'), ann=self.anno_importComponentWorkshop)
-        self.op_compMenuImportWorkshopOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 3, 'workshop'))
-        self.op_compMenuImportMaster = cmds.menuItem( parent=self.op_compMenuImport, label="Master", command=lambda *args: opsUIWrappers.import_selected(2, 3, 'master'), ann=self.anno_importComponentMaster)
-        self.op_compMenuImportMasterOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 3, 'master'))
-        
-        self.op_compMenuReference = cmds.menuItem(parent=self.op_assetComponentMenu, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_compMenuReferenceWorkshop = cmds.menuItem(parent=self.op_compMenuReference, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(2, 3, 'workshop'), ann=self.anno_referenceComponentWorkshop)
-        self.op_compMenuReferenceWorkshopOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 3, 'workshop'))
-        self.op_compMenuReferenceMaster = cmds.menuItem(parent=self.op_compMenuReference, label="Master", command=lambda *args: opsUIWrappers.reference_selected(2, 3, 'master'), ann=self.anno_referenceComponentMaster)
-        self.op_compMenuReferenceMasterOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 3, 'master'))
-        
-        self.op_assetCompMenuArchive = cmds.menuItem(parent=self.op_assetComponentMenu, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(2, 3))
-
-        self.op_assetColumnLayout02 = cmds.columnLayout(parent=self.op_assets_components_menuBarLayout, adj=1)
-        self.op_componentScrollList = cmds.textScrollList(parent=self.op_assetColumnLayout02, w=125, h=100, en=0, dcc=lambda *args: opsUIWrappers.open_currently_selected(2, 3, 'workshop', 0), sc=opsUIWrappers.component_selected, fn="smallPlainLabelFont", ann=self.anno_componentList)
-        self.op_assetPopupMenu02 = cmds.popupMenu(parent=self.op_componentScrollList, b=3, mm=1, pmc=opsUIWrappers.component_selected)
-        self.op_compMenuEdit2 = cmds.menuItem(parent=self.op_assetPopupMenu02, label="Edit Component", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(2, 3, 'workshop', 0), ann=self.anno_editComponent)
-        self.op_compMenuView2 = cmds.menuItem(parent=self.op_assetPopupMenu02, label="View Master", command=lambda *args: opsUIWrappers.open_currently_selected(2, 3, 'master', 0), ann=self.anno_viewComponent)
-        
-        self.op_compMenuImport2 = cmds.menuItem(parent=self.op_assetPopupMenu02, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_compMenuImportWorkshop2 = cmds.menuItem(parent=self.op_compMenuImport2, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(2, 3, 'workshop'), ann=self.anno_importComponentWorkshop)
-        self.op_compMenuImportWorkshopOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 3, 'workshop'))
-        self.op_compMenuImportMaster2 = cmds.menuItem(parent=self.op_compMenuImport2, label="Master", command=lambda *args: opsUIWrappers.import_selected(2, 3, 'master'), ann=self.anno_importComponentMaster)
-        self.op_compMenuImportMasterOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(2, 3, 'master'))
-        
-        self.op_compMenuReference2 = cmds.menuItem(parent=self.op_assetPopupMenu02, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_compMenuReferenceWorkshop2 = cmds.menuItem(parent=self.op_compMenuReference2, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(2, 3, 'workshop'), ann=self.anno_referenceComponentWorkshop)
-        self.op_compMenuReferenceWorkshopOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 3, 'workshop'))
-        self.op_compMenuReferenceMaster2 = cmds.menuItem(parent=self.op_compMenuReference2, label="Master", command=lambda *args: opsUIWrappers.reference_selected(2, 3, 'master'), ann=self.anno_referenceComponentMaster)
-        self.op_compMenuReferenceMasterOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(2, 3, 'master'))
-        
-        self.op_assetCompMenuArchive2 = cmds.menuItem(parent=self.op_assetPopupMenu02, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(2, 3))
-        
-        self.op_assetSubFormLayout02 = cmds.formLayout(parent=self.op_assetColumnLayout02, numberOfDivisions=100)
-        self.op_componentNewButton = cmds.button(parent=self.op_assetSubFormLayout02, l="New...", bgc=(.6, .8, .5), w=65, c=opsUIWrappers.prompt_new_asset_component, ann=self.anno_newComponent)
-        self.op_componentRemoveButton = cmds.button(parent=self.op_assetSubFormLayout02, l="Delete", bgc=(.8, .3, .3), w=60, c=lambda *args: opsUIWrappers.remove_process(2, 3), ann=self.anno_removeComponent)
-
-        cmds.formLayout(
-            self.op_assetSubFormLayout02,
-            e=1,
-            attachPosition=[
-                (self.op_componentNewButton, "left", 0, 0),
-                (self.op_componentNewButton, "right", 0, 50),
-                (self.op_componentNewButton, "top", 5, 0),
-                (self.op_componentRemoveButton, "left", 0, 50),
-                (self.op_componentRemoveButton, "right", 0, 100),
-                (self.op_componentRemoveButton, "top", 5, 0),
-            ],
-            )
-        
-                        
-        cmds.formLayout(
-            self.op_assetsComponents_formLayout,
-            e=1,
-            attachForm=[
-                (self.op_assetsComponents_txt, "left", 0),
-                ],
-            attachControl=[
-                (self.op_assets_components_menuBarLayout, "top", 5, self.op_assetsComponents_txt),
-            ],
-            attachPosition=[
-                (self.op_assets_components_menuBarLayout, "right", 0, 100),
-                (self.op_assets_components_menuBarLayout, "left", 0, 0),
-            ]
-        )
-
-        self.op_assetPreviewTxt = cmds.text(parent=self.op_assetBrowser_formLayout, fn="smallBoldLabelFont", l="Preview", w=164, al="center")
-        self.op_assetPreviewImage = cmds.image(parent=self.op_assetBrowser_formLayout, h=105, w=164, i=self.op_currOpenPreview_filePath, bgc=(0, 0, 0))
-        self.op_assetViewPlayblastAssetButton = cmds.button(parent=self.op_assetBrowser_formLayout, l="View Playblast", h=30, en=0, w=164, c=lambda *args: opsUIWrappers.view_playblast_selected(2))
-        self.op_assetHistoryTxt = cmds.text(parent=self.op_assetBrowser_formLayout, fn="smallBoldLabelFont", l="History", w=225, al="center")
-        self.op_commentField = cmds.scrollField(parent=self.op_assetBrowser_formLayout, w=225, h=80,enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="")
-        self.op_assetNotesTxt = cmds.text(parent=self.op_assetBrowser_formLayout, fn="smallBoldLabelFont", l="Notes", w=225, al="center")
-        self.op_assetNoteField = cmds.scrollField(parent=self.op_assetBrowser_formLayout, w=225, h=45, enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="")
-        self.op_assetLocationTxt = cmds.text(parent=self.op_assetBrowser_formLayout, fn="smallBoldLabelFont", l="Location", w=395, al="center")
-        self.op_assetLocationField = cmds.textField(parent=self.op_assetBrowser_formLayout, editable=0, w=345)
-        self.op_exploreAssetsButton = cmds.button(parent=self.op_assetBrowser_formLayout, w=50, align="center", label="explore...", c=lambda *args: opsUIWrappers.explore_selected(2))
-        
-        cmds.formLayout(
-            self.op_assetBrowser_formLayout,
-            e=1,
-            attachPosition=[
-                (self.op_assetSeperator01, "left", 0, 0),
-                (self.op_assetSeperator01, "right", 0, 100),
-                (self.op_assetSeperator01, "top", 5, 0),
-                (self.op_assetAssetBrowser_txt, "left", 0, 0),
-                (self.op_assetSeperator02, "left", 0, 0),
-                (self.op_assetSeperator02, "right", 0, 100),
-                
-                (self.op_shotSequence_formLayout, "left", 0, 0),
-                (self.op_shotSequence_formLayout, "right", 2, 33),
-                
-                (self.op_assetAssets_formLayout, "left", 2, 33),
-                (self.op_assetAssets_formLayout, "right", 2, 66),
-                
-                (self.op_assetsComponents_formLayout, "left", 2, 66),
-                (self.op_assetsComponents_formLayout, "right", 0, 100),
-                
-                (self.op_assetPreviewTxt, "left", 0, 0),
-                (self.op_assetPreviewImage, "left", 0, 0),
-                (self.op_assetHistoryTxt, "right", 0, 100),
-                (self.op_commentField, "right", 0, 100),
-                (self.op_assetViewPlayblastAssetButton, "left", 0, 0),
-                
-                (self.op_assetNotesTxt, "right", 0, 100),
-                
-                (self.op_assetLocationTxt, "left", 5, 0),
-                (self.op_assetLocationTxt, "right", 0, 100),
-                (self.op_assetNoteField, "right", 0, 100),
-                (self.op_assetLocationField, "right", 0, 80),
-                (self.op_assetLocationField, "left", 0, 0),
-                (self.op_exploreAssetsButton, "right", 0, 100),
-            ],
-            attachControl=[
-                (self.op_assetAssetBrowser_txt, "top", 5, self.op_assetSeperator01),
-                (self.op_assetSeperator02, "top", 0, self.op_assetAssetBrowser_txt),
-                
-                (self.op_assetAssets_formLayout, "top", 5, self.op_assetSeperator02),
-                (self.op_shotSequence_formLayout, "top", 5, self.op_assetSeperator02),
-                (self.op_assetsComponents_formLayout, "top", 5, self.op_assetSeperator02),
-                
-                (self.op_assetPreviewTxt, "top", 5, self.op_assetAssets_formLayout),
-                (self.op_assetPreviewTxt, "top", 5, self.op_assetAssets_formLayout),
-                (self.op_assetPreviewImage, "top", 5, self.op_assetPreviewTxt),
-                (self.op_assetHistoryTxt, "left", 5, self.op_assetPreviewImage),
-                (self.op_assetHistoryTxt, "top", 5, self.op_assetAssets_formLayout),
-                (self.op_commentField, "left", 5, self.op_assetPreviewImage),
-                (self.op_commentField, "top", 5, self.op_assetPreviewTxt),
-                (self.op_assetViewPlayblastAssetButton, "top", 5, self.op_assetPreviewImage),
-                
-                (self.op_assetNotesTxt, "top", 5, self.op_commentField),
-                (self.op_assetNotesTxt, "left", 5, self.op_assetPreviewImage),
-                (self.op_assetNoteField, "left", 5, self.op_assetPreviewImage),
-                (self.op_assetNoteField, "top", 5, self.op_assetNotesTxt),
-                (self.op_assetLocationTxt, "top", 5, self.op_assetNoteField),
-                (self.op_assetLocationField, "top", 5, self.op_assetLocationTxt),
-                (self.op_exploreAssetsButton, "left", 5, self.op_assetLocationField),
-                (self.op_exploreAssetsButton, "top", 5, self.op_assetLocationTxt),
-            ],
-            )
+    def _asset_comp_context_menu(self, position):
+        menu = QtWidgets.QMenu()
+        menu.addAction("Edit Component", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
+        menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'master', version_offset=0))
+        imp = menu.addMenu("Import")
+        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'workshop'))
+        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'master'))
+        ref = menu.addMenu("Reference")
+        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'workshop'))
+        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'master'))
+        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_3))
+        menu.exec(self.ops_componentScrollList.mapToGlobal(position))
 
     def _build_shot_browser_tab(self):
-        self.op_shotFormLayout = cmds.formLayout('op_shotFormLayout', parent=self.op_mainTabs_tabLayout, width=410, numberOfDivisions=100)
-        self.op_shotSeperator01 = cmds.separator(parent=self.op_shotFormLayout, style="double", w=410)
-        self.op_shotTabShotBrowserTxt = cmds.text(parent=self.op_shotFormLayout, fn="boldLabelFont", label="SHOT BROWSER", w=410, al="left")
-        self.op_shotSeperator02 = cmds.separator(parent=self.op_shotFormLayout, style="double", w=410)
+        tab = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(tab)
+        cols_layout = QtWidgets.QHBoxLayout()
         
-        self.op_shotSequenceFormLayout = cmds.formLayout(parent=self.op_shotFormLayout, numberOfDivisions=100)
+        self._build_sequences_column(cols_layout)
+        self._build_shots_column(cols_layout)
+        self._build_shot_components_column(cols_layout)
         
-        self.op_shotSequenceTxt = cmds.text(parent=self.op_shotSequenceFormLayout, l="Sequence", w=125, fn="smallBoldLabelFont", al="left")
-        self.op_sequenceScrollList = cmds.textScrollList(parent=self.op_shotSequenceFormLayout, w=125, h=119, ams=0, sc=lambda *args: opsUIWrappers.update_shot_list(0), fn="smallPlainLabelFont", ann=self.anno_sequenceList)
-        self.op_assetTypeNewButton = cmds.button(parent=self.op_shotSequenceFormLayout, l="New...", bgc=(.6, .8, .5), w=65, c=opsUIWrappers.prompt_new_sequence, ann=self.anno_newSequence)
-        self.op_sequenceRemoveButton = cmds.button(parent=self.op_shotSequenceFormLayout, l="Delete", bgc=(.8, .3, .3), w=60, c=lambda *args: opsUIWrappers.remove_process(3, 1), ann=self.anno_removeSequence)
+        layout.addLayout(cols_layout)
+        self._build_shot_info_section(layout)
+        
+        self.ops_mainTabs_tabLayout.addTab(tab, "Shot Browser")
 
+    def _build_sequences_column(self, parent_layout):
+        col1 = QtWidgets.QGroupBox("Sequence")
+        col1_layout = QtWidgets.QVBoxLayout(col1)
+        self.ops_sequenceScrollList = QtWidgets.QListWidget()
+        self.ops_sequenceScrollList.itemSelectionChanged.connect(lambda: opsUIWrappers.update_shot_list(preserve_selection=0))
+        col1_layout.addWidget(self.ops_sequenceScrollList)
+        
+        btn_lyt1 = QtWidgets.QHBoxLayout()
+        self.ops_sequenceNewButton = QtWidgets.QPushButton("New...")
+        self.ops_sequenceNewButton.setProperty("styleClass", "positiveAction")
+        self.ops_sequenceNewButton.clicked.connect(opsUIWrappers.prompt_new_sequence)
+        self.ops_sequenceRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_sequenceRemoveButton.setProperty("styleClass", "negativeAction")
+        self.ops_sequenceRemoveButton.clicked.connect(lambda: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_1))
+        btn_lyt1.addWidget(self.ops_sequenceNewButton)
+        btn_lyt1.addWidget(self.ops_sequenceRemoveButton)
+        col1_layout.addLayout(btn_lyt1)
+        parent_layout.addWidget(col1)
 
-        cmds.formLayout(
-            self.op_shotSequenceFormLayout,
-            e=1,
-            attachPosition=[
-                (self.op_shotSequenceTxt, "left", 0, 0),
-                (self.op_sequenceScrollList, "left", 0, 0),
-                (self.op_sequenceScrollList, "right", 0, 100),
-                
-                (self.op_assetTypeNewButton, "left", 0, 0),
-                (self.op_assetTypeNewButton, "right", 0, 50),
-                
-                (self.op_sequenceRemoveButton, "left", 0, 50),
-                
-                (self.op_sequenceRemoveButton, "right", 0, 100),
-            ],
-            attachControl=[
-                (self.op_sequenceScrollList, "top", 5, self.op_shotSequenceTxt),
-                
-                (self.op_assetTypeNewButton, "top", 5, self.op_sequenceScrollList),
-                
-                (self.op_sequenceRemoveButton, "top", 5, self.op_sequenceScrollList),
-            ],
-            )
+    def _build_shots_column(self, parent_layout):
+        col2 = QtWidgets.QGroupBox("Shot")
+        col2_layout = QtWidgets.QVBoxLayout(col2)
+        self.ops_shotScrollList = QtWidgets.QListWidget()
+        self.ops_shotScrollList.itemSelectionChanged.connect(lambda: opsUIWrappers.shot_selected(preserve_selection=0))
+        self.ops_shotScrollList.itemDoubleClicked.connect(lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
+        self.ops_shotScrollList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ops_shotScrollList.customContextMenuRequested.connect(self._shot_context_menu)
+        col2_layout.addWidget(self.ops_shotScrollList)
+        
+        btn_lyt2 = QtWidgets.QHBoxLayout()
+        self.ops_shotNewButton = QtWidgets.QPushButton("New...")
+        self.ops_shotNewButton.setProperty("styleClass", "positiveAction")
+        self.ops_shotNewButton.clicked.connect(opsUIWrappers.prompt_new_shot)
+        self.ops_shotRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_shotRemoveButton.setProperty("styleClass", "negativeAction")
+        self.ops_shotRemoveButton.clicked.connect(lambda: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_2))
+        btn_lyt2.addWidget(self.ops_shotNewButton)
+        btn_lyt2.addWidget(self.ops_shotRemoveButton)
+        col2_layout.addLayout(btn_lyt2)
+        parent_layout.addWidget(col2)
 
-        self.op_shotShotFormLayout = cmds.formLayout(parent=self.op_shotFormLayout, numberOfDivisions=100)
-        self.op_shotShotTxt = cmds.text(parent=self.op_shotShotFormLayout, fn="smallBoldLabelFont", l="Shot", w=120, al="left")
-        self.op_shotMenuBarLayout01 = cmds.menuBarLayout(parent=self.op_shotShotFormLayout, w=125, h=175)
+    def _build_shot_components_column(self, parent_layout):
+        col3 = QtWidgets.QGroupBox("Components")
+        col3_layout = QtWidgets.QVBoxLayout(col3)
+        self.ops_shotComponentScrollList = QtWidgets.QListWidget()
+        self.ops_shotComponentScrollList.itemSelectionChanged.connect(opsUIWrappers.shot_component_selected)
+        self.ops_shotComponentScrollList.itemDoubleClicked.connect(lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
+        self.ops_shotComponentScrollList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.ops_shotComponentScrollList.customContextMenuRequested.connect(self._shot_comp_context_menu)
+        col3_layout.addWidget(self.ops_shotComponentScrollList)
+        
+        btn_lyt3 = QtWidgets.QHBoxLayout()
+        self.ops_shotComponentNewButton = QtWidgets.QPushButton("New...")
+        self.ops_shotComponentNewButton.setProperty("styleClass", "positiveAction")
+        self.ops_shotComponentNewButton.clicked.connect(opsUIWrappers.prompt_new_shot_component)
+        self.ops_shotComponentRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_shotComponentRemoveButton.setProperty("styleClass", "negativeAction")
+        self.ops_shotComponentRemoveButton.clicked.connect(lambda: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_3))
+        btn_lyt3.addWidget(self.ops_shotComponentNewButton)
+        btn_lyt3.addWidget(self.ops_shotComponentRemoveButton)
+        col3_layout.addLayout(btn_lyt3)
+        parent_layout.addWidget(col3)
 
-        self.op_shotMenu = cmds.menu(parent=self.op_shotMenuBarLayout01, label="ACTIONS...")
+    def _build_shot_info_section(self, parent_layout):
+        info_layout = QtWidgets.QHBoxLayout()
+        prev_group = QtWidgets.QGroupBox("Preview")
+        prev_layout = QtWidgets.QVBoxLayout(prev_group)
+        self.ops_shotPreviewImage = QtWidgets.QLabel()
+        self.ops_shotPreviewImage.setPixmap(QtGui.QPixmap(self.ops_defaultPreview_filePath))
+        prev_layout.addWidget(self.ops_shotPreviewImage)
+        self.ops_shotViewPlayblastButton = QtWidgets.QPushButton("View Playblast")
+        self.ops_shotViewPlayblastButton.clicked.connect(lambda: opsUIWrappers.view_playblast_selected(TAB_SHOT))
+        prev_layout.addWidget(self.ops_shotViewPlayblastButton)
+        info_layout.addWidget(prev_group)
         
-        self.op_shotMenuEdit = cmds.menuItem(parent=self.op_shotMenu, label="Edit Shot", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(3, 2, 'workshop', 0), ann=self.anno_editShot)
-        self.op_shotMenuView = cmds.menuItem(parent=self.op_shotMenu, label="View Master", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(3, 2, 'master', 0), ann=self.anno_viewShot)
+        hist_group = QtWidgets.QGroupBox("History & Notes")
+        hist_layout = QtWidgets.QVBoxLayout(hist_group)
+        self.ops_shotCommentField = QtWidgets.QTextEdit()
+        self.ops_shotCommentField.setReadOnly(True)
+        hist_layout.addWidget(QtWidgets.QLabel("History:"))
+        hist_layout.addWidget(self.ops_shotCommentField)
+        self.ops_shotInfoField = QtWidgets.QTextEdit()
+        self.ops_shotInfoField.setReadOnly(True)
+        self.ops_shotInfoField.setMaximumHeight(60)
+        hist_layout.addWidget(QtWidgets.QLabel("Notes:"))
+        hist_layout.addWidget(self.ops_shotInfoField)
+        info_layout.addWidget(hist_group)
+        parent_layout.addLayout(info_layout)
         
-        self.op_shotMenuImport = cmds.menuItem(parent=self.op_shotMenu, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_shotMenuImportWorkshop = cmds.menuItem(parent=self.op_shotMenuImport, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(3, 2, 'workshop'), ann=self.anno_importShotWorkshop)
-        self.op_shotMenuImportWorkshopOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 2, 'workshop'), en=0)
-        self.op_shotMenuImportMaster = cmds.menuItem(parent=self.op_shotMenuImport, label="Master", command=lambda *args: opsUIWrappers.import_selected(3, 2, 'master'), ann=self.anno_importShotMaster)
-        self.op_shotMenuImportMasterOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 2, 'master'))
-        
-        self.op_shotMenuReference = cmds.menuItem(parent=self.op_shotMenu, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_shotMenuReferenceWorkshop = cmds.menuItem(parent=self.op_shotMenuReference, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(3, 2, 'workshop'), ann=self.anno_referenceShotWorkshop)
-        self.op_shotMenuReferenceWorkshopOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 2, 'workshop'))
-        self.op_shotMenuReferenceMaster = cmds.menuItem(parent=self.op_shotMenuReference, label="Master", command=lambda *args: opsUIWrappers.reference_selected(3, 2, 'master'), ann=self.anno_referenceShotMaster)
-        self.op_shotMenuReferenceMasterOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 2, 'master'))
-        
-        self.op_shotMenuArchive = cmds.menuItem(parent=self.op_shotMenu, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(3, 2))
-        
-        self.op_shotColumnLayout01 = cmds.columnLayout(parent=self.op_shotMenuBarLayout01, adj=1)
-        self.op_shotScrollList = cmds.textScrollList(parent=self.op_shotColumnLayout01, w=125, h=100, dcc=lambda *args: opsUIWrappers.open_currently_selected(3, 2, 'workshop', 0), sc=lambda *args: opsUIWrappers.shot_selected(0), fn="smallPlainLabelFont", ann=self.anno_shotList)
-        
-        self.op_shotPopupMenu01 = cmds.popupMenu(p=self.op_shotScrollList, b=3, mm=1, pmc=lambda *args: opsUIWrappers.shot_selected(0))
-        
-        self.op_shotMenuEdit2 = cmds.menuItem(parent=self.op_shotPopupMenu01, label="Edit Shot", command=lambda *args: opsUIWrappers.open_currently_selected(3, 2, 'workshop', 0), ann=self.anno_editShot)
-        self.op_shotMenuView2 = cmds.menuItem(parent=self.op_shotPopupMenu01, label="View Master", command=lambda *args: opsUIWrappers.open_currently_selected(3, 2, 'master', 0), ann=self.anno_viewShot)
-        
-        self.op_shotMenuImport2 = cmds.menuItem(parent=self.op_shotPopupMenu01, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_shotMenuImportWorkshop2 = cmds.menuItem(parent=self.op_shotMenuImport2, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(3, 2, 'workshop'), ann=self.anno_importShotWorkshop)
-        self.op_shotMenuImportWorkshopOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 2, 'workshop'))
-        self.op_shotMenuImportMaster2 = cmds.menuItem(parent=self.op_shotMenuImport2, label="Master", command=lambda *args: opsUIWrappers.import_selected(3, 2, 'master'), ann=self.anno_importShotMaster)
-        self.op_shotMenuImportMasterOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 2, 'master'))
-        
-        self.op_shotMenuReference2 = cmds.menuItem(parent=self.op_shotPopupMenu01, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_shotMenuReferenceWorkshop2 = cmds.menuItem(parent=self.op_shotMenuReference2, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(3, 2, 'workshop'), ann=self.anno_referenceShotWorkshop)
-        self.op_shotMenuReferenceWorkshopOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 2, 'workshop'))
-        self.op_shotMenuReferenceMaster2 = cmds.menuItem(parent=self.op_shotMenuReference2, label="Master", command=lambda *args: opsUIWrappers.reference_selected(3, 2, 'master'), ann=self.anno_referenceShotMaster)
-        self.op_shotMenuReferenceMasterOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 2, 'master'))
-        
-        self.op_shotMenuArchive2 = cmds.menuItem(parent=self.op_shotPopupMenu01, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(3, 2))
-        
-        self.op_shotSubFormLayout01 = cmds.formLayout(parent=self.op_shotColumnLayout01, numberOfDivisions=100)
-        self.op_shotNewButton = cmds.button(parent=self.op_shotSubFormLayout01, l="New...", bgc=(.6, .8, .5), w=65, c=opsUIWrappers.prompt_new_shot, ann=self.anno_newShot)
-        self.op_shotRemoveButton = cmds.button(parent=self.op_shotSubFormLayout01, l="Delete", bgc=(.8, .3, .3), w=60, c=lambda *args: opsUIWrappers.remove_process(3, 2), ann=self.anno_removeShot)
-        cmds.formLayout(
-            self.op_shotSubFormLayout01,
-            e=1,
-            attachPosition=[
-                (self.op_shotNewButton, "left", 0, 0),
-                (self.op_shotNewButton, "right", 0, 50),
-                (self.op_shotNewButton, "top", 5, 0),
-                (self.op_shotRemoveButton, "left", 0, 50),
-                (self.op_shotRemoveButton, "right", 0, 100),
-                (self.op_shotRemoveButton, "top", 5, 0),
-            ],
-        )
-        
-        cmds.formLayout(
-            self.op_shotShotFormLayout,
-            e=1,
-            attachForm=[
-                (self.op_shotShotTxt, "left", 0),
-                (self.op_shotMenuBarLayout01, "left", 0),
-            ],
-            attachControl=[
-                (self.op_shotMenuBarLayout01, "top", 5, self.op_shotShotTxt),
-            ],
-            attachPosition=[
-                (self.op_shotMenuBarLayout01, "right", 0, 100),
-            ]
-        )
+        loc_layout = QtWidgets.QFormLayout()
+        loc_row = QtWidgets.QHBoxLayout()
+        self.ops_shotLocationField = QtWidgets.QLineEdit()
+        self.ops_shotLocationField.setReadOnly(True)
+        self.ops_exploreShotsButton = QtWidgets.QPushButton("explore...")
+        self.ops_exploreShotsButton.clicked.connect(lambda: opsUIWrappers.explore_selected(TAB_SHOT))
+        loc_row.addWidget(self.ops_shotLocationField)
+        loc_row.addWidget(self.ops_exploreShotsButton)
+        loc_layout.addRow("Location:", loc_row)
+        parent_layout.addLayout(loc_layout)
 
-        self.op_shotComponentsFormLayout = cmds.formLayout(parent=self.op_shotFormLayout, numberOfDivisions=100)
-        
-        self.op_shotComponentsTxt = cmds.text(parent=self.op_shotComponentsFormLayout, fn="smallBoldLabelFont", l="Components", w=125, al="left")
-        self.op_shotMenuBarLayout02 = cmds.menuBarLayout(parent=self.op_shotComponentsFormLayout, w=125, h=175)
-        
-        self.op_shotComponentMenu = cmds.menu(parent=self.op_shotMenuBarLayout02, label="ACTIONS...")
-        
-        self.op_shotcompMenuEdit = cmds.menuItem(parent=self.op_shotComponentMenu, label="Edit Shot Component", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(3, 3, 'workshop', 0), ann=self.anno_editShotComponent)
-        self.op_shotcompMenuView = cmds.menuItem(parent=self.op_shotComponentMenu, label="View Master", command=lambda *args: opsUIWrappers.open_currently_selected(3, 3, 'master', 0), ann=self.anno_viewShotComponent)
-        
-        self.op_shotcompMenuImport = cmds.menuItem(parent=self.op_shotComponentMenu, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_shotcompMenuImportWorkshop = cmds.menuItem(parent=self.op_shotcompMenuImport, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(3, 3, 'workshop'), ann=self.anno_importShotComponentWorkshop)
-        self.op_shotcompMenuImportWorkshopOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 3, 'workshop'))
-        self.op_shotcompMenuImportMaster = cmds.menuItem(parent=self.op_shotcompMenuImport, label="Master", command=lambda *args: opsUIWrappers.import_selected(3, 3, 'master'), ann=self.anno_importShotComponentMaster)
-        self.op_shotcompMenuImportMasterOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 3, 'master'))
-        
-        self.op_shotcompMenuReference = cmds.menuItem(parent=self.op_shotComponentMenu, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_shotcompMenuReferenceWorkshop = cmds.menuItem(parent=self.op_shotcompMenuReference, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(3, 3, 'workshop'), ann=self.anno_referenceShotComponentWorkshop)
-        self.op_shotcompMenuReferenceWorkshopOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 3, 'workshop'))
-        self.op_shotcompMenuReferenceMaster = cmds.menuItem(parent=self.op_shotcompMenuReference, label="Master", command=lambda *args: opsUIWrappers.reference_selected(3, 3, 'master'), ann=self.anno_referenceShotComponentMaster)
-        self.op_shotcompMenuReferenceMasterOpBox = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 3, 'master'))
-        
-        self.op_shotcompMenuArchive = cmds.menuItem(parent=self.op_shotComponentMenu, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(3, 3))
-        
-        self.op_shotColumnLayout02 = cmds.columnLayout(parent=self.op_shotMenuBarLayout02, adj=1)
-        self.op_shotComponentScrollList = cmds.textScrollList(parent=self.op_shotColumnLayout02, w=125, h=100, en=0, dcc=lambda *args: opsUIWrappers.open_currently_selected(3, 3, 'workshop', 0), sc=opsUIWrappers.shot_component_selected, fn="smallPlainLabelFont", ann=self.anno_shotComponentList)
+    def _shot_context_menu(self, position):
+        menu = QtWidgets.QMenu()
+        menu.addAction("Edit Shot", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
+        menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'master', version_offset=0))
+        imp = menu.addMenu("Import")
+        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'workshop'))
+        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'master'))
+        ref = menu.addMenu("Reference")
+        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'workshop'))
+        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'master'))
+        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_2))
+        menu.exec(self.ops_shotScrollList.mapToGlobal(position))
 
-        self.op_shotPopupMenu02 = cmds.popupMenu(p=self.op_shotComponentScrollList, b=3, mm=1, pmc=opsUIWrappers.shot_component_selected)
-        
-        self.op_shotcompMenuEdit2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="Edit Shot Component", subMenu=0, command=lambda *args: opsUIWrappers.open_currently_selected(3, 3, 'workshop', 0), ann=self.anno_editShotComponent)
-        self.op_shotcompMenuView2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="View Master", command=lambda *args: opsUIWrappers.open_currently_selected(3, 3, 'master', 0), ann=self.anno_viewShotComponent)
-        
-        self.op_shotcompMenuImport2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="Import", aob=1, subMenu=1, ann=" ")
-        self.op_shotcompMenuImportWorkshop2 = cmds.menuItem(parent=self.op_shotcompMenuImport2, label="Workshop", command=lambda *args: opsUIWrappers.import_selected(3, 3, 'workshop'), ann=self.anno_importShotComponentWorkshop)
-        self.op_shotcompMenuImportWorkshopOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 3, 'workshop'))
-        self.op_shotcompMenuImportMaster2 = cmds.menuItem(parent=self.op_shotcompMenuImport2, label="Master", command=lambda *args: opsUIWrappers.import_selected(3, 3, 'master'), ann=self.anno_importShotComponentMaster)
-        self.op_shotcompMenuImportMasterOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.import_selected(3, 3, 'master'))
-        
-        self.op_shotcompMenuReference2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="Reference", aob=1, subMenu=1, ann=" ")
-        self.op_shotcompMenuReferenceWorkshop2 = cmds.menuItem(parent=self.op_shotcompMenuReference2, label="Workshop", command=lambda *args: opsUIWrappers.reference_selected(3, 3, 'workshop'), ann=self.anno_referenceShotComponentWorkshop)
-        self.op_shotcompMenuReferenceWorkshopOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 3, 'workshop'))
-        self.op_shotcompMenuReferenceMaster2 = cmds.menuItem(parent=self.op_shotcompMenuReference2, label="Master", command=lambda *args: opsUIWrappers.reference_selected(3, 3, 'master'), ann=self.anno_referenceShotComponentMaster)
-        self.op_shotcompMenuReferenceMasterOpBox2 = cmds.menuItem(ob=1, c=lambda *args: opsUIWrappers.reference_selected(3, 3, 'master'))
-        
-        self.op_shotcompMenuArchive2 = cmds.menuItem(p=self.op_shotPopupMenu02, label="Archive...", command=lambda *args: opsUIWrappers.prompt_archive(3, 3))
-        
-        self.op_shotSubFormLayout02 = cmds.formLayout(parent=self.op_shotColumnLayout02, numberOfDivisions=100)
-        self.op_shotComponentNewButton = cmds.button(parent=self.op_shotSubFormLayout02, l="New...", bgc=(.6, .8, .5), w=65, c=opsUIWrappers.prompt_new_shot_component, ann=self.anno_newShotComponent)
-        self.op_shotComponentRemoveButton = cmds.button(parent=self.op_shotSubFormLayout02, l="Delete", bgc=(.8, .3, .3), w=60, c=lambda *args: opsUIWrappers.remove_process(3, 3), ann=self.anno_removeShotComponent)
-        
-        cmds.formLayout(
-            self.op_shotSubFormLayout02,
-            e=1,
-            attachPosition=[
-                (self.op_shotComponentNewButton, "top", 5, 0),
-                (self.op_shotComponentNewButton, "left", 0, 0),
-                (self.op_shotComponentNewButton, "right", 0, 50),
-                (self.op_shotComponentRemoveButton, "top", 5, 0),
-                (self.op_shotComponentRemoveButton, "left", 0, 50),
-                (self.op_shotComponentRemoveButton, "right", 0, 100),
-            ]
-        )
-        
-        cmds.formLayout(
-            self.op_shotComponentsFormLayout,
-            e=1,
-            attachForm=[
-                (self.op_shotComponentsTxt, "left", 0),
-                (self.op_shotMenuBarLayout02, "left", 0),
-            ],
-            attachControl=[
-                (self.op_shotMenuBarLayout02, "top", 5, self.op_shotComponentsTxt),
-            ],
-            attachPosition=[
-                (self.op_shotMenuBarLayout02, "right", 0, 100),
-            ],
-        )	
+    def _shot_comp_context_menu(self, position):
+        menu = QtWidgets.QMenu()
+        menu.addAction("Edit Shot Component", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
+        menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'master', version_offset=0))
+        imp = menu.addMenu("Import")
+        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'workshop'))
+        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'master'))
+        ref = menu.addMenu("Reference")
+        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'workshop'))
+        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'master'))
+        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_3))
+        menu.exec(self.ops_shotComponentScrollList.mapToGlobal(position))
 
-        self.op_shotPreviewTxt = cmds.text(parent=self.op_shotFormLayout, fn="smallBoldLabelFont", w=164, l="Preview", al="center")
-        self.op_shotPreviewImage = cmds.image(parent=self.op_shotFormLayout, h=105, w=164, i=self.op_defaultPreview_filePath, bgc=(0, 0, 0))
-        self.op_shotViewPlayblastButton = cmds.button(parent=self.op_shotFormLayout, l="View Playblast", h=30, w=164, c=lambda *args: opsUIWrappers.view_playblast_selected(3))
-        self.op_shotHistoryTxt = cmds.text(parent=self.op_shotFormLayout, fn="smallBoldLabelFont", l="History", al="center")
-        self.op_shotCommentField = cmds.scrollField(parent=self.op_shotFormLayout, w=225, h=80, enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="")
-        self.op_shotNotesTxt = cmds.text(parent=self.op_shotFormLayout, fn="smallBoldLabelFont", l="Notes", al="center")
-        self.op_shotInfoField = cmds.scrollField(parent=self.op_shotFormLayout, w=225, h=45, enable=1, editable=0, wordWrap=1, font="smallPlainLabelFont", text="")
-        self.op_shotLocationTxt = cmds.text(parent=self.op_shotFormLayout, fn="smallBoldLabelFont", l="Location", al="center")
-        self.op_shotLocationField = cmds.textField(parent=self.op_shotFormLayout, editable=0, w=345)
-        self.op_exploreShotsButton = cmds.button(parent=self.op_shotFormLayout, w=50, align="center", label="explore...", c=lambda *args: opsUIWrappers.explore_selected(3))
-        cmds.formLayout(
-            self.op_shotFormLayout,
-            e=1,
-            attachPosition=[
-                (self.op_shotSeperator01, "left", 0, 0),
-                (self.op_shotSeperator01, "top", 5, 0),
-                (self.op_shotSeperator01, "right", 0, 100),
-                (self.op_shotSeperator02, "left", 0, 0),
-                (self.op_shotSeperator02, "right", 0, 100),
-                
-                (self.op_shotSequenceFormLayout, "left", 0, 0),
-                (self.op_shotSequenceFormLayout, "right", 2, 33),
-                
-                (self.op_shotComponentsFormLayout, "right", 0, 100),
-                (self.op_shotComponentsFormLayout, "left", 2, 66),
-                
-                (self.op_shotShotFormLayout, "left", 2, 33),
-                (self.op_shotShotFormLayout, "right", 2, 66),
-                
-                (self.op_shotPreviewTxt, "left", 0, 0),
-                (self.op_shotPreviewImage, "left", 0, 0),
-                (self.op_shotViewPlayblastButton, "left", 0, 0),
-                
-                (self.op_shotHistoryTxt, "right", 0, 100),
-                (self.op_shotCommentField, "right", 0, 100),
-                (self.op_shotNotesTxt, "right", 0, 100),
-                (self.op_shotInfoField, "right", 0, 100),
-                
-                (self.op_shotLocationTxt, "left", 0, 0),
-                (self.op_shotLocationTxt, "right", 0, 100),
-                (self.op_shotLocationField, "left", 0, 0),
-                (self.op_shotLocationField, "right", 0, 100),
-                (self.op_shotLocationField, "right", 0, 80),
-                (self.op_exploreShotsButton, "right", 0, 100),
-                
-            ],
-            attachControl=[
-                (self.op_shotTabShotBrowserTxt, "top", 5, self.op_shotSeperator01),
-                (self.op_shotSeperator02, "top", 0, self.op_shotTabShotBrowserTxt),
-                
-                (self.op_shotSequenceFormLayout, "top", 5, self.op_shotSeperator02),
-                
-                (self.op_shotShotFormLayout, "top", 5, self.op_shotSeperator02),
-                
-                (self.op_shotComponentsFormLayout, "top", 5, self.op_shotSeperator02),
-                
-                (self.op_shotPreviewTxt, "top", 22, self.op_shotSequenceFormLayout),
-                (self.op_shotPreviewImage, "top", 5, self.op_shotPreviewTxt),
-                (self.op_shotViewPlayblastButton, "top", 5, self.op_shotPreviewImage),
-                
-                (self.op_shotHistoryTxt, "top", 22, self.op_shotSequenceFormLayout),
-                (self.op_shotHistoryTxt, "left", 5, self.op_shotPreviewImage),
-                (self.op_shotCommentField, "top", 5, self.op_shotHistoryTxt),
-                (self.op_shotCommentField, "left", 5, self.op_shotPreviewImage),
-                (self.op_shotNotesTxt, "top", 5, self.op_shotCommentField),
-                (self.op_shotNotesTxt, "left", 5, self.op_shotPreviewImage),
-                (self.op_shotInfoField, "top", 5, self.op_shotNotesTxt),
-                (self.op_shotInfoField, "left", 5, self.op_shotPreviewImage),
-                
-                (self.op_shotLocationTxt, "top", 5, self.op_shotInfoField),
-                (self.op_shotLocationField, "top", 5, self.op_shotLocationTxt),
-                (self.op_exploreShotsButton, "left", 5, self.op_shotLocationField),
-                (self.op_exploreShotsButton, "top", 5, self.op_shotLocationTxt),
-                
-            ],
-            attachForm=[
-                (self.op_shotTabShotBrowserTxt, "left", 0),
-                
-                
-                
-            ]
-            )
-
-    def _build_bottom_buttons(self):
-        self.ops_refreshUI_formLayout = cmds.formLayout(parent=self.ops_form1, width=410, numberOfDivisions=100)
+    def _build_bottom_buttons(self, parent_layout):
+        bottom_layout = QtWidgets.QHBoxLayout()
+        self.ops_refreshUIButton = QtWidgets.QPushButton("Refresh UI")
+        self.ops_refreshUIButton.setMinimumHeight(35)
+        self.ops_refreshUIButton.clicked.connect(opsUIWrappers.refresh_ui)
         
-        self.ops_refreshUIButton = cmds.button(h=30, label="Refresh UI", command=lambda *args: opsUIWrappers.refresh_ui())
-        self.ops_closeUIButton = cmds.button(h=30, label="Close", command=lambda *args: opsUIWrappers.close_ui(), ann=self.anno_close)
-        cmds.formLayout(
-            self.ops_refreshUI_formLayout,
-            e=1,
-            attachPosition=[
-                (self.ops_refreshUIButton, "right", 0, 50),
-                (self.ops_closeUIButton, "left", 0, 50),
-                (self.ops_refreshUIButton, "left", 0, 0),
-                (self.ops_refreshUIButton, "bottom", 5, 100),
-                (self.ops_closeUIButton, "right", 0, 100),
-                (self.ops_closeUIButton, "bottom", 5, 100),
-            ],
-        )
+        self.ops_closeUIButton = QtWidgets.QPushButton("Close")
+        self.ops_closeUIButton.setMinimumHeight(35)
+        self.ops_closeUIButton.clicked.connect(self.close)
         
-    def _attach_main_form_elements(self):
-        cmds.formLayout(
-            self.ops_form1,
-            edit=True,
-            attachPosition=[
-                
-                (self.ops_topDropDown_menuBarLayout, 'top', 0, 0),
-                (self.ops_topDropDown_menuBarLayout, 'right', self.rtMargin, 100),
-                (self.ops_topDropDown_menuBarLayout, 'left', self.lfMargin, 0),
-                
-                (self.ops_projPath_txtField, 'right', self.rtMargin, 100),
-                (self.ops_projPath_txt, 'left', self.lfMargin, 0),
-                (self.ops_projName_txt, 'left', self.lfMargin, 0),
-                (self.ops_userName_txt, 'left', self.lfMargin, 0),
-                (self.ops_icon_image, 'right', self.rtMargin, 100),
-                (self.ops_icon_image, 'left', self.lfMargin, 0),
-                (self.ops_mainTabs_tabLayout, 'right', self.rtMargin, 100),
-                (self.ops_mainTabs_tabLayout, 'left', self.lfMargin, 0),
-                (self.ops_refreshUI_formLayout, 'right', self.rtMargin, 100),
-                (self.ops_refreshUI_formLayout, 'left', self.lfMargin, 0),
-                (self.ops_refreshUI_formLayout, 'bottom', 10, 100)
-                
-                
-            ],
-            attachControl=[
-                
-                (self.ops_userName_txt, 'top', 8, self.ops_topDropDown_menuBarLayout),
-                (self.ops_userName_optionMenu, 'top', 8, self.ops_topDropDown_menuBarLayout),
-                (self.ops_userName_optionMenu, 'left', 2, self.ops_userName_txt),
-                (self.ops_projManager_btn, 'top', 8, self.ops_topDropDown_menuBarLayout),
-                (self.ops_projManager_btn, 'left', 2, self.ops_userName_optionMenu),
-                (self.ops_projName_txt, 'top', 2, self.ops_userName_optionMenu),
-                (self.ops_projName_optionMenu, 'top', 2, self.ops_userName_optionMenu),
-                (self.ops_projName_optionMenu, 'left', 2, self.ops_projName_txt),
-                (self.ops_projPath_txt, 'top', 2, self.ops_projName_optionMenu),
-                (self.ops_projPath_txtField, 'top', 2, self.ops_projName_optionMenu),
-                (self.ops_projPath_txtField, 'left', 2, self.ops_projPath_txt),
-                (self.ops_icon_image, 'top', 2, self.ops_projPath_txtField),
-                (self.ops_mainTabs_tabLayout, 'top', 10, self.ops_icon_image),
-                (self.ops_mainTabs_tabLayout, 'bottom', 10, self.ops_refreshUI_formLayout),
-            ]
-            )
+        bottom_layout.addWidget(self.ops_refreshUIButton)
+        bottom_layout.addWidget(self.ops_closeUIButton)
+        
+        parent_layout.addLayout(bottom_layout)
 
     # --- Menu Callbacks ---
+    def on_open_scene_inventory(self, *args):
+        import opsSceneInv
+        opsSceneInv.show_window()
+
     def on_open_settings(self, *args):
         import opsSettingsGUI
         import importlib

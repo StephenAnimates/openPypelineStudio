@@ -6,139 +6,152 @@ Description:
     Allows users to customize localization and pipeline defaults.
 """
 
-import maya.cmds as cmds
-import window as window
-import UIObjects as UIObjects
+from PySide6 import QtWidgets, QtCore
+from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
+import UIObjects
+from openpypeline.core.util import prefs
 
-class opsSettingsGUI(window.window):
+class opsSettingsGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
     """
     A Maya window class for managing global openPypeline Studio settings.
     """
 
-    def __init__(self):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
         self.UIObjects = UIObjects.UIObjects()
         
-        self.width = 400
-        self.height = 250
-        self.name = "Global Settings"
-        self.dockable = 0
+        self.setWindowTitle("Global Settings")
+        self.setObjectName("opsSettingsGUI")
+        self.setMinimumSize(400, 450)
+        self.setWindowFlags(QtCore.Qt.Window)
         
-        self.lfMargin = 10
-        self.rtMargin = 10
-        
-    def content(self):
-        """Builds and returns the main form layout for the Settings UI."""
-        self.form1 = cmds.formLayout('opsSettingsGUI_form', numberOfDivisions=100)
-        
-        self._build_localization_section()
-        self._build_pipeline_defaults_section()
-        self._build_action_buttons()
-        
-        self._attach_form_elements()
+        self._build_ui()
         self._populate_fields()
         
-        return [self.form1]
+    def showWindow(self):
+        self.show()
 
-    def _build_localization_section(self):
-        self.loc_frame = cmds.frameLayout('loc_frame', label="Localization & Display", collapsable=False, parent=self.form1)
-        self.loc_column = cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=("both", 10), parent=self.loc_frame)
-        
-        self.date_format_grp = cmds.optionMenuGrp('ops_dateFormat_opt', label="Date Format: ", parent=self.loc_column)
-        cmds.menuItem(label="MM/DD/YYYY (US)", parent=self.date_format_grp)
-        cmds.menuItem(label="DD/MM/YYYY (EU/UK)", parent=self.date_format_grp)
-        cmds.menuItem(label="YYYY-MM-DD (ISO)", parent=self.date_format_grp)
-        
-        self.time_format_grp = cmds.optionMenuGrp('ops_timeFormat_opt', label="Time Format: ", parent=self.loc_column)
-        cmds.menuItem(label="12-Hour (AM/PM)", parent=self.time_format_grp)
-        cmds.menuItem(label="24-Hour", parent=self.time_format_grp)
+    def _build_ui(self):
+        main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-    def _build_pipeline_defaults_section(self):
-        self.pipe_frame = cmds.frameLayout('pipe_frame', label="Pipeline Defaults", collapsable=False, parent=self.form1)
-        self.pipe_column = cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=("both", 10), parent=self.pipe_frame)
+        # --- Localization Section ---
+        loc_group = QtWidgets.QGroupBox("Localization & Display")
+        loc_layout = QtWidgets.QFormLayout(loc_group)
         
-        self.wip_name_grp = cmds.textFieldGrp('ops_defaultWip_txt', label="Default WIP Name: ", parent=self.pipe_column)
-        self.master_name_grp = cmds.textFieldGrp('ops_defaultMaster_txt', label="Default Master Name: ", parent=self.pipe_column)
+        self.date_format_combo = QtWidgets.QComboBox()
+        self.date_format_combo.addItems(["MM/DD/YYYY (US)", "DD/MM/YYYY (EU/UK)", "YYYY-MM-DD (ISO)"])
         
-        self.file_format_grp = cmds.optionMenuGrp('ops_defaultFormat_opt', label="Default File Format: ", parent=self.pipe_column)
-        cmds.menuItem(label="ma", parent=self.file_format_grp)
-        cmds.menuItem(label="mb", parent=self.file_format_grp)
-        cmds.menuItem(label="usd", parent=self.file_format_grp)
-        cmds.menuItem(label="usda", parent=self.file_format_grp)
-        cmds.menuItem(label="abc", parent=self.file_format_grp)
+        self.time_format_combo = QtWidgets.QComboBox()
+        self.time_format_combo.addItems(["12-Hour (AM/PM)", "24-Hour"])
+        
+        loc_layout.addRow("Date Format:", self.date_format_combo)
+        loc_layout.addRow("Time Format:", self.time_format_combo)
+        main_layout.addWidget(loc_group)
 
-    def _build_action_buttons(self):
-        self.btn_row = cmds.rowLayout(numberOfColumns=2, columnWidth2=(190, 190), columnAttach=[(1, 'both', 5), (2, 'both', 5)], parent=self.form1)
-        self.save_btn = cmds.button(label="Save", command=self.on_save, parent=self.btn_row)
-        self.cancel_btn = cmds.button(label="Cancel", command=self.on_cancel, parent=self.btn_row)
+        # --- Pipeline Defaults Section ---
+        pipe_group = QtWidgets.QGroupBox("Pipeline Defaults")
+        pipe_layout = QtWidgets.QFormLayout(pipe_group)
+        
+        self.wip_name_field = QtWidgets.QLineEdit()
+        self.master_name_field = QtWidgets.QLineEdit()
+        
+        self.file_format_combo = QtWidgets.QComboBox()
+        self.file_format_combo.addItems(["ma", "mb", "usd", "usda", "abc"])
+        
+        pipe_layout.addRow("Default WIP Name:", self.wip_name_field)
+        pipe_layout.addRow("Default Master Name:", self.master_name_field)
+        pipe_layout.addRow("Default File Format:", self.file_format_combo)
+        main_layout.addWidget(pipe_group)
 
-    def _attach_form_elements(self):
-        cmds.formLayout(
-            self.form1,
-            edit=True,
-            attachForm=[
-                (self.loc_frame, 'top', 10),
-                (self.loc_frame, 'left', self.lfMargin),
-                (self.loc_frame, 'right', self.rtMargin),
-                
-                (self.pipe_frame, 'left', self.lfMargin),
-                (self.pipe_frame, 'right', self.rtMargin),
-                
-                (self.btn_row, 'left', self.lfMargin),
-                (self.btn_row, 'right', self.rtMargin),
-                (self.btn_row, 'bottom', 10)
-            ],
-            attachControl=[
-                (self.pipe_frame, 'top', 10, self.loc_frame)
-            ]
-        )
+        # --- Tracker Settings Section ---
+        tracker_group = QtWidgets.QGroupBox("Production Tracking")
+        tracker_layout = QtWidgets.QFormLayout(tracker_group)
+        
+        self.tracker_type_combo = QtWidgets.QComboBox()
+        self.tracker_type_combo.addItems(["none", "shotgrid"])
+        
+        self.tracker_url_field = QtWidgets.QLineEdit()
+        self.tracker_user_field = QtWidgets.QLineEdit()
+        self.tracker_key_field = QtWidgets.QLineEdit()
+        self.tracker_key_field.setEchoMode(QtWidgets.QLineEdit.Password)
+        
+        tracker_layout.addRow("Tracker Type:", self.tracker_type_combo)
+        tracker_layout.addRow("Tracker URL:", self.tracker_url_field)
+        tracker_layout.addRow("Auth User:", self.tracker_user_field)
+        tracker_layout.addRow("Auth Key:", self.tracker_key_field)
+        main_layout.addWidget(tracker_group)
+
+        # --- Action Buttons ---
+        btn_layout = QtWidgets.QHBoxLayout()
+        self.save_btn = QtWidgets.QPushButton("Save")
+        self.save_btn.clicked.connect(self.on_save)
+        self.cancel_btn = QtWidgets.QPushButton("Cancel")
+        self.cancel_btn.clicked.connect(self.close)
+        
+        btn_layout.addWidget(self.save_btn)
+        btn_layout.addWidget(self.cancel_btn)
+        main_layout.addLayout(btn_layout)
 
     def _populate_fields(self):
-        date_fmt = cmds.optionVar(query="ops_dateFormat") if cmds.optionVar(exists="ops_dateFormat") else "%m/%d/%Y"
-        if date_fmt == "%d/%m/%Y": cmds.optionMenuGrp(self.date_format_grp, edit=True, select=2)
-        elif date_fmt == "%Y-%m-%d": cmds.optionMenuGrp(self.date_format_grp, edit=True, select=3)
-        else: cmds.optionMenuGrp(self.date_format_grp, edit=True, select=1)
+        date_fmt = prefs.get_pref("ops_dateFormat", "%m/%d/%Y")
+        if date_fmt == "%d/%m/%Y": self.date_format_combo.setCurrentIndex(1)
+        elif date_fmt == "%Y-%m-%d": self.date_format_combo.setCurrentIndex(2)
+        else: self.date_format_combo.setCurrentIndex(0)
         
-        time_fmt = cmds.optionVar(query="ops_timeFormat") if cmds.optionVar(exists="ops_timeFormat") else "%I:%M:%S %p"
-        if time_fmt == "%I:%M:%S %p": cmds.optionMenuGrp(self.time_format_grp, edit=True, select=1)
-        else: cmds.optionMenuGrp(self.time_format_grp, edit=True, select=2)
+        time_fmt = prefs.get_pref("ops_timeFormat", "%I:%M:%S %p")
+        if time_fmt == "%I:%M:%S %p": self.time_format_combo.setCurrentIndex(0)
+        else: self.time_format_combo.setCurrentIndex(1)
         
-        w_name = cmds.optionVar(query="ops_wip") if cmds.optionVar(exists="ops_wip") else "wip"
-        m_name = cmds.optionVar(query="ops_masterName") if cmds.optionVar(exists="ops_masterName") else "master"
-        cmds.textFieldGrp(self.wip_name_grp, edit=True, text=w_name)
-        cmds.textFieldGrp(self.master_name_grp, edit=True, text=m_name)
+        w_name = prefs.get_pref("ops_wip", "wip")
+        m_name = prefs.get_pref("ops_masterName", "master")
+        self.wip_name_field.setText(w_name)
+        self.master_name_field.setText(m_name)
         
-        f_fmt = cmds.optionVar(query="ops_workshopFormat") if cmds.optionVar(exists="ops_workshopFormat") else "ma"
-        if f_fmt == "abc": cmds.optionMenuGrp(self.file_format_grp, edit=True, select=5)
-        elif f_fmt == "usda": cmds.optionMenuGrp(self.file_format_grp, edit=True, select=4)
-        elif f_fmt == "usd": cmds.optionMenuGrp(self.file_format_grp, edit=True, select=3)
-        elif f_fmt == "mb": cmds.optionMenuGrp(self.file_format_grp, edit=True, select=2)
-        else: cmds.optionMenuGrp(self.file_format_grp, edit=True, select=1)
+        f_fmt = prefs.get_pref("ops_wipFormat", "ma")
+        if f_fmt == "abc": self.file_format_combo.setCurrentIndex(4)
+        elif f_fmt == "usda": self.file_format_combo.setCurrentIndex(3)
+        elif f_fmt == "usd": self.file_format_combo.setCurrentIndex(2)
+        elif f_fmt == "mb": self.file_format_combo.setCurrentIndex(1)
+        else: self.file_format_combo.setCurrentIndex(0)
+
+        tracker_type = prefs.get_pref("ops_tracker_type", "none")
+        if tracker_type == "shotgrid": self.tracker_type_combo.setCurrentIndex(1)
+        else: self.tracker_type_combo.setCurrentIndex(0)
+        
+        self.tracker_url_field.setText(prefs.get_pref("ops_tracker_url", ""))
+        self.tracker_user_field.setText(prefs.get_pref("ops_tracker_user", ""))
+        self.tracker_key_field.setText(prefs.get_pref("ops_tracker_key", ""))
 
     def on_save(self, *args):
-        date_idx = cmds.optionMenuGrp(self.date_format_grp, query=True, select=True)
-        if date_idx == 2: cmds.optionVar(stringValue=("ops_dateFormat", "%d/%m/%Y"))
-        elif date_idx == 3: cmds.optionVar(stringValue=("ops_dateFormat", "%Y-%m-%d"))
-        else: cmds.optionVar(stringValue=("ops_dateFormat", "%m/%d/%Y"))
+        date_idx = self.date_format_combo.currentIndex()
+        if date_idx == 1: prefs.set_pref("ops_dateFormat", "%d/%m/%Y")
+        elif date_idx == 2: prefs.set_pref("ops_dateFormat", "%Y-%m-%d")
+        else: prefs.set_pref("ops_dateFormat", "%m/%d/%Y")
         
-        time_idx = cmds.optionMenuGrp(self.time_format_grp, query=True, select=True)
-        if time_idx == 1: cmds.optionVar(stringValue=("ops_timeFormat", "%I:%M:%S %p"))
-        else: cmds.optionVar(stringValue=("ops_timeFormat", "%H:%M:%S"))
+        time_idx = self.time_format_combo.currentIndex()
+        if time_idx == 0: prefs.set_pref("ops_timeFormat", "%I:%M:%S %p")
+        else: prefs.set_pref("ops_timeFormat", "%H:%M:%S")
         
-        w_name = cmds.textFieldGrp(self.wip_name_grp, query=True, text=True).strip()
-        m_name = cmds.textFieldGrp(self.master_name_grp, query=True, text=True).strip()
+        w_name = self.wip_name_field.text().strip()
+        m_name = self.master_name_field.text().strip()
         
-        if w_name: cmds.optionVar(stringValue=("ops_wip", w_name))
-        if m_name: cmds.optionVar(stringValue=("ops_masterName", m_name))
+        if w_name: prefs.set_pref("ops_wip", w_name)
+        if m_name: prefs.set_pref("ops_masterName", m_name)
         
-        fmt_idx = cmds.optionMenuGrp(self.file_format_grp, query=True, select=True)
-        fmt_map = {1: "ma", 2: "mb", 3: "usd", 4: "usda", 5: "abc"}
+        fmt_idx = self.file_format_combo.currentIndex()
+        fmt_map = {0: "ma", 1: "mb", 2: "usd", 3: "usda", 4: "abc"}
         fmt = fmt_map.get(fmt_idx, "ma")
-        cmds.optionVar(stringValue=("ops_workshopFormat", fmt))
-        cmds.optionVar(stringValue=("ops_masterFormat", fmt))
+        prefs.set_pref("ops_wipFormat", fmt)
+        prefs.set_pref("ops_masterFormat", fmt)
         
-        self.deleteWindow()
+        t_type = "shotgrid" if self.tracker_type_combo.currentIndex() == 1 else "none"
+        prefs.set_pref("ops_tracker_type", t_type)
+        prefs.set_pref("ops_tracker_url", self.tracker_url_field.text().strip())
+        prefs.set_pref("ops_tracker_user", self.tracker_user_field.text().strip())
+        prefs.set_pref("ops_tracker_key", self.tracker_key_field.text().strip())
+        
+        self.close()
         import opsUIWrappers
         opsUIWrappers.refresh_ui()
-
-    def on_cancel(self, *args):
-        self.deleteWindow()

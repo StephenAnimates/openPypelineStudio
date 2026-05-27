@@ -2,34 +2,34 @@
 Module: diagnosticUI.py
 
 Description:
-    This script is an example of how a single class can manage and store the data for all Maya openPypeline Studio GUIs.
-    With its loadPrefs() and savePrefs() procedures, it also demonstrates its potential ability to save out both session independent & application independent information.
+    Developer-focused diagnostic tool for launching, reloading, and tracking the state of 
+    various PySide6 GUIs within the openPypeline Studio framework.
     
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
 import os
 import importlib
 
-import window as window
+from PySide6 import QtWidgets, QtCore
+from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
 
-import UIObjects as UIObjects
+import UIObjects
 
 import openpypeline.core.util.XML as XML
 importlib.reload(XML)
 
-import opsSaveMasterGUI as opsSaveMasterGUI
+import opsSaveMasterGUI
 importlib.reload(opsSaveMasterGUI)
 
 import openpypeline.app.maya.ui.opsProjectManagerGUI as opsProjectManagerGUI
 importlib.reload(opsProjectManagerGUI)
 
-import opsProjDialogGUI as opsProjDialogGUI
+import opsProjDialogGUI
 importlib.reload(opsProjDialogGUI)
 
-import opsMainUI as opsMainUI
+import opsMainUI
 importlib.reload(opsMainUI)
 
 import opsProject
@@ -41,133 +41,150 @@ importlib.reload(opsActions)
 import opsLoader
 importlib.reload(opsLoader)
 
-class diagnosticUI(window.window):
+class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
 
-    def __init__(self, filePath = None):
-        
+    def __init__(self, filePath=None, parent=None):
+        super().__init__(parent=parent)
         self.UIObjects = UIObjects.UIObjects()
-        
         self.filePath = filePath
         
-        self.width=500
-        self.height=300
-        self.name = "Diagnostic UI Manager"
-        self.dockable=0
+        self.setWindowTitle("Diagnostic UI Manager")
+        self.setObjectName("DiagnosticUIManager")
+        self.resize(500, 300)
+        
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        
         self.UIObjects.opsSaveMasterGUI = opsSaveMasterGUI.opsSaveMasterGUI()
         self.UIObjects.opsProjectManagerGUI = opsProjectManagerGUI.opsProjectManagerGUI()
         self.UIObjects.opsProjDialogGUI = opsProjDialogGUI.opsProjDialogGUI()
         self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
+        
+        self._build_ui()
+
+    def showWindow(self):
+        self.show()
+        self.updateTextField()
     
-    def content(self):
-        """
-        Builds and returns the main form layout for the Diagnostic UI.
-        """
-        self.form1 = cmds.formLayout('openPipelineProjectManagerGUI_form', numberOfDivisions=100)
+    def _build_ui(self):
+        """Constructs the UI using PySide widgets and layouts."""
         
-        self._build_menu_bar()
-        self._build_main_controls()
-        self._build_buttons()
-        self._attach_form_elements()
+        # Menu Bar
+        menubar = self.menuBar()
+        options_menu = menubar.addMenu("Options")
         
-        return [self.form1]
+        refresh_action = options_menu.addAction("Refresh Objects Field")
+        refresh_action.triggered.connect(self.updateTextField)
+        
+        reload_action = options_menu.addAction("Reload")
+        reload_action.triggered.connect(self.reload)
+        
+        save_prefs_action = options_menu.addAction("Save Prefs")
+        save_prefs_action.triggered.connect(self.savePrefs)
+        
+        load_prefs_action = options_menu.addAction("Load Prefs")
+        load_prefs_action.triggered.connect(self.loadPrefs)
 
-    def _build_menu_bar(self):
-        self.menuBarLayout0 = cmds.menuBarLayout(parent=self.form1)
-        self.menu01 = cmds.menu(label='options', parent=self.menuBarLayout0)
-        cmds.menuItem(label="Refresh Objects Field", subMenu=0, parent=self.menu01, command=lambda *args:self.updateTextField())
-        cmds.menuItem(label="Reload", subMenu=0, parent=self.menu01, command=lambda *args:self.reload())
-        cmds.menuItem(label="Save Prefs", subMenu=0, parent=self.menu01, command=lambda *args:self.savePrefs())
-        cmds.menuItem(label="Load Prefs", subMenu=0, parent=self.menu01, command=lambda *args:self.loadPrefs())
+        # Central Layout
+        main_layout = QtWidgets.QVBoxLayout(self.centralWidget())
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-    def _build_main_controls(self):
-        self.diagnosticUI_UIObjects_scrollField = cmds.scrollField('diagnosticUI_UIObjects_scrollField', parent=self.form1, ww=1, editable=0)
+        # --- UI Launchers Group ---
+        launcher_group = QtWidgets.QGroupBox("UI Launchers")
+        launcher_layout = QtWidgets.QVBoxLayout(launcher_group)
+        
+        # Data-driven button creation (Pythonic DRY principle)
+        buttons_data = [
+            ("Open Pipeline Main GUI", "opsMainUI"),
+            ("Project Manager GUI", "opsProjectManagerGUI"),
+            ("Save Master GUI", "opsSaveMasterGUI"),
+            ("Project Dialogue GUI", "opsProjDialogGUI")
+        ]
+        
+        for label, target in buttons_data:
+            btn = QtWidgets.QPushButton(label)
+            btn.setMinimumHeight(30)
+            # Using lambda checked=False, t=target to capture the loop variable locally
+            btn.clicked.connect(lambda checked=False, t=target: self.buttonRelease(t))
+            launcher_layout.addWidget(btn)
+            
+        main_layout.addWidget(launcher_group)
 
-    def _build_buttons(self):
-        self.diagnosticUImainUI_btn = cmds.button(l="Open Pipeline Main GUI", parent=self.form1, bgc=(.85, .85, .85), c=lambda *args:self.buttonRelease('opsMainUI'))
-        self.diagnosticUIProjManager_btn = cmds.button(l="Project Manager GUI", parent=self.form1, bgc=(.8, .8, .8), c=lambda *args:self.buttonRelease('opsProjectManagerGUI'))
-        self.diagnosticUISaveMaster_btn = cmds.button(l="Save Master GUI", parent=self.form1, bgc=(.75, .75, .75), c=lambda *args:self.buttonRelease('opsSaveMasterGUI'))
-        self.diagnosticUIProjDialog_btn = cmds.button(l="Project Dialogue GUI", parent=self.form1, bgc=(.7, .7, .7), c=lambda *args:self.buttonRelease('opsProjDialogGUI'))
-
-    def _attach_form_elements(self):
-        cmds.formLayout(
-            self.form1,
-            edit=True,
-            attachPosition=[
-                (self.menuBarLayout0, 'top', 0, 0),
-                (self.menuBarLayout0, 'left', 0, 0),
-                (self.menuBarLayout0, 'right', 0, 100),
-                (self.diagnosticUImainUI_btn, 'left', 5, 0),
-                (self.diagnosticUImainUI_btn, 'right', 5, 100),
-                (self.diagnosticUI_UIObjects_scrollField, 'left', 5, 0),
-                (self.diagnosticUI_UIObjects_scrollField, 'right', 5, 100),
-                (self.diagnosticUIProjManager_btn, 'left', 5, 0),
-                (self.diagnosticUIProjManager_btn, 'right', 5, 100),
-                (self.diagnosticUISaveMaster_btn, 'left', 5, 0),
-                (self.diagnosticUISaveMaster_btn, 'right', 5, 100),
-                (self.diagnosticUIProjDialog_btn, 'left', 5, 0),
-                (self.diagnosticUIProjDialog_btn, 'right', 5, 100),
-                (self.diagnosticUIProjDialog_btn, 'bottom', 2, 100),
-            ],
-            attachControl=[
-                
-                (self.diagnosticUI_UIObjects_scrollField, 'top', 2, self.menuBarLayout0),
-                (self.diagnosticUI_UIObjects_scrollField, 'bottom', 2, self.diagnosticUImainUI_btn),
-                (self.diagnosticUImainUI_btn, 'bottom', 2, self.diagnosticUIProjManager_btn),
-                (self.diagnosticUIProjManager_btn, 'bottom', 2, self.diagnosticUISaveMaster_btn),
-                (self.diagnosticUISaveMaster_btn, 'bottom', 2, self.diagnosticUIProjDialog_btn),
-            ]
-        )
+        # --- Diagnostic Output Group ---
+        output_group = QtWidgets.QGroupBox("Diagnostic Output")
+        output_layout = QtWidgets.QVBoxLayout(output_group)
+        
+        self.diagnosticUI_UIObjects_scrollField = QtWidgets.QTextEdit()
+        self.diagnosticUI_UIObjects_scrollField.setReadOnly(True)
+        output_layout.addWidget(self.diagnosticUI_UIObjects_scrollField)
+        
+        # stretch=1 forces the text edit to fill remaining vertical space when resized
+        main_layout.addWidget(output_group, stretch=1) 
     
     def reload(self):
         '''
-        "reload" resets the diagnosticUI
+        "reload" resets the diagnosticUI and closes associated windows.
         '''
-        for obj in self.UIObjects.window:
-            if cmds.window(obj, q=True, ex=True):
-                cmds.deleteUI(obj)
-        for obj in self.UIObjects.dockControl:
-            if cmds.workspaceControl(obj, q=1, exists=1):
-                cmds.deleteUI(obj)
+                
+        # Try to close PySide widgets tracked via attributes on UIObjects directly
+        for attr in ['opsSaveMasterGUI', 'opsProjectManagerGUI', 'opsProjDialogGUI', 'opsMainUI']:
+            if hasattr(self.UIObjects, attr):
+                ui_obj = getattr(self.UIObjects, attr)
+                if hasattr(ui_obj, 'close'):
+                    ui_obj.close()
+
         self.UIObjects = UIObjects.UIObjects()
+        self.UIObjects.opsSaveMasterGUI = opsSaveMasterGUI.opsSaveMasterGUI()
+        self.UIObjects.opsProjectManagerGUI = opsProjectManagerGUI.opsProjectManagerGUI()
+        self.UIObjects.opsProjDialogGUI = opsProjDialogGUI.opsProjDialogGUI()
+        self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
+        
         self.showWindow()
         self.updateTextField()
     
     def buttonRelease(self, window):
         getattr(self.UIObjects, window).showWindow()
+        self.updateTextField()
     
     def updateTextField(self):
         '''
-        "updateTextField" updates the 'self.diagnosticUI_UIObjects_scrollField' text field to reflect the most current GUI state.
+        Updates the text field to reflect the most current GUI state.
         '''
         textFieldString = '---window objects---\n\n'
-        for obj in self.UIObjects.window:
-            if cmds.window(obj, q=True, ex=True):
-                textFieldString += f"{obj}\n"
-        textFieldString += '\n---dockable objects---\n\n'
-        for obj in self.UIObjects.dockControl:
-            if cmds.workspaceControl(obj, q=1, exists=1):
-                textFieldString += f"{obj}\n"
-        cmds.scrollField(self.diagnosticUI_UIObjects_scrollField, edit=1, text=textFieldString)
+                
+        # Fallback to display the PySide attribute objects if they aren't explicitly registered
+        for attr in ['opsSaveMasterGUI', 'opsProjectManagerGUI', 'opsProjDialogGUI', 'opsMainUI']:
+            if hasattr(self.UIObjects, attr):
+                ui_obj = getattr(self.UIObjects, attr)
+                if hasattr(ui_obj, 'isVisible') and ui_obj.isVisible():
+                    name = ui_obj.objectName() or type(ui_obj).__name__
+                    if name not in textFieldString:
+                        textFieldString += f"{name}\n"
+
+        self.diagnosticUI_UIObjects_scrollField.setPlainText(textFieldString)
         
     def savePrefs(self):
-        
         '''
         "savePrefs" stores xml data using the 'XML.py' module
         '''
         fileName = 'test1.xml'
-        prefs = [('hello'),('goodbye'),('idunno')]
-        filePath = os.path.join(self.filePath, 'openpypeline', 'app', 'maya', 'ui', 'prefs', fileName)
-        xmlFile = XML.xmlfile(filePath)
-        xmlFile.save(prefs)
+        prefs = ['hello', 'goodbye', 'idunno']
+        if self.filePath:
+            prefs_dir = os.path.join(self.filePath, 'openpypeline', 'app', 'maya', 'ui', 'prefs')
+            os.makedirs(prefs_dir, exist_ok=True)
+            filePath = os.path.join(prefs_dir, fileName)
+            xmlFile = XML.xmlfile(filePath)
+            xmlFile.save(prefs)
         
     def loadPrefs(self):
-        
         '''
-        "loadPrefs" loades xml data using the 'XML.py' module
+        "loadPrefs" loads xml data using the 'XML.py' module
         '''
-        
         fileName = 'test1.xml'
-        filePath = os.path.join(self.filePath, 'openpypeline', 'app', 'maya', 'ui', 'prefs', fileName)
-        xmlFile = XML.xmlfile(filePath)
-        prefs = xmlFile.load()
-        print(f"prefs = {prefs}")
+        if self.filePath:
+            filePath = os.path.join(self.filePath, 'openpypeline', 'app', 'maya', 'ui', 'prefs', fileName)
+            if os.path.exists(filePath):
+                xmlFile = XML.xmlfile(filePath)
+                prefs = xmlFile.load()
+                print(f"prefs = {prefs}")

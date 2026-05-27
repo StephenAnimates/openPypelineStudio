@@ -8,18 +8,22 @@ Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
 import os
 import re
+import logging
+from openpypeline.core.util import prefs
+from PySide6 import QtWidgets, QtCore
 
 import opsInfo
 import opsUtils
 import opsActions
 
+logger = logging.getLogger("openPypeline.project")
+
 
 def get_proj_file():
     """Returns the full path of the Project configuration file."""
-    proj_path = cmds.optionVar(query="ops_projectFilePath") if cmds.optionVar(exists="ops_projectFilePath") else ""
+    proj_path = prefs.get_pref("ops_projectFilePath", "")
     if not proj_path or str(proj_path).strip() in ["", "Not Set"]:
         return ""
     return os.path.join(proj_path, "openPipeline_projects.xml").replace("\\", "/")
@@ -48,7 +52,7 @@ def get_projects_data():
                     f.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
                     f.write("<openPipeline_project_list>\n</openPipeline_project_list>\n")
             except Exception as e:
-                cmds.error(f"Project File does not exist, could not be opened, or could not be created: {e}")
+                logger.error(f"Project File does not exist, could not be opened, or could not be created: {e}")
     return []
 
 
@@ -65,7 +69,7 @@ def rewrite_proj_file(proj_list):
     """Rewrites the project xml file with the data it is passed as a string array."""
     proj_file = get_proj_file()
     if not proj_file:
-        cmds.error("Project file path is not set. Please use 'Edit Locations...' to set it.")
+        logger.error("Project file path is not set. Please use 'Edit Locations...' to set it.")
         return
     try:
         with open(proj_file, 'w', encoding="utf-8") as f:
@@ -78,14 +82,12 @@ def rewrite_proj_file(proj_list):
                 f.write(f"    <project>\n        {p_content}\n    </project>\n")
             f.write("</openPipeline_project_list>\n")
     except Exception as e:
-        cmds.error(f"Project File {proj_file} could not be found, or is not writable: {e}")
+        logger.error(f"Project File {proj_file} could not be found, or is not writable: {e}")
 
 
 def close_proj_ui(*args):
-    """Closes the Project UI and related windows."""
-    for ui_name in ["openPypelineStudioProjectManager_window", "CreateNewProject_window", "openPipelineUsersPromptUI", "openPipelineEditUsersUI"]:
-        if cmds.window(ui_name, exists=True):
-            cmds.deleteUI(ui_name)
+    """Legacy hook for closing Project UIs. Now handled natively by PySide."""
+    pass
 
 
 def get_project_info_string(proj_name):
@@ -105,7 +107,7 @@ def get_project_info_string(proj_name):
         f"Deadline: {opsUtils.get_xml_data(proj_xml, 'deadline')}\n"
         f"-------------------------------------\n"
         f"Master Files:\nname - {opsUtils.get_xml_data(proj_xml, 'mastername')}\nformat - {opsUtils.get_xml_data(proj_xml, 'masterformat')}\n"
-        f"Workshop Files:\nname - {opsUtils.get_xml_data(proj_xml, 'workshopname')}\nformat - {opsUtils.get_xml_data(proj_xml, 'workshopformat')}\n"
+        f"Workshop Files:\nname - {opsUtils.get_xml_data(proj_xml, 'wipname')}\nformat - {opsUtils.get_xml_data(proj_xml, 'wipformat')}\n"
         f"-------------------------------------\n"
         f"Library Sub-folder:    {opsUtils.get_xml_data(proj_xml, 'libraryfolder')}\n"
         f"Shots Sub-folder:      {opsUtils.get_xml_data(proj_xml, 'scenesfolder')}\n"
@@ -121,20 +123,9 @@ def get_project_info_string(proj_name):
     return info
 
 
-def _browse_path(textfield_id, proj_name_id=None):
-    """Helper to open a directory dialog and set a UI field."""
-    result = cmds.fileDialog2(fileMode=3, caption="Select Location")
-    if result and result[0]:
-        path = result[0].replace("\\", "/")
-        if proj_name_id:
-            proj_name = cmds.textField(proj_name_id, query=True, text=True).strip()
-            path = os.path.join(path, proj_name).replace("\\", "/")
-        cmds.textField(textfield_id, edit=True, text=path)
-
-
 def get_users():
     """Reads the users.xml file."""
-    proj_path = cmds.optionVar(query="ops_projectFilePath") if cmds.optionVar(exists="ops_projectFilePath") else ""
+    proj_path = prefs.get_pref("ops_projectFilePath", "")
     if not proj_path or str(proj_path).strip() in ["", "Not Set"]:
         return []
     users_file = os.path.join(proj_path, "openPipeline_users.xml").replace("\\", "/")
@@ -146,9 +137,9 @@ def get_users():
 
 def edit_users_save_file(users):
     """Updates user.xml file with users, overwrites existing."""
-    proj_path = cmds.optionVar(query="ops_projectFilePath") if cmds.optionVar(exists="ops_projectFilePath") else ""
+    proj_path = prefs.get_pref("ops_projectFilePath", "")
     if not proj_path or str(proj_path).strip() in ["", "Not Set"]:
-        cmds.warning("Project file path is not set. Cannot save users.")
+        logger.warning("Project file path is not set. Cannot save users.")
         return
     users_file = os.path.join(proj_path, "openPipeline_users.xml").replace("\\", "/")
     with open(users_file, "w") as f:
@@ -156,112 +147,58 @@ def edit_users_save_file(users):
             f.write(f"{user}\n")
 
 
+class EditUsersDialog(QtWidgets.QDialog):
+    """PySide6 Dialog for adding and removing global project users."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Add / Remove Users")
+        self.setMinimumSize(340, 230)
+        
+        layout = QtWidgets.QVBoxLayout(self)
+        
+        self.user_list = QtWidgets.QListWidget()
+        self.user_list.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self._refresh_list()
+        layout.addWidget(self.user_list)
+        
+        btn_layout = QtWidgets.QHBoxLayout()
+        self.add_btn = QtWidgets.QPushButton("Add user")
+        self.remove_btn = QtWidgets.QPushButton("Remove Selected")
+        self.close_btn = QtWidgets.QPushButton("Close")
+        
+        self.add_btn.clicked.connect(self.on_add)
+        self.remove_btn.clicked.connect(self.on_remove)
+        self.close_btn.clicked.connect(self.accept)
+        
+        btn_layout.addWidget(self.add_btn)
+        btn_layout.addWidget(self.remove_btn)
+        btn_layout.addWidget(self.close_btn)
+        layout.addLayout(btn_layout)
+        
+    def _refresh_list(self):
+        self.user_list.clear()
+        self.user_list.addItems(get_users())
+        
+    def on_add(self):
+        name, ok = QtWidgets.QInputDialog.getText(self, "Add User", "Enter Name:")
+        if ok and name.strip():
+            users = get_users()
+            if name.strip() not in users:
+                users.append(name.strip())
+                edit_users_save_file(users)
+                self._refresh_list()
+                
+    def on_remove(self):
+        selected = [item.text() for item in self.user_list.selectedItems()]
+        if not selected: return
+        
+        users = get_users()
+        users = [u for u in users if u not in selected]
+        edit_users_save_file(users)
+        self._refresh_list()
+
+
 def proj_edit_users(*args):
-    """Basic UI to add / remove users in global list."""
-    if cmds.window("openPipelineEditUsersUI", exists=True):
-        cmds.deleteUI("openPipelineEditUsersUI")
-        
-    cmds.window("openPipelineEditUsersUI", widthHeight=(338, 229), title="Add / Remove Users")
-    form = cmds.formLayout()
-    cmds.textScrollList("openPipelineEditUsersList", allowMultiSelection=True)
-    for user in get_users():
-        cmds.textScrollList("openPipelineEditUsersList", edit=True, append=user)
-        
-    add_btn = cmds.button(width=100, label="Add user", command=edit_users_add)
-    remove_btn = cmds.button(width=100, label="Remove Selected", command=edit_users_remove)
-    close_btn = cmds.button(width=100, label="Close", command=lambda x: cmds.deleteUI("openPipelineEditUsersUI"))
-    
-    cmds.formLayout(
-        form, edit=True,
-        attachForm=[
-            ("openPipelineEditUsersList", "top", 0), ("openPipelineEditUsersList", "left", 0), ("openPipelineEditUsersList", "right", 0),
-            (add_btn, "left", 0), (add_btn, "bottom", 0),
-            (remove_btn, "bottom", 0),
-            (close_btn, "right", 0), (close_btn, "bottom", 0)
-        ],
-        attachControl=[("openPipelineEditUsersList", "bottom", 0, add_btn)],
-        attachPosition=[
-            (add_btn, "right", 0, 33),
-            (remove_btn, "left", 0, 33), (remove_btn, "right", 0, 66),
-            (close_btn, "left", 0, 66)
-        ]
-    )
-    cmds.showWindow("openPipelineEditUsersUI")
-
-
-def edit_users_add(*args):
-    """Ask for Name and adds user to list and xml file."""
-    res = cmds.promptDialog(title="Add User", message="Enter Name:", button=["OK", "Cancel"], defaultButton="OK", cancelButton="Cancel", dismissString="Cancel")
-    if res == "OK":
-        name = cmds.promptDialog(query=True, text=True).strip()
-        if name:
-            cmds.textScrollList("openPipelineEditUsersList", edit=True, append=name)
-            edit_users_save_file(cmds.textScrollList("openPipelineEditUsersList", query=True, allItems=True) or [])
-            if cmds.window("openPipelineUsersPromptUI", exists=True):
-                cmds.textScrollList("openPipelineProjSetUsersPromptUserList", edit=True, removeAll=True)
-                for u in get_users(): cmds.textScrollList("openPipelineProjSetUsersPromptUserList", edit=True, append=u)
-
-
-def edit_users_remove(*args):
-    """Removes selected users from list and main file."""
-    selected = cmds.textScrollList("openPipelineEditUsersList", query=True, selectItem=True) or []
-    for sel in selected:
-        cmds.textScrollList("openPipelineEditUsersList", edit=True, removeItem=sel)
-    edit_users_save_file(cmds.textScrollList("openPipelineEditUsersList", query=True, allItems=True) or [])
-    if cmds.window("openPipelineUsersPromptUI", exists=True):
-        cmds.textScrollList("openPipelineProjSetUsersPromptUserList", edit=True, removeAll=True)
-        for u in get_users(): cmds.textScrollList("openPipelineProjSetUsersPromptUserList", edit=True, append=u)
-
-
-def proj_custom_users(*args):
-    """Enables/Disables Custom UserNames via Checkbox."""
-    state = cmds.checkBox("ops_customUsers_checkBox", query=True, value=True)
-    if state:
-        cmds.button("ops_customUsers_btn", edit=True, enable=True)
-    else:
-        cmds.button("ops_customUsers_btn", edit=True, enable=False)
-
-
-def proj_set_users_prompt_ui(*args):
-    """Launches the UI prompt to set Project Users."""
-    if cmds.window("openPipelineUsersPromptUI", exists=True):
-        cmds.deleteUI("openPipelineUsersPromptUI")
-        
-    cmds.window("openPipelineUsersPromptUI", widthHeight=(300, 240), title="Set Project Users")
-    form = cmds.formLayout(numberOfDivisions=100)
-    
-    label = cmds.text(label="Select users to add to project.")
-    list_ui = cmds.textScrollList("openPipelineProjSetUsersPromptUserList", allowMultiSelection=True)
-    for user in get_users():
-        cmds.textScrollList("openPipelineProjSetUsersPromptUserList", edit=True, append=user)
-        
-    set_btn = cmds.button(width=100, label="Set Users", command=proj_set_users_prompt_set)
-    edit_btn = cmds.button(width=100, label="Edit Users", command=proj_edit_users)
-    cancel_btn = cmds.button(width=100, label="Cancel", command=lambda x: cmds.deleteUI("openPipelineUsersPromptUI"))
-    
-    cmds.formLayout(
-        form, edit=True,
-        attachForm=[
-            (label, "top", 0), (label, "left", 0), (label, "right", 0),
-            (list_ui, "left", 0), (list_ui, "right", 0),
-            (set_btn, "left", 0), (set_btn, "bottom", 0),
-            (edit_btn, "bottom", 0),
-            (cancel_btn, "right", 0), (cancel_btn, "bottom", 0)
-        ],
-        attachControl=[
-            (list_ui, "top", 0, label), (list_ui, "bottom", 0, set_btn)
-        ],
-        attachPosition=[
-            (set_btn, "right", 0, 33),
-            (edit_btn, "left", 0, 33), (edit_btn, "right", 0, 66),
-            (cancel_btn, "left", 0, 66)
-        ]
-    )
-    cmds.showWindow("openPipelineUsersPromptUI")
-
-
-def proj_set_users_prompt_set(*args):
-    """Set users selected from the prompt to the string field."""
-    users = cmds.textScrollList("openPipelineProjSetUsersPromptUserList", query=True, selectItem=True) or []
-    cmds.textField("ops_customUsers_txtField", edit=True, text=",".join(users))
-    cmds.deleteUI("openPipelineUsersPromptUI")
+    """Launches the PySide6 UI to edit global project users."""
+    dialog = EditUsersDialog()
+    dialog.exec()

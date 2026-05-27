@@ -3,526 +3,381 @@ Module: opsProjDialogGUI.py
 
 Description:
     Opens the Project Dialog Window. This is used either for creating a new project 
-    or editing an existing project.
+    or editing an existing project using PySide6.
     
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
-import window as window
+import os
+from PySide6 import QtWidgets, QtCore
+from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
+
 import UIObjects as UIObjects
 import opsProject
+import opsInfo
+import opsUtils
+import opsActions
+import opsUIWrappers
 
-class opsProjDialogGUI(window.window):
+# --- UI Stylesheet ---
+OPS_PROJ_DIALOG_STYLESHEET = """
+    QPushButton[styleClass="acceptBtn"] {
+        background-color: #6699cc; 
+        color: black; 
+        font-weight: bold;
+    }
+"""
+
+class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
     """
-    A Maya window class for creating or editing an openPypeline Studio project.
+    A PySide6 Maya window class for creating or editing an openPypeline Studio project.
     """
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """
-        Initialize the Project Dialog window. Sets up window dimensions, names, 
-        and default string values used as placeholders in the UI fields.
+        Initialize the Project Dialog window. Sets up window dimensions and defaults.
         """
+        super().__init__(parent=parent)
         self.UIObjects = UIObjects.UIObjects()
         
-        self.width=380
-        self.height=700
-        self.name = "Create New Project"
-        self.dockable=0
-        
-        self.lfMargin = 5
-        self.rtMargin = 5
-        
-        # Default directory and settings nomenclature
-        self.ops_creationDate = 'dd/mm/year'
-        self.ops_deadline = 'dd/mm/year'
-        self.ops_masterFilesName = 'master'
-        self.ops_workshopFilesName = 'workshop'
-        self.ops_assetLibrary = 'lib'
-        self.ops_scripts = 'scripts'
-        self.ops_shotLibrary = 'scenes'
-        self.ops_textures = 'textures'
-        self.ops_renders = 'renders'
-        self.ops_particles = 'particles'
-        self.ops_archive = 'archive'
-        self.ops_deleted = 'deleted'
+        self.setWindowTitle("Create New Project")
+        self.setObjectName("openPypelineProjDialog")
+        self.setMinimumSize(450, 650)
+        self.setWindowFlags(QtCore.Qt.Window)
         
         self.mode = 0
         self.old_name = ""
-    
-    def content(self):
-        """
-        Builds and returns the main form layout for the Project Dialog UI.
-        The process involves creating a master formLayout, constructing each UI 
-        section sequentially, and then attaching them to their final positions.
-        """
-        # Main container for the dialog UI
-        self.form1 = cmds.formLayout('opsProjDialogGUI_form', numberOfDivisions=100)
-        
-        # Sequentially build logical sections of the UI
-        self._build_project_name_section()
-        self._build_project_path_section()
-        self._build_description_section()
-        self._build_project_status_section()
-        self._build_custom_users_section()
-        self._build_dates_section()
-        self._build_master_files_section()
-        self._build_workshop_files_section()
-        self._build_sub_folder_section()
-        self._build_archive_deleted_section()
-        self._build_action_buttons()
-        
-        # Organize and position all built elements within the main form
-        self._attach_form_elements()
-        self._populate_fields()
-        
-        return [self.form1]
 
-    def _build_project_name_section(self):
-        """Builds the input fields for the project's name."""
-        self.ops_projName_txt =  cmds.text('ops_projName_txt', parent=self.form1, fn="boldLabelFont", label="Project  Name (max length: 22):", align="left", width=220)
-        self.ops_projName_txtField = cmds.textField('ops_projName_txtField', parent=self.form1, h=20)
-        self.ops_separator1 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_project_path_section(self):
-        """Builds the directory browser section to define the project's root path."""
-        self.ops_projPath_txt =  cmds.text('ops_projPath_txt', parent=self.form1, fn="boldLabelFont", label="Project Path:", align="left", width=90)
-        self.ops_projPathParens_txt =  cmds.text('ops_projPathParens_txt', parent=self.form1, label="(folders which don't already exist will be created)", align="left", width=250)
-        self.ops_pathField_txtField = cmds.textField('ops_pathField_txtField', parent=self.form1, h=20)
-        self.ops_pathBrowse_btn = cmds.button('ops_pathBrowse_btn', parent=self.form1, w=60, l="Browse...", c=lambda *args: opsProject._browse_path("ops_pathField_txtField", "ops_projName_txtField"))
-        self.ops_separator2 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_description_section(self):
-        """Builds the project description input section."""
-        self.ops_description_txt =  cmds.text('ops_description_txt', parent=self.form1, fn="boldLabelFont", label="Description:", align="left", width=80)
-        self.ops_description_txtField = cmds.textField('ops_description_txtField', parent=self.form1, h=20)
-        self.ops_separator3 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_project_status_section(self):
-        """Builds the dropdown to set the project as active or inactive."""
-        self.ops_status_txt =  cmds.text('ops_status_txt', parent=self.form1, fn="boldLabelFont", label="Project Status:", align="left", width=100)
-        self.ops_status_optMenu = cmds.optionMenu('ops_status_optMenu', parent=self.form1)
-        cmds.menuItem(label="active", parent=self.ops_status_optMenu)
-        cmds.menuItem(label="inactive", parent=self.ops_status_optMenu)
-        self.ops_statusParens_txt = cmds.text('ops_statusParens_txt', parent=self.form1, fn="smallPlainLabelFont", label="(inactive projects won't appear in main openPipeline window)", align="left", width=340)
-        self.ops_separator4 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_custom_users_section(self):
-        """Builds the custom users management section."""
-        self.ops_customUsers_checkBox = cmds.checkBox('ops_customUsers_checkBox', parent=self.form1, label="", cc=opsProject.proj_custom_users)
-        self.ops_enableCustomUsers_txt = cmds.text('ops_enableCustomUsers_txt', parent=self.form1, fn="boldLabelFont", label="Enable Custom Users", align="left", width=320)
-        self.ops_customUsers_txt = cmds.text('ops_customUsers_txt', parent=self.form1, fn="boldLabelFont", label="Users:", align="left", width=80)
-        self.ops_customUsers_txtField = cmds.textField('ops_customUsers_txtField', parent=self.form1, enable=0, h=20)
-        self.ops_customUsers_btn = cmds.button('ops_customUsers_btn', parent=self.form1, l="...", c=opsProject.proj_set_users_prompt_ui)
-        self.ops_separator5 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_dates_section(self):
-        """Builds the fields to establish project creation and deadline dates."""
-        self.ops_creationDate_txt = cmds.text('ops_creationDate_txt', parent=self.form1, fn="boldLabelFont", label="Creation Date:", align="left", width=100)
-        self.ops_creationDate_txtField = cmds.textField('ops_creationDate_txtField', text=self.ops_creationDate, parent=self.form1, h=20)
-        self.ops_deadline_txt = cmds.text('ops_deadline_txt', parent=self.form1, fn="boldLabelFont", label="Deadline:", align="center", width=70)
-        self.ops_deadline_txtField = cmds.textField('ops_deadline_txtField', text=self.ops_deadline, parent=self.form1, h=20)
-        self.ops_separator6 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_master_files_section(self):
-        """Builds the settings for finalized 'Master' files (format and nomenclature)."""
-        self.ops_masterFiles_txt = cmds.text('ops_masterFiles_txt', parent=self.form1, fn="boldLabelFont", label="Master Files:", align="left", width=100)
-        self.ops_masterFilesParens_txt = cmds.text('ops_masterFilesParens_txt', parent=self.form1, fn="smallPlainLabelFont", label="(finalized versions with flattened references)", align="left", width=240)
-        self.ops_masterFilesName_txt = cmds.text('ops_masterFilesName_txt', parent=self.form1, fn="smallPlainLabelFont", label="Name:", align="left", width=50)
-        self.ops_masterFilesName_txtField = cmds.textField('ops_masterFilesName_txtField', text=self.ops_masterFilesName, parent=self.form1, h=20)
-        self.ops_masterFileFormat_txt = cmds.text('ops_masterFileFormat_txt', parent=self.form1, fn="smallPlainLabelFont", label="File Format:", align="center")
-        self.ops_masterFileFormat_optMenu = cmds.optionMenu('ops_masterFileFormat_optMenu', parent=self.form1)
-        cmds.menuItem(label="mb", parent=self.ops_masterFileFormat_optMenu)
-        cmds.menuItem(label="ma", parent=self.ops_masterFileFormat_optMenu)
-        cmds.menuItem(label="usd", parent=self.ops_masterFileFormat_optMenu)
-        cmds.menuItem(label="usda", parent=self.ops_masterFileFormat_optMenu)
-        cmds.menuItem(label="abc", parent=self.ops_masterFileFormat_optMenu)
-        self.ops_separator7 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_workshop_files_section(self):
-        """Builds the settings for work-in-progress 'Workshop' files (format and nomenclature)."""
-        self.ops_workshopFiles_txt = cmds.text('ops_workshopFiles_txt', parent=self.form1, fn="boldLabelFont", label="Workshop Files:", align="left", width=100)
-        self.ops_workshopFilesParens_txt = cmds.text('ops_workshopFilesParens_txt', parent=self.form1, fn="smallPlainLabelFont", label="(preliminary and test versions)", align="left", width=240)
-        self.ops_workshopFilesName_txt = cmds.text('ops_workshopFilesName_txt', parent=self.form1, fn="smallPlainLabelFont", label="Name:", align="left", width=50)
-        self.ops_workshopFilesName_txtField = cmds.textField('ops_workshopFilesName_txtField', parent=self.form1, text=self.ops_workshopFilesName, h=20)
-        self.ops_workshopFileFormat_txt = cmds.text('ops_workshopFileFormat_txt', parent=self.form1, fn="smallPlainLabelFont", label="File Format:", align="center")
-        self.ops_workshopFileFormat_optMenu = cmds.optionMenu('ops_workshopFileFormat_optMenu', parent=self.form1)
-        cmds.menuItem(label="mb", parent=self.ops_workshopFileFormat_optMenu)
-        cmds.menuItem(label="ma", parent=self.ops_workshopFileFormat_optMenu)
-        cmds.menuItem(label="usd", parent=self.ops_workshopFileFormat_optMenu)
-        cmds.menuItem(label="usda", parent=self.ops_workshopFileFormat_optMenu)
-        cmds.menuItem(label="abc", parent=self.ops_workshopFileFormat_optMenu)
-        self.ops_separator8 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_sub_folder_section(self):
-        """Builds the configuration inputs to define custom names for standard subdirectories."""
-        self.ops_subFolderNames_txt = cmds.text('ops_subFolderNames_txt', parent=self.form1, fn="boldLabelFont", label="Sub-Folder Names:", align="left", width=200)
-        self.ops_assetLibrary_txt = cmds.text('ops_assetLibrary_txt', fn="smallPlainLabelFont", parent=self.form1, label="Asset Library:", align="left", width=70)
-        self.ops_assetLibrary_txtField = cmds.textField('ops_assetLibrary_txtField', parent=self.form1, text=self.ops_assetLibrary, h=20)
-        self.ops_scripts_txt = cmds.text('ops_scripts_txt', parent=self.form1, fn="smallPlainLabelFont", label="Scripts:", align="center", width=50)
-        self.ops_scripts_txtField = cmds.textField('ops_scripts_txtField', parent=self.form1, text=self.ops_scripts, h=20)
-        
-        self.ops_shotLibrary_txt = cmds.text('ops_shotLibrary_txt', fn="smallPlainLabelFont", parent=self.form1, label="Shot Library:", align="left", width=70)
-        self.ops_shotLibrary_txtField = cmds.textField('ops_shotLibrary_txtField', parent=self.form1, text=self.ops_shotLibrary, h=20)
-        self.ops_textures_txt = cmds.text('ops_textures_txt', parent=self.form1, fn="smallPlainLabelFont", label="Textures:", align="center", width=50)
-        self.ops_textures_txtField = cmds.textField('ops_textures_txtField', parent=self.form1, text=self.ops_textures, h=20)
-        
-        self.ops_renders_txt = cmds.text('ops_renders_txt', fn="smallPlainLabelFont", parent=self.form1, label="Renders:", align="left", width=70)
-        self.ops_renders_txtField = cmds.textField('ops_renders_txtField', parent=self.form1, text=self.ops_renders, h=20)
-        self.ops_particles_txt = cmds.text('ops_particles_txt', parent=self.form1, fn="smallPlainLabelFont", label="Particles:", align="center", width=50)
-        self.ops_particles_txtField = cmds.textField('ops_particles_txtField', parent=self.form1, text=self.ops_particles, h=20)
-        
-    def _build_archive_deleted_section(self):
-        """Builds the directory browser section to define locations for archived/deleted data."""
-        self.ops_archiveDeletedItems_txt = cmds.text('ops_archiveDeletedItems_txt', parent=self.form1, fn="boldLabelFont", label="Archived and Deleted Items Locations:", align="left", width=70)
-        self.ops_archive_txt = cmds.text('ops_archive_txt', fn="smallPlainLabelFont", parent=self.form1, label="Archive:", align="left", width=70)
-        self.ops_archive_txtField = cmds.textField('ops_archive_txtField', parent=self.form1, text=self.ops_archive, h=20)
-        self.ops_archiveBrowse_btn = cmds.button('ops_archiveBrowse_btn', parent=self.form1, width=70, l="Browse...", c=lambda *args: opsProject._browse_path("ops_archive_txtField"))
-        self.ops_deletedItems_txt = cmds.text('ops_deletedItems_txt', fn="smallPlainLabelFont", parent=self.form1, label="Deleted Items:", align="left", width=70)
-        self.ops_deletedItems_txtField = cmds.textField('ops_deletedItems_txtField', parent=self.form1, text=self.ops_deleted, h=20)
-        self.ops_deletedItems_btn = cmds.button('ops_deletedItems_btn', parent=self.form1, width=70, l="Browse...", c=lambda *args: opsProject._browse_path("ops_deletedItems_txtField"))
-        self.ops_separator9 = cmds.separator(parent=self.form1, h=5, st="out")
-        
-    def _build_action_buttons(self):
-        """Builds the main Accept and Cancel buttons for the dialog."""
-        self.ops_accept_btn = cmds.button('ops_accept_btn', parent=self.form1, l="Accept", command=self.on_accept)
-        self.ops_cancel_btn = cmds.button('ops_cancel_btn', parent=self.form1, l="Cancel", command=self.on_cancel)
-        
-    def _attach_form_elements(self):
-        """
-        Positions all the created UI elements within the main form layout.
-        Uses a combination of attachPosition (percentages), attachForm (edges), 
-        and attachControl (relative to other elements) to construct the grid.
-        """
-        cmds.formLayout(
-            self.form1,
-            edit=True,
-            attachPosition=[
-                
-                # Project Name Section
-                (self.ops_projName_txt, 'top', 6, 0),
-                (self.ops_projName_txtField, 'top', 6, 0),
-                (self.ops_projName_txt, 'left', self.lfMargin, 0),
-                (self.ops_projName_txtField, 'right', self.rtMargin, 100),
-                (self.ops_separator1, 'left', self.lfMargin, 0),
-                (self.ops_separator1, 'right', self.rtMargin, 100),
-                
-                # Project Path Section
-                (self.ops_projPath_txt, 'left', self.lfMargin, 0),
-                (self.ops_pathField_txtField, 'left', self.lfMargin, 0),
-                (self.ops_pathField_txtField, 'right', 70, 100),
-                (self.ops_pathBrowse_btn, 'right', self.rtMargin, 100),
-                (self.ops_separator2, 'left', self.lfMargin, 0),
-                (self.ops_separator2, 'right', self.rtMargin, 100),
-                
-                # Description Section
-                (self.ops_description_txt, 'left', self.lfMargin, 0),
-                (self.ops_description_txtField, 'right', self.rtMargin, 100),
-                (self.ops_separator3, 'left', self.lfMargin, 0),
-                (self.ops_separator3, 'right', self.rtMargin, 100),
-                
-                # Project Status Section
-                (self.ops_status_txt, 'left', self.lfMargin, 0),
-                (self.ops_statusParens_txt, 'left', self.lfMargin, 0),
-                (self.ops_separator4, 'left', self.lfMargin, 0),
-                (self.ops_separator4, 'right', self.rtMargin, 100),
-                
-                # Custom Users Section
-                (self.ops_customUsers_checkBox, 'left', self.lfMargin, 0),
-                (self.ops_customUsers_txt, 'left', self.lfMargin, 0),
-                (self.ops_customUsers_txtField, 'right', 50, 100),
-                (self.ops_customUsers_btn, 'right', self.rtMargin, 100),
-                (self.ops_separator5, 'left', self.lfMargin, 0),
-                (self.ops_separator5, 'right', self.rtMargin, 100),
-                
-                # Creation Date & Deadline Section
-                (self.ops_creationDate_txt, 'left', self.lfMargin, 0),
-                (self.ops_creationDate_txtField, 'right', 0, 50),
-                (self.ops_deadline_txtField, 'right', self.rtMargin, 100),
-                (self.ops_separator6, 'left', self.lfMargin, 0),
-                (self.ops_separator6, 'right', self.rtMargin, 100),
-                
-                # Master Files Section
-                (self.ops_masterFiles_txt, 'left', self.lfMargin, 0),
-                (self.ops_masterFilesName_txt, 'left', self.lfMargin, 0),
-                (self.ops_masterFileFormat_optMenu, 'right', self.rtMargin, 100),
-                (self.ops_separator7, 'left', self.lfMargin, 0),
-                (self.ops_separator7, 'right', self.rtMargin, 100),
-                
-                # Workshop Files Section
-                (self.ops_workshopFiles_txt, 'left', self.lfMargin, 0),
-                (self.ops_workshopFilesName_txt, 'left', self.lfMargin, 0),
-                (self.ops_workshopFileFormat_optMenu, 'right', self.rtMargin, 100),
-                (self.ops_separator8, 'left', self.lfMargin, 0),
-                (self.ops_separator8, 'right', self.rtMargin, 100),
-                
-                # Sub-Folder Section
-                (self.ops_subFolderNames_txt, 'left', self.lfMargin, 0),
-                (self.ops_assetLibrary_txt, 'left', self.lfMargin, 0),
-                (self.ops_assetLibrary_txtField, 'right', 0, 50),
-                (self.ops_scripts_txtField, 'right', self.rtMargin, 100),
-                
-                (self.ops_shotLibrary_txt, 'left', self.lfMargin, 0),
-                (self.ops_shotLibrary_txtField, 'right', 0, 50),
-                (self.ops_textures_txtField, 'right', self.rtMargin, 100),
-                
-                (self.ops_renders_txt, 'left', self.lfMargin, 0),
-                (self.ops_renders_txtField, 'right', 0, 50),
-                (self.ops_particles_txtField, 'right', self.rtMargin, 100),
-                
-                # Archived and Deleted Items
-                (self.ops_archiveDeletedItems_txt, 'left', self.lfMargin, 0),
-                (self.ops_archive_txt, 'left', self.lfMargin, 0),
-                (self.ops_archiveBrowse_btn, 'right', self.rtMargin, 100),
-                (self.ops_deletedItems_txt, 'left', self.lfMargin, 0),
-                (self.ops_deletedItems_btn, 'right', self.rtMargin, 100),
-                (self.ops_separator9, 'left', self.lfMargin, 0),
-                (self.ops_separator9, 'right', self.rtMargin, 100),
-                
-                # Accept & Cancel Buttons
-                (self.ops_accept_btn, 'left', self.lfMargin, 0),
-                (self.ops_accept_btn, 'right', 0, 50),
-                (self.ops_cancel_btn, 'right', self.rtMargin, 100),
-                (self.ops_cancel_btn, 'left', 0, 50),
-                (self.ops_accept_btn, 'bottom', 2, 100),
-                (self.ops_cancel_btn, 'bottom', 2, 100),
-                
-            ],
-            attachForm=[
-            ],
-            attachControl=[
-                
-                # Project Name Section
-                (self.ops_projName_txtField, 'left', 2, self.ops_projName_txt),
-                (self.ops_separator1, 'top', 6, self.ops_projName_txtField),
-                
-                # Project Path Section
-                (self.ops_projPath_txt, 'top', 5, self.ops_separator1),
-                (self.ops_projPathParens_txt, 'top', 5, self.ops_separator1),
-                (self.ops_projPathParens_txt, 'left', 6, self.ops_projPath_txt),
-                (self.ops_pathField_txtField, 'top', 6, self.ops_projPath_txt),
-                (self.ops_pathBrowse_btn, 'top', 6, self.ops_projPath_txt),
-                (self.ops_pathBrowse_btn, 'left', 2, self.ops_pathField_txtField),
-                (self.ops_separator2, 'top', 6, self.ops_pathField_txtField),
-                
-                # Description Section
-                (self.ops_description_txt, 'top', 6, self.ops_separator2),
-                (self.ops_description_txtField, 'top', 6, self.ops_separator2),
-                (self.ops_description_txtField, 'left', 6, self.ops_description_txt),
-                (self.ops_separator3, 'top', 6, self.ops_description_txtField),
-                
-                # Project Status Section
-                (self.ops_status_txt, 'top', 6, self.ops_separator3),
-                (self.ops_status_optMenu, 'top', 6, self.ops_separator3),
-                (self.ops_status_optMenu, 'left', 2, self.ops_status_txt),
-                (self.ops_statusParens_txt, 'top', 6, self.ops_status_txt),
-                (self.ops_separator4, 'top', 6, self.ops_statusParens_txt),
-                
-                # Custom Users Section
-                (self.ops_customUsers_checkBox, 'top', 6, self.ops_separator4),
-                (self.ops_enableCustomUsers_txt, 'top', 6, self.ops_separator4),
-                (self.ops_enableCustomUsers_txt, 'left', 6, self.ops_customUsers_checkBox),
-                (self.ops_customUsers_txt, 'top', 6, self.ops_enableCustomUsers_txt),
-                (self.ops_customUsers_txtField, 'left', 6, self.ops_customUsers_txt),
-                (self.ops_customUsers_txtField, 'top', 6, self.ops_enableCustomUsers_txt),
-                (self.ops_customUsers_btn, 'top', 6, self.ops_enableCustomUsers_txt),
-                (self.ops_customUsers_btn, 'left', 6, self.ops_customUsers_txtField),
-                (self.ops_separator5, 'top', 6, self.ops_customUsers_btn),
-                
-                # Creation Date & Deadline Section
-                (self.ops_creationDate_txt, 'top', 6, self.ops_separator5),
-                (self.ops_creationDate_txtField, 'top', 6, self.ops_separator5),
-                (self.ops_creationDate_txtField, 'left', 6, self.ops_creationDate_txt),
-                (self.ops_deadline_txt, 'top', 6, self.ops_separator5),
-                (self.ops_deadline_txt, 'left', 6, self.ops_creationDate_txtField),
-                (self.ops_deadline_txtField, 'top', 6, self.ops_separator5),
-                (self.ops_deadline_txtField, 'left', 6, self.ops_deadline_txt),
-                (self.ops_separator6, 'top', 6, self.ops_deadline_txtField),
-                
-                # Master Files Section
-                (self.ops_masterFiles_txt, 'top', 6, self.ops_separator6),
-                (self.ops_masterFilesParens_txt, 'top', 6, self.ops_separator6),
-                (self.ops_masterFilesParens_txt, 'left', 6, self.ops_masterFiles_txt),
-                (self.ops_masterFilesName_txt, 'top', 10, self.ops_masterFiles_txt),
-                (self.ops_masterFilesName_txtField, 'top', 10, self.ops_masterFiles_txt),
-                (self.ops_masterFilesName_txtField, 'left', 6, self.ops_masterFilesName_txt),
-                (self.ops_masterFilesName_txtField, 'right', 6, self.ops_masterFileFormat_txt),
-                (self.ops_masterFileFormat_txt, 'top', 10, self.ops_masterFiles_txt),
-                (self.ops_masterFileFormat_txt, 'right', 6, self.ops_masterFileFormat_optMenu),
-                (self.ops_masterFileFormat_optMenu, 'top', 10, self.ops_masterFiles_txt),
-                (self.ops_separator7, 'top', 6, self.ops_masterFilesName_txtField),
-                
-                # Workshop Files Section
-                (self.ops_workshopFiles_txt, 'top', 6, self.ops_separator7),
-                (self.ops_workshopFilesParens_txt, 'top', 6, self.ops_separator7),
-                (self.ops_workshopFilesParens_txt, 'left', 6, self.ops_workshopFiles_txt),
-                (self.ops_workshopFilesName_txt, 'top', 10, self.ops_workshopFiles_txt),
-                (self.ops_workshopFilesName_txtField, 'top', 10, self.ops_workshopFiles_txt),
-                (self.ops_workshopFilesName_txtField, 'left', 6, self.ops_workshopFilesName_txt),
-                (self.ops_workshopFilesName_txtField, 'right', 6, self.ops_workshopFileFormat_txt),
-                (self.ops_workshopFileFormat_txt, 'top', 10, self.ops_workshopFiles_txt),
-                (self.ops_workshopFileFormat_txt, 'right', 10, self.ops_workshopFileFormat_optMenu),
-                (self.ops_workshopFileFormat_optMenu, 'top', 10, self.ops_workshopFiles_txt),
-                (self.ops_separator8, 'top', 6, self.ops_workshopFilesName_txtField),
-                
-                # Sub-Folder Section
-                (self.ops_subFolderNames_txt, 'top', 6, self.ops_separator8),
-                (self.ops_assetLibrary_txt, 'top', 10, self.ops_subFolderNames_txt),
-                (self.ops_assetLibrary_txtField, 'left', 6, self.ops_assetLibrary_txt),
-                (self.ops_assetLibrary_txtField, 'top', 10, self.ops_subFolderNames_txt),
-                (self.ops_scripts_txt, 'top', 10, self.ops_subFolderNames_txt),
-                (self.ops_scripts_txt, 'left', 6, self.ops_assetLibrary_txtField),
-                (self.ops_scripts_txtField, 'top', 10, self.ops_subFolderNames_txt),
-                (self.ops_scripts_txtField, 'left', 6, self.ops_scripts_txt),
-                
-                (self.ops_shotLibrary_txt, 'top', 6, self.ops_assetLibrary_txtField),
-                (self.ops_shotLibrary_txtField, 'left', 6, self.ops_shotLibrary_txt),
-                (self.ops_shotLibrary_txtField, 'top', 6, self.ops_assetLibrary_txtField),
-                (self.ops_textures_txt, 'top', 6, self.ops_assetLibrary_txtField),
-                (self.ops_textures_txt, 'left', 6, self.ops_shotLibrary_txtField),
-                (self.ops_textures_txtField, 'top', 6, self.ops_assetLibrary_txtField),
-                (self.ops_textures_txtField, 'left', 6, self.ops_textures_txt),
-                
-                (self.ops_renders_txt, 'top', 6, self.ops_shotLibrary_txtField),
-                (self.ops_renders_txtField, 'left', 6, self.ops_renders_txt),
-                (self.ops_renders_txtField, 'top', 6, self.ops_shotLibrary_txtField),
-                (self.ops_particles_txt, 'top', 6, self.ops_shotLibrary_txtField),
-                (self.ops_particles_txt, 'left', 6, self.ops_renders_txtField),
-                (self.ops_particles_txtField, 'top', 6, self.ops_shotLibrary_txtField),
-                (self.ops_particles_txtField, 'left', 6, self.ops_particles_txt),
-                
-                # Archived and Deleted Items
-                (self.ops_archiveDeletedItems_txt, 'top', 10, self.ops_renders_txtField),
-                (self.ops_archive_txt, 'top', 10, self.ops_archiveDeletedItems_txt),
-                (self.ops_archive_txtField, 'top', 10, self.ops_archiveDeletedItems_txt),
-                (self.ops_archive_txtField, 'left', 10, self.ops_archive_txt),
-                (self.ops_archive_txtField, 'right', 10, self.ops_archiveBrowse_btn),
-                (self.ops_archiveBrowse_btn, 'top', 10, self.ops_archiveDeletedItems_txt),
-                (self.ops_deletedItems_txt, 'top', 10, self.ops_archive_txtField),
-                (self.ops_deletedItems_txtField, 'top', 10, self.ops_archive_txtField),
-                (self.ops_deletedItems_txtField, 'left', 10, self.ops_deletedItems_txt),
-                (self.ops_deletedItems_txtField, 'right', 10, self.ops_deletedItems_btn),
-                (self.ops_deletedItems_btn, 'top', 10, self.ops_archive_txtField),
-                (self.ops_separator9, 'top', 10, self.ops_deletedItems_txtField),
-                
-                # Accept & Cancel Buttons
-                (self.ops_accept_btn, 'top', 10, self.ops_separator9),
-                (self.ops_cancel_btn, 'top', 10, self.ops_separator9),
-        
-            ]
-            )
+        self._build_ui()
+
+    def showWindow(self):
+        """Configures the dialog state based on mode and shows it."""
+        if self.mode == 1:
+            self.setWindowTitle(f"Edit Project: {self.old_name}")
+        else:
+            self.setWindowTitle("Create New Project")
+            
+        self._populate_fields()
+        self.show()
+    
+    def _build_ui(self):
+        """Constructs the UI using PySide widgets and layouts."""
+        self.setStyleSheet(OPS_PROJ_DIALOG_STYLESHEET)
+        main_layout = QtWidgets.QVBoxLayout(self)
+
+        # --- Project Settings Group ---
+        settings_group = QtWidgets.QGroupBox("Project Settings")
+        settings_layout = QtWidgets.QFormLayout(settings_group)
+
+        self.proj_name_field = QtWidgets.QLineEdit()
+        self.proj_name_field.setMaxLength(22)
+
+        path_layout = QtWidgets.QHBoxLayout()
+        self.proj_path_field = QtWidgets.QLineEdit()
+        self.path_browse_btn = QtWidgets.QPushButton("Browse...")
+        self.path_browse_btn.clicked.connect(lambda: self._browse_directory(self.proj_path_field, append_proj_name=True))
+        path_layout.addWidget(self.proj_path_field)
+        path_layout.addWidget(self.path_browse_btn)
+
+        self.desc_field = QtWidgets.QLineEdit()
+        self.desc_field.setMaxLength(250)
+
+        self.status_combo = QtWidgets.QComboBox()
+        self.status_combo.addItems(["active", "inactive"])
+
+        settings_layout.addRow("Project Name:", self.proj_name_field)
+        settings_layout.addRow("Project Path:", path_layout)
+        settings_layout.addRow("Description:", self.desc_field)
+        settings_layout.addRow("Status:", self.status_combo)
+
+        main_layout.addWidget(settings_group)
+
+        # --- Users & Dates Group ---
+        users_dates_group = QtWidgets.QGroupBox("Users & Dates")
+        users_dates_layout = QtWidgets.QFormLayout(users_dates_group)
+
+        self.custom_users_chk = QtWidgets.QCheckBox("Enable Custom Users")
+        self.custom_users_chk.stateChanged.connect(self._toggle_custom_users)
+
+        users_layout = QtWidgets.QHBoxLayout()
+        self.custom_users_field = QtWidgets.QLineEdit()
+        self.custom_users_field.setReadOnly(True)
+        self.custom_users_field.setEnabled(False)
+        self.custom_users_btn = QtWidgets.QPushButton("...")
+        self.custom_users_btn.setEnabled(False)
+        self.custom_users_btn.clicked.connect(self._select_custom_users)
+        users_layout.addWidget(self.custom_users_field)
+        users_layout.addWidget(self.custom_users_btn)
+
+        self.creation_date_field = QtWidgets.QLineEdit("dd/mm/year")
+        self.deadline_field = QtWidgets.QLineEdit("dd/mm/year")
+
+        users_dates_layout.addRow("", self.custom_users_chk)
+        users_dates_layout.addRow("Users:", users_layout)
+        users_dates_layout.addRow("Creation Date:", self.creation_date_field)
+        users_dates_layout.addRow("Deadline:", self.deadline_field)
+
+        main_layout.addWidget(users_dates_group)
+
+        # --- Files Group ---
+        files_group = QtWidgets.QGroupBox("Files (Master / WIP)")
+        files_layout = QtWidgets.QGridLayout(files_group)
+
+        files_layout.addWidget(QtWidgets.QLabel("Master Name:"), 0, 0)
+        self.master_name_field = QtWidgets.QLineEdit("master")
+        files_layout.addWidget(self.master_name_field, 0, 1)
+
+        files_layout.addWidget(QtWidgets.QLabel("Format:"), 0, 2)
+        self.master_format_combo = QtWidgets.QComboBox()
+        self.master_format_combo.addItems(["mb", "ma", "usd", "usda", "abc"])
+        files_layout.addWidget(self.master_format_combo, 0, 3)
+
+        files_layout.addWidget(QtWidgets.QLabel("WIP Name:"), 1, 0)
+        self.wip_name_field = QtWidgets.QLineEdit("wip")
+        files_layout.addWidget(self.wip_name_field, 1, 1)
+
+        files_layout.addWidget(QtWidgets.QLabel("Format:"), 1, 2)
+        self.wip_format_combo = QtWidgets.QComboBox()
+        self.wip_format_combo.addItems(["mb", "ma", "usd", "usda", "abc"])
+        files_layout.addWidget(self.wip_format_combo, 1, 3)
+
+        main_layout.addWidget(files_group)
+
+        # --- Sub-Folders Group ---
+        subfolders_group = QtWidgets.QGroupBox("Sub-Folder Names")
+        subfolders_layout = QtWidgets.QGridLayout(subfolders_group)
+
+        self.asset_lib_field = QtWidgets.QLineEdit("lib")
+        self.scripts_field = QtWidgets.QLineEdit("scripts")
+        self.shot_lib_field = QtWidgets.QLineEdit("scenes")
+        self.textures_field = QtWidgets.QLineEdit("textures")
+        self.renders_field = QtWidgets.QLineEdit("renders")
+        self.particles_field = QtWidgets.QLineEdit("particles")
+
+        subfolders_layout.addWidget(QtWidgets.QLabel("Asset Library:"), 0, 0)
+        subfolders_layout.addWidget(self.asset_lib_field, 0, 1)
+        subfolders_layout.addWidget(QtWidgets.QLabel("Scripts:"), 0, 2)
+        subfolders_layout.addWidget(self.scripts_field, 0, 3)
+
+        subfolders_layout.addWidget(QtWidgets.QLabel("Shot Library:"), 1, 0)
+        subfolders_layout.addWidget(self.shot_lib_field, 1, 1)
+        subfolders_layout.addWidget(QtWidgets.QLabel("Textures:"), 1, 2)
+        subfolders_layout.addWidget(self.textures_field, 1, 3)
+
+        subfolders_layout.addWidget(QtWidgets.QLabel("Renders:"), 2, 0)
+        subfolders_layout.addWidget(self.renders_field, 2, 1)
+        subfolders_layout.addWidget(QtWidgets.QLabel("Particles:"), 2, 2)
+        subfolders_layout.addWidget(self.particles_field, 2, 3)
+
+        main_layout.addWidget(subfolders_group)
+
+        # --- Archive / Deleted Group ---
+        archive_group = QtWidgets.QGroupBox("Archived and Deleted Locations")
+        archive_layout = QtWidgets.QFormLayout(archive_group)
+
+        arch_layout = QtWidgets.QHBoxLayout()
+        self.archive_field = QtWidgets.QLineEdit("archive")
+        self.archive_btn = QtWidgets.QPushButton("Browse...")
+        self.archive_btn.clicked.connect(lambda: self._browse_directory(self.archive_field))
+        arch_layout.addWidget(self.archive_field)
+        arch_layout.addWidget(self.archive_btn)
+
+        del_layout = QtWidgets.QHBoxLayout()
+        self.deleted_field = QtWidgets.QLineEdit("deleted")
+        self.deleted_btn = QtWidgets.QPushButton("Browse...")
+        self.deleted_btn.clicked.connect(lambda: self._browse_directory(self.deleted_field))
+        del_layout.addWidget(self.deleted_field)
+        del_layout.addWidget(self.deleted_btn)
+
+        archive_layout.addRow("Archive:", arch_layout)
+        archive_layout.addRow("Deleted Items:", del_layout)
+
+        main_layout.addWidget(archive_group)
+
+        # --- Bottom Action Buttons ---
+        btn_layout = QtWidgets.QHBoxLayout()
+        self.accept_btn = QtWidgets.QPushButton("Accept")
+        self.accept_btn.setProperty("styleClass", "acceptBtn")
+        self.accept_btn.setMinimumHeight(35)
+        self.accept_btn.clicked.connect(self.on_accept)
+
+        self.cancel_btn = QtWidgets.QPushButton("Cancel")
+        self.cancel_btn.setMinimumHeight(35)
+        self.cancel_btn.clicked.connect(self.close)
+
+        btn_layout.addWidget(self.accept_btn)
+        btn_layout.addWidget(self.cancel_btn)
+
+        main_layout.addLayout(btn_layout)
+
+    def _browse_directory(self, line_edit, append_proj_name=False):
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Location")
+        if dir_path:
+            if append_proj_name:
+                proj_name = self.proj_name_field.text().strip()
+                if proj_name:
+                    dir_path = os.path.join(dir_path, proj_name)
+            line_edit.setText(dir_path.replace("\\", "/"))
+
+    def _toggle_custom_users(self, state):
+        is_enabled = bool(state)
+        self.custom_users_field.setEnabled(is_enabled)
+        self.custom_users_btn.setEnabled(is_enabled)
+
+    def _select_custom_users(self):
+        """Native PySide implementation of the custom project users selection dialog."""
+        users = opsProject.get_users()
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Set Project Users")
+        dialog.setMinimumSize(300, 240)
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        layout.addWidget(QtWidgets.QLabel("Select users to add to project:"))
+        list_widget = QtWidgets.QListWidget()
+        list_widget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        list_widget.addItems(users)
+        layout.addWidget(list_widget)
+
+        # Select currently assigned users
+        current_users = self.custom_users_field.text().split(",")
+        for i in range(list_widget.count()):
+            item = list_widget.item(i)
+            if item.text() in current_users:
+                item.setSelected(True)
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        set_btn = QtWidgets.QPushButton("Set Users")
+        edit_btn = QtWidgets.QPushButton("Edit Global Users")
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+
+        def on_set():
+            selected = [item.text() for item in list_widget.selectedItems()]
+            self.custom_users_field.setText(",".join(selected))
+            dialog.accept()
+
+        set_btn.clicked.connect(on_set)
+        edit_btn.clicked.connect(opsProject.proj_edit_users)
+        cancel_btn.clicked.connect(dialog.reject)
+
+        btn_layout.addWidget(set_btn)
+        btn_layout.addWidget(edit_btn)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+
+        dialog.exec()
 
     def _populate_fields(self):
-        """Auto-populates the UI fields if editing an existing project."""
-        import opsInfo
-        import opsProject
-        import opsUtils
+        """Auto-populates the UI fields for new or existing projects."""
         
         date_str = opsInfo.get_date()
-        cmds.textField(self.ops_creationDate_txtField, edit=True, text=date_str)
-        cmds.textField(self.ops_deadline_txtField, edit=True, text=date_str)
+        self.creation_date_field.setText(date_str)
+        self.deadline_field.setText(date_str)
         
         if self.mode == 1 and self.old_name:
             proj_xml = opsProject.get_single_project_xml(self.old_name)
             if proj_xml:
-                cmds.textField(self.ops_projName_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "name"))
-                cmds.textField(self.ops_pathField_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "path"))
-                cmds.textField(self.ops_description_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "description"))
-                cmds.textField(self.ops_creationDate_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "date"))
-                cmds.textField(self.ops_deadline_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "deadline"))
+                self.proj_name_field.setText(opsUtils.get_xml_data(proj_xml, "name"))
+                self.proj_path_field.setText(opsUtils.get_xml_data(proj_xml, "path"))
+                self.desc_field.setText(opsUtils.get_xml_data(proj_xml, "description"))
+                self.creation_date_field.setText(opsUtils.get_xml_data(proj_xml, "date"))
+                self.deadline_field.setText(opsUtils.get_xml_data(proj_xml, "deadline"))
                 
-                cmds.textField(self.ops_assetLibrary_txtField, edit=True, editable=False, text=opsUtils.get_xml_data(proj_xml, "libraryfolder"))
-                cmds.textField(self.ops_shotLibrary_txtField, edit=True, editable=False, text=opsUtils.get_xml_data(proj_xml, "scenesfolder"))
-                cmds.textField(self.ops_archive_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "archivefolder"))
-                cmds.textField(self.ops_deletedItems_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "deletedfolder"))
-                cmds.textField(self.ops_renders_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "rendersfolder"))
-                cmds.textField(self.ops_particles_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "particlesfolder"))
-                cmds.textField(self.ops_textures_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "texturesfolder"))
-                cmds.textField(self.ops_scripts_txtField, edit=True, text=opsUtils.get_xml_data(proj_xml, "scriptsfolder"))
+                self.asset_lib_field.setText(opsUtils.get_xml_data(proj_xml, "libraryfolder"))
+                self.shot_lib_field.setText(opsUtils.get_xml_data(proj_xml, "scenesfolder"))
+                self.archive_field.setText(opsUtils.get_xml_data(proj_xml, "archivefolder"))
+                self.deleted_field.setText(opsUtils.get_xml_data(proj_xml, "deletedfolder"))
+                self.renders_field.setText(opsUtils.get_xml_data(proj_xml, "rendersfolder"))
+                self.particles_field.setText(opsUtils.get_xml_data(proj_xml, "particlesfolder"))
+                self.textures_field.setText(opsUtils.get_xml_data(proj_xml, "texturesfolder"))
+                self.scripts_field.setText(opsUtils.get_xml_data(proj_xml, "scriptsfolder"))
                 
-                cmds.textField(self.ops_masterFilesName_txtField, edit=True, editable=False, text=opsUtils.get_xml_data(proj_xml, "mastername"))
-                cmds.optionMenu(self.ops_masterFileFormat_optMenu, edit=True, enable=False, value=opsUtils.get_xml_data(proj_xml, "masterformat"))
-                cmds.textField(self.ops_workshopFilesName_txtField, edit=True, editable=False, text=opsUtils.get_xml_data(proj_xml, "workshopname"))
-                cmds.optionMenu(self.ops_workshopFileFormat_optMenu, edit=True, enable=False, value=opsUtils.get_xml_data(proj_xml, "workshopformat"))
+                self.master_name_field.setText(opsUtils.get_xml_data(proj_xml, "mastername"))
+                self.master_format_combo.setCurrentText(opsUtils.get_xml_data(proj_xml, "masterformat"))
+                self.wip_name_field.setText(opsUtils.get_xml_data(proj_xml, "wipname"))
+                self.wip_format_combo.setCurrentText(opsUtils.get_xml_data(proj_xml, "wipformat"))
                 
                 # status: active=1, inactive=0. Option menu indexes: active=1, inactive=2.
                 status = int(opsUtils.get_xml_data(proj_xml, "status") or 1)
-                cmds.optionMenu(self.ops_status_optMenu, edit=True, select=(2 - status))
+                self.status_combo.setCurrentIndex(1 - status)
                 
                 user_mode = int(opsUtils.get_xml_data(proj_xml, "userMode") or 0)
-                cmds.checkBox(self.ops_customUsers_checkBox, edit=True, value=user_mode)
-                cmds.button(self.ops_customUsers_btn, edit=True, enable=bool(user_mode))
+                self.custom_users_chk.setChecked(bool(user_mode))
                 
                 curr_users = opsUtils.get_xml_data(proj_xml, "users")
                 if curr_users:
                     global_users = opsProject.get_users()
                     valid_users = [u for u in curr_users.split(",") if u in global_users]
-                    cmds.textField(self.ops_customUsers_txtField, edit=True, text=",".join(valid_users))
+                    self.custom_users_field.setText(",".join(valid_users))
                 else:
-                    cmds.textField(self.ops_customUsers_txtField, edit=True, text="")
+                    self.custom_users_field.setText("")
+                    
+                # Disable structural fields in edit mode to prevent path breakage
+                self.asset_lib_field.setReadOnly(True)
+                self.shot_lib_field.setReadOnly(True)
+                self.master_name_field.setReadOnly(True)
+                self.wip_name_field.setReadOnly(True)
+                self.master_format_combo.setEnabled(False)
+                self.wip_format_combo.setEnabled(False)
         else:
-            cmds.checkBox(self.ops_customUsers_checkBox, edit=True, value=0)
-            cmds.button(self.ops_customUsers_btn, edit=True, enable=False)
+            self.custom_users_chk.setChecked(False)
+            self.proj_name_field.clear()
+            self.proj_path_field.clear()
+            self.desc_field.clear()
+            self.custom_users_field.clear()
             
-            # Clear text fields for new project mode
-            cmds.textField(self.ops_projName_txtField, edit=True, text="")
-            cmds.textField(self.ops_pathField_txtField, edit=True, text="")
-            cmds.textField(self.ops_description_txtField, edit=True, text="")
-            cmds.textField(self.ops_customUsers_txtField, edit=True, text="")
+            # Re-enable structural fields for new project mode
+            self.asset_lib_field.setReadOnly(False)
+            self.shot_lib_field.setReadOnly(False)
+            self.master_name_field.setReadOnly(False)
+            self.wip_name_field.setReadOnly(False)
+            self.master_format_combo.setEnabled(True)
+            self.wip_format_combo.setEnabled(True)
 
     # --- Button Callbacks ---
 
     def on_accept(self, *args):
         """Gathers data from the UI and passes it to the core opsActions module."""
-        import opsActions
-        
-        new_name = cmds.textField(self.ops_projName_txtField, query=True, text=True).strip()
-        new_path = cmds.textField(self.ops_pathField_txtField, query=True, text=True).strip()
-        new_description = cmds.textField(self.ops_description_txtField, query=True, text=True).strip()
+        new_name = self.proj_name_field.text().strip()
+        new_path = self.proj_path_field.text().strip()
+        new_description = self.desc_field.text().strip()
         
         # OptionMenu: 1="active", 2="inactive". We want "1" for active, "0" for inactive.
-        new_status = str(2 - cmds.optionMenu(self.ops_status_optMenu, query=True, select=True))
+        new_status = "1" if self.status_combo.currentIndex() == 0 else "0"
         
-        new_date = cmds.textField(self.ops_creationDate_txtField, query=True, text=True).strip()
-        new_deadline = cmds.textField(self.ops_deadline_txtField, query=True, text=True).strip()
+        new_date = self.creation_date_field.text().strip()
+        new_deadline = self.deadline_field.text().strip()
         
-        new_master_name = cmds.textField(self.ops_masterFilesName_txtField, query=True, text=True).strip()
-        new_master_format = cmds.optionMenu(self.ops_masterFileFormat_optMenu, query=True, value=True).strip()
+        new_master_name = self.master_name_field.text().strip()
+        new_master_format = self.master_format_combo.currentText().strip()
         
-        new_workshop_name = cmds.textField(self.ops_workshopFilesName_txtField, query=True, text=True).strip()
-        new_workshop_format = cmds.optionMenu(self.ops_workshopFileFormat_optMenu, query=True, value=True).strip()
+        new_wip_name = self.wip_name_field.text().strip()
+        new_wip_format = self.wip_format_combo.currentText().strip()
         
-        new_lib_loc = cmds.textField(self.ops_assetLibrary_txtField, query=True, text=True).strip()
-        new_shot_loc = cmds.textField(self.ops_shotLibrary_txtField, query=True, text=True).strip()
-        new_renders_loc = cmds.textField(self.ops_renders_txtField, query=True, text=True).strip()
-        new_scripts_loc = cmds.textField(self.ops_scripts_txtField, query=True, text=True).strip()
-        new_textures_loc = cmds.textField(self.ops_textures_txtField, query=True, text=True).strip()
-        new_particles_loc = cmds.textField(self.ops_particles_txtField, query=True, text=True).strip()
+        new_lib_loc = self.asset_lib_field.text().strip()
+        new_shot_loc = self.shot_lib_field.text().strip()
+        new_renders_loc = self.renders_field.text().strip()
+        new_scripts_loc = self.scripts_field.text().strip()
+        new_textures_loc = self.textures_field.text().strip()
+        new_particles_loc = self.particles_field.text().strip()
         
-        new_archive_loc = cmds.textField(self.ops_archive_txtField, query=True, text=True).strip()
-        new_deleted_loc = cmds.textField(self.ops_deletedItems_txtField, query=True, text=True).strip()
+        new_archive_loc = self.archive_field.text().strip()
+        new_deleted_loc = self.deleted_field.text().strip()
         
-        new_users = cmds.textField(self.ops_customUsers_txtField, query=True, text=True).strip()
-        user_mode = str(int(cmds.checkBox(self.ops_customUsers_checkBox, query=True, value=True)))
+        new_users = self.custom_users_field.text().strip()
+        user_mode = "1" if self.custom_users_chk.isChecked() else "0"
         
         result = opsActions.create_or_edit_project(
             self.mode, self.old_name, new_name, new_path, new_description, new_status, new_date, new_deadline,
-            new_master_name, new_master_format, new_workshop_name, new_workshop_format, new_lib_loc,
+            new_master_name, new_master_format, new_wip_name, new_wip_format, new_lib_loc,
             new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc,
             new_archive_loc, new_deleted_loc, new_users, user_mode
         )
         
         if result:
-            self.deleteWindow()
-            # Refresh main UI if open
-            import opsUIWrappers
+            self.close()
             opsUIWrappers.refresh_ui()
-            # Trigger the list refresh on the Project Manager window if it's currently open
             if hasattr(self.UIObjects, 'opsProjectManagerGUI'):
-                try: self.UIObjects.opsProjectManagerGUI.on_refresh_list()
+                try: 
+                    self.UIObjects.opsProjectManagerGUI.on_refresh_list()
                 except: pass
-                
-    def on_cancel(self, *args):
-        """Closes the UI without saving."""
-        self.deleteWindow()

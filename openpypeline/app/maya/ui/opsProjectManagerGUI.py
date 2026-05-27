@@ -2,191 +2,177 @@
 Module: opsProjectManagerGUI.py
 
 Description:
-    Creates the openPypeline Studio Project Manager UI.
-    
+    Creates the openPypeline Studio Project Manager UI using PySide6.
 """
 
-import maya.cmds as cmds
-import importlib
-import window as window
-importlib.reload(window)
+from PySide6 import QtWidgets, QtCore
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 import UIObjects as UIObjects
+import opsLoader
+import opsProject
+import opsActions
+import opsUtils
+from openpypeline.core.util import prefs
 
-class opsProjectManagerGUI(window.window):
+# --- UI Stylesheet ---
+OPS_PROJ_MANAGER_STYLESHEET = """
+    QPushButton[styleClass="positiveAction"] {
+        background-color: #99cc80; 
+        color: black;
+    }
+    QPushButton[styleClass="negativeAction"] {
+        background-color: #cc4d4d; 
+        color: white;
+    }
+    QPushButton[styleClass="editAction"] {
+        background-color: #80b3b3; 
+        color: black;
+    }
+"""
+
+class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     """
-    A Maya window class for managing openPypeline Studio projects.
-    It allows users to select, create, edit, and remove projects, as well as
-    manage user permissions and set up default pipeline paths.
+    A PySide-based Maya window for managing openPypeline Studio projects.
+    It allows users to select, create, edit, and remove projects, and manage users.
     """
 
-    def __init__(self):
-        """
-        Initializes the Project Manager window. Sets up dimensions, names,
-        and fetches current script and project locations from Maya's optionVars.
-        """
-        
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
         self.UIObjects = UIObjects.UIObjects()
-        
-        self.width=550
-        self.height=460
-        self.name = "openPypeline Studio Project Manager"
-        self.dockable=0
-        self.scriptLocation = cmds.optionVar(query="ops_scriptPath") if cmds.optionVar(exists="ops_scriptPath") else "Not Set"
-        self.projectLocation = cmds.optionVar(query="ops_projectFilePath") if cmds.optionVar(exists="ops_projectFilePath") else "Not Set"
-    
-    def content(self):
-        """
-        Builds and returns the main form layout for the Project Manager UI.
-        Constructs the UI in logical sections and then positions them.
-        """
-        # Main container for the project manager UI
-        self.form1 = cmds.formLayout('opsProjectManagerGUI_form', numberOfDivisions=100)
-        
-        # Sequentially build logical sections of the UI
-        self._build_locations_section()
-        self._build_project_list_section()
-        self._build_project_buttons_subform()
-        self._build_project_info_section()
-        self._build_action_buttons()
-        
-        # Organize and position all built elements within the main form
-        self._attach_form_elements()
-        
-        # Populate the initial list of projects
+
+        self.setWindowTitle("openPypeline Studio Project Manager")
+        self.setObjectName("openPypelineStudioProjectManager")
+        self.setMinimumSize(550, 460)
+
+        # Fetch initial paths
+        self.scriptLocation = prefs.get_pref("ops_scriptPath", "Not Set")
+        self.projectLocation = prefs.get_pref("ops_projectFilePath", "Not Set")
+
+        self._build_ui()
         self.on_refresh_list()
-        
-        return [self.form1]
 
-    def _build_locations_section(self):
-        """Builds the fields displaying current script and project file locations."""
-        self.ops_scriptLocation_txt = cmds.text('ops_scriptLocation_txt', parent=self.form1, align="right", l="Script Location:", w=110)
-        self.ops_scriptLocation_txtField = cmds.textField('ops_scriptLocation_txtField', parent=self.form1, editable=0, tx=self.scriptLocation)
-        self.ops_projFileLocation_txt = cmds.text('ops_projFileLocation_txt', parent=self.form1, align="right", l="Project File Location:", w=110)
-        self.ops_projFPath_txtField = cmds.textField('ops_projFPath_txtField', parent=self.form1, editable=0, tx=self.projectLocation)
-        self.ops_setup_btn = cmds.button('ops_setup_btn', parent=self.form1, l="Edit\nLocations...", h=45, c=self.on_edit_locations)
-        
-    def _build_project_list_section(self):
-        """Builds the project selection list and the user management button."""
-        self.ops_editUsers_btn = cmds.button('ops_editUsers_btn', l="Edit Users", parent=self.form1, c=self.on_edit_users, ann="Add / Remove users to system")
-        self.ops_projectList_txtScrollList = cmds.textScrollList('ops_projectList_txtScrollList', parent=self.form1, sc=self.on_project_selection, doubleClickCommand=self.on_edit_project)
-        
-    def _build_project_buttons_subform(self):
-        """Builds the sub-form layout containing project action buttons (New, Edit, Remove)."""
-        self.form2 = cmds.formLayout('opsProjectManagerGUI_form2', parent=self.form1, numberOfDivisions=100)
-        
-        self.ops_projNew_btn = cmds.button('ops_projNew_btn', parent=self.form2, l="New...", bgc=(.6, .8, .5), c=self.on_new_project, ann="") 
-        self.ops_projRm_btn = cmds.button('ops_projRm_btn', parent=self.form2, l="Remove", bgc=(.8, .3, .3), en=0, c=self.on_remove_project, ann="")
-        self.ops_projEdit_btn = cmds.button('ops_projEdit_btn', parent=self.form2, l="Edit..", bgc=(.5, .7, .7), en=0, c=self.on_edit_project, ann="")
+    def showWindow(self):
+        """Shows the window as a dockable panel."""
+        self.show(dockable=True, floating=True)
 
-        cmds.formLayout(
-            self.form2,
-            edit=True,
-            attachPosition=[
-                (self.ops_projNew_btn, 'left', 0, 0),
-                (self.ops_projNew_btn, 'right', 0, 50),
-                (self.ops_projRm_btn, 'left', 0, 50),
-                (self.ops_projRm_btn, 'right', 0, 100),
-                (self.ops_projEdit_btn, 'left', 0, 0),
-                (self.ops_projEdit_btn, 'right', 0, 100),
-                (self.ops_projEdit_btn, 'bottom', 0, 100),
-            ],
-            attachControl=[
-                (self.ops_projNew_btn, 'bottom', 2, self.ops_projEdit_btn),
-                (self.ops_projRm_btn, 'bottom', 2, self.ops_projEdit_btn),
-            ]
-        )
-        
-    def _build_project_info_section(self):
-        """Builds the uneditable scroll field used to display detailed project info."""
-        self.ops_projInfo_txt = cmds.text('ops_projInfo_txt', parent=self.form1, l="Project Info", fn="plainLabelFont", al="left")
-        self.ops_projInfo_scrollField = cmds.scrollField('ops_projInfo_scrollField', parent=self.form1, ww=1, editable=0)
-        
-    def _build_action_buttons(self):
-        """Builds the main Refresh and Close buttons for the dialog."""
-        self.ops_refresh_btn = cmds.button('ops_refresh_btn', parent=self.form1, height=30, l="Refresh List", c=self.on_refresh_list)
-        self.ops_close_btn = cmds.button('ops_close_btn', parent=self.form1, height=30, l="Close", c=self.on_close)  
-                
-    def _attach_form_elements(self):
-        """
-        Positions all the created UI elements within the main form layout.
-        Uses percentages (attachPosition), edges (attachForm), and 
-        relative snapping (attachControl) to build a responsive grid.
-        """
-        cmds.formLayout(
-            self.form1,
-            edit=True,
-            attachPosition=[
-                (self.ops_scriptLocation_txtField, 'right', 90, 100),
-                (self.ops_projFPath_txtField, 'right', 90, 100),
-                (self.ops_projectList_txtScrollList, 'right', 0, 30),
-                (self.ops_projInfo_txt, 'right', 2, 100),
-                (self.ops_projInfo_scrollField, 'right', 5, 100),
-                (self.ops_editUsers_btn, 'right', 0, 30),
-                (self.form2, 'right', 0, 30),
-                (self.ops_refresh_btn, 'right', 0, 50),
-                (self.ops_close_btn, 'left', 0, 50),
-                (self.ops_close_btn, 'right', 5, 100),
-                (self.ops_close_btn, 'bottom', 5, 100),
-                (self.ops_refresh_btn, 'bottom', 5, 100),
-                (self.ops_setup_btn, 'right', 2, 100),
-                (self.ops_setup_btn, 'top', 2, 0),
-            ],
-            attachForm=[
-                (self.ops_scriptLocation_txt, 'top', 2),
-                (self.ops_scriptLocation_txt, 'left', 2),
-                (self.ops_scriptLocation_txtField, 'top', 2),
-                (self.ops_projFileLocation_txt, 'left', 2),
-                (self.ops_editUsers_btn, 'left', 10),
-                (self.ops_projectList_txtScrollList, 'left', 10),
-                (self.form2, 'left', 10),
-                (self.ops_refresh_btn, 'left', 10),
-            ],
-            attachControl=[
-                (self.ops_scriptLocation_txtField, 'left', 2, self.ops_scriptLocation_txt),
-                (self.ops_projFileLocation_txt, 'top', 2, self.ops_scriptLocation_txtField),
-                (self.ops_projFPath_txtField, 'top', 2, self.ops_scriptLocation_txtField),
-                (self.ops_projFPath_txtField, 'left', 2, self.ops_projFileLocation_txt),
-                (self.ops_setup_btn, 'left', 2, self.ops_scriptLocation_txtField),
-                (self.ops_editUsers_btn, 'top', 30, self.ops_projFileLocation_txt),
-                (self.ops_projectList_txtScrollList, 'top', 2, self.ops_editUsers_btn),
-                (self.ops_projectList_txtScrollList, 'bottom', 2, self.form2),
-                (self.ops_projInfo_scrollField, 'top', 30, self.ops_projInfo_txt),
-                (self.ops_projInfo_txt, 'top', 50, self.ops_projFileLocation_txt),
-                (self.ops_projInfo_txt, 'left', 30, self.form2),
-                (self.ops_projInfo_scrollField, 'top', 2, self.ops_projInfo_txt),
-                (self.ops_projInfo_scrollField, 'left', 30, self.form2),
-                (self.form2, 'bottom', 20, self.ops_refresh_btn),
-                (self.ops_projInfo_scrollField, 'bottom', 20, self.ops_refresh_btn),
-            ]
-        )
+    def _build_ui(self):
+        """Constructs the UI using PySide widgets and layouts."""
+        self.setStyleSheet(OPS_PROJ_MANAGER_STYLESHEET)
+        main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(5)
+
+        # --- Top Locations Section ---
+        locations_group = QtWidgets.QGroupBox("Locations")
+        locations_layout = QtWidgets.QFormLayout(locations_group)
+        locations_layout.setSpacing(5)
+
+        self.script_location_field = QtWidgets.QLineEdit(self.scriptLocation)
+        self.script_location_field.setReadOnly(True)
+
+        self.project_location_field = QtWidgets.QLineEdit(self.projectLocation)
+        self.project_location_field.setReadOnly(True)
+
+        self.edit_locations_btn = QtWidgets.QPushButton("Edit Locations...")
+        self.edit_locations_btn.setMinimumHeight(35)
+        self.edit_locations_btn.clicked.connect(self.on_edit_locations)
+
+        locations_layout.addRow("Script Location:", self.script_location_field)
+        locations_layout.addRow("Project File Location:", self.project_location_field)
+        locations_layout.addRow("", self.edit_locations_btn)
+
+        main_layout.addWidget(locations_group)
+
+        # --- Main Content Section (Projects & Info) ---
+        main_content_layout = QtWidgets.QHBoxLayout()
+
+        # Left side: Project List
+        project_list_group = QtWidgets.QGroupBox("Projects")
+        project_list_layout = QtWidgets.QVBoxLayout(project_list_group)
+
+        self.edit_users_btn = QtWidgets.QPushButton("Edit Users")
+        self.edit_users_btn.setToolTip("Add / Remove users to system")
+        self.edit_users_btn.clicked.connect(self.on_edit_users)
+
+        self.project_list_widget = QtWidgets.QListWidget()
+        self.project_list_widget.itemSelectionChanged.connect(self.on_project_selection)
+        self.project_list_widget.itemDoubleClicked.connect(self.on_edit_project)
+
+        project_buttons_layout = QtWidgets.QHBoxLayout()
+        self.new_proj_btn = QtWidgets.QPushButton("New...")
+        self.new_proj_btn.setProperty("styleClass", "positiveAction")
+        self.new_proj_btn.clicked.connect(self.on_new_project)
+
+        self.remove_proj_btn = QtWidgets.QPushButton("Remove")
+        self.remove_proj_btn.setProperty("styleClass", "negativeAction")
+        self.remove_proj_btn.setEnabled(False)
+        self.remove_proj_btn.clicked.connect(self.on_remove_project)
+
+        project_buttons_layout.addWidget(self.new_proj_btn)
+        project_buttons_layout.addWidget(self.remove_proj_btn)
+
+        self.edit_proj_btn = QtWidgets.QPushButton("Edit...")
+        self.edit_proj_btn.setProperty("styleClass", "editAction")
+        self.edit_proj_btn.setEnabled(False)
+        self.edit_proj_btn.clicked.connect(self.on_edit_project)
+
+        project_list_layout.addWidget(self.edit_users_btn)
+        project_list_layout.addWidget(self.project_list_widget)
+        project_list_layout.addLayout(project_buttons_layout)
+        project_list_layout.addWidget(self.edit_proj_btn)
+
+        # Right side: Project Info
+        project_info_group = QtWidgets.QGroupBox("Project Info")
+        project_info_layout = QtWidgets.QVBoxLayout(project_info_group)
+        self.project_info_field = QtWidgets.QTextEdit()
+        self.project_info_field.setReadOnly(True)
+        project_info_layout.addWidget(self.project_info_field)
+
+        main_content_layout.addWidget(project_list_group, 1)
+        main_content_layout.addWidget(project_info_group, 2)
+
+        main_layout.addLayout(main_content_layout)
+
+        # --- Bottom Action Buttons ---
+        bottom_buttons_layout = QtWidgets.QHBoxLayout()
+        self.refresh_btn = QtWidgets.QPushButton("Refresh List")
+        self.refresh_btn.setMinimumHeight(30)
+        self.refresh_btn.clicked.connect(self.on_refresh_list)
+
+        self.close_btn = QtWidgets.QPushButton("Close")
+        self.close_btn.setMinimumHeight(30)
+        self.close_btn.clicked.connect(self.on_close)
+
+        bottom_buttons_layout.addWidget(self.refresh_btn)
+        bottom_buttons_layout.addWidget(self.close_btn)
+
+        main_layout.addLayout(bottom_buttons_layout)
 
     # --- Button Callbacks ---
 
     def on_edit_locations(self, *args):
         """Launches the Setup UI to change the script or project paths."""
-        import opsLoader
         opsLoader.openPypelineSetup()
         
     def on_edit_users(self, *args):
         """Launches the UI to edit user permissions."""
-        import opsProject
         opsProject.proj_edit_users()
         
     def on_project_selection(self, *args):
         """Updates the UI info field when a project is selected."""
-        selected = cmds.textScrollList(self.ops_projectList_txtScrollList, query=True, selectItem=True)
-        if not selected:
+        selected_items = self.project_list_widget.selectedItems()
+        if not selected_items:
+            self.edit_proj_btn.setEnabled(False)
+            self.remove_proj_btn.setEnabled(False)
             return
         
-        # Enable Edit and Remove buttons
-        cmds.button(self.ops_projEdit_btn, edit=True, enable=True)
-        cmds.button(self.ops_projRm_btn, edit=True, enable=True)
+        self.edit_proj_btn.setEnabled(True)
+        self.remove_proj_btn.setEnabled(True)
         
-        # Fetch and display project info
-        import opsProject
-        info_string = opsProject.get_project_info_string(selected[0])
-        cmds.scrollField(self.ops_projInfo_scrollField, edit=True, text=info_string)
+        info_string = opsProject.get_project_info_string(selected_items[0].text())
+        self.project_info_field.setPlainText(info_string)
         
     def on_new_project(self, *args):
         """Launches the Project Dialog window in 'New' mode."""
@@ -196,53 +182,48 @@ class opsProjectManagerGUI(window.window):
         
     def on_edit_project(self, *args):
         """Launches the Project Dialog window in 'Edit' mode."""
-        selected = cmds.textScrollList(self.ops_projectList_txtScrollList, query=True, selectItem=True)
-        if not selected:
+        selected_items = self.project_list_widget.selectedItems()
+        if not selected_items:
             return
             
         self.UIObjects.opsProjDialogGUI.mode = 1
-        self.UIObjects.opsProjDialogGUI.old_name = selected[0]
+        self.UIObjects.opsProjDialogGUI.old_name = selected_items[0].text()
         self.UIObjects.opsProjDialogGUI.showWindow()
         
     def on_remove_project(self, *args):
         """Prompts the user and removes the selected project configuration."""
-        selected = cmds.textScrollList(self.ops_projectList_txtScrollList, query=True, selectItem=True)
-        if not selected:
+        selected_items = self.project_list_widget.selectedItems()
+        if not selected_items:
             return
             
-        proj_name = selected[0]
-        res = cmds.confirmDialog(
-            title="Remove Project Confirm", 
-            message=f"Are you sure you want to remove project {proj_name}?",
-            button=["Yes", "Cancel"], 
-            defaultButton="Yes", 
-            cancelButton="Cancel", 
-            dismissString="Cancel"
+        proj_name = selected_items[0].text()
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Remove Project Confirm",
+            f"Are you sure you want to remove project {proj_name}?",
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Cancel
         )
         
-        if res == "Yes":
-            import opsActions
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if opsActions.remove_project(proj_name):
                 self.on_refresh_list()
             else:
-                cmds.error("Project was not found.")
+                QtWidgets.QMessageBox.warning(self, "Error", "Project was not found.")
                 
     def on_refresh_list(self, *args):
         """Clears and rebuilds the list of available projects."""
-        import opsProject
-        import opsUtils
-        
-        cmds.textScrollList(self.ops_projectList_txtScrollList, edit=True, removeAll=True)
+        self.project_list_widget.clear()
         
         proj_list = [opsUtils.get_xml_data(p, "name") for p in opsProject.get_projects_data()]
-        for p in proj_list:
-            cmds.textScrollList(self.ops_projectList_txtScrollList, edit=True, append=p)
+        if proj_list:
+            self.project_list_widget.addItems(proj_list)
             
-        cmds.scrollField(self.ops_projInfo_scrollField, edit=True, text="")
-        cmds.button(self.ops_projEdit_btn, edit=True, enable=False)
-        cmds.button(self.ops_projRm_btn, edit=True, enable=False)
+        self.project_info_field.clear()
+        self.edit_proj_btn.setEnabled(False)
+        self.remove_proj_btn.setEnabled(False)
         
     def on_close(self, *args):
         """Closes the Project Manager UI."""
-        import opsProject
         opsProject.close_proj_ui()
+        self.close()
