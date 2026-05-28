@@ -1,7 +1,8 @@
 import os
+import importlib
 
 from util import XML
-reload( XML )
+importlib.reload( XML )
 
 class Project():
     '''

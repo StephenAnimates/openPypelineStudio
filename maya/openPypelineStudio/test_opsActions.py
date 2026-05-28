@@ -24,7 +24,7 @@ import opsActions
 @patch('opsInfo.get_category')
 @patch('openpypeline.core.util.prefs.get_pref')
 @patch('opsEngine.OpsEngine')
-def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_category, mock_get_file_name, mock_isdir, mock_makedirs):
+def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_category, mock_get_file_name, mock_isdir, mock_makedirs, file_ext, expected_file_type):
     """
     Test that OpenUSD and Alembic file formats trigger the correct 
     `export_file` calls during item creation (mode 2 and 3).
@@ -74,7 +74,7 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
 @patch('opsInfo.get_file_name')
 @patch('openpypeline.core.util.prefs.get_pref')
 @patch('opsEngine.OpsEngine')
-def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_get_version):
+def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_get_version, file_ext, expected_file_type):
     """
     Test that save_wip triggers the correct `export_file` calls for OpenUSD and Alembic.
     """
@@ -110,7 +110,7 @@ def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_na
 @patch('opsInfo.get_file_name')
 @patch('openpypeline.core.util.prefs.get_pref')
 @patch('opsEngine.OpsEngine')
-def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_save_wip, mock_exists, mock_rename):
+def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_save_wip, mock_exists, mock_rename, file_ext, expected_file_type):
     """
     Test that save_master triggers the correct `export_file` calls for OpenUSD and Alembic.
     """

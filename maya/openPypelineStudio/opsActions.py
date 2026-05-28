@@ -40,9 +40,9 @@ def activate_project(proj_name):
         proj_archive = opsUtils.get_xml_data(proj_xml, "archivefolder")
         proj_deleted = opsUtils.get_xml_data(proj_xml, "deletedfolder")
         proj_m_format = opsUtils.get_xml_data(proj_xml, "masterformat")
-        proj_w_format = opsUtils.get_xml_data(proj_xml, "workshopformat")
+        proj_w_format = opsUtils.get_xml_data(proj_xml, "wipformat") or opsUtils.get_xml_data(proj_xml, "workshopformat")
         proj_m_name = opsUtils.get_xml_data(proj_xml, "mastername")
-        proj_w_name = opsUtils.get_xml_data(proj_xml, "workshopname")
+        proj_w_name = opsUtils.get_xml_data(proj_xml, "wipname") or opsUtils.get_xml_data(proj_xml, "workshopname")
         proj_users = opsUtils.get_xml_data(proj_xml, "users")
 
         lib_path = os.path.join(proj_path, proj_lib, "").replace("\\", "/")
@@ -635,7 +635,7 @@ def close_file():
             button=["Save", "Don't Save", "Cancel"],
             defaultButton="Don't Save"
         )
-        if confirm == "Save": save_workshop("saved before closing")
+        if confirm == "Save": save_wip("saved before closing")
         elif confirm == "Cancel": return 1
     
     prefs.set_pref("ops_currOpenType", "")
