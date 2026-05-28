@@ -164,11 +164,11 @@ def test_create_new_project(mock_get_pref, mock_rewrite, mock_get_data, tmp_path
     new_wip_format = "ma"
     
     # Sub-folder names
-    new_lib_loc = "lib"
+    new_lib_loc = "scenes/assets"
     new_shot_loc = "scenes"
-    new_renders_loc = "renders"
+    new_renders_loc = "images/renders"
     new_scripts_loc = "scripts"
-    new_textures_loc = "textures"
+    new_textures_loc = "sourceimages"
     new_particles_loc = "particles"
     new_archive_loc = "archive"
     new_deleted_loc = "deleted"

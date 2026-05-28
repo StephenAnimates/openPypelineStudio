@@ -11,6 +11,7 @@ Status: Fully migrated to PySide6. UI components are now native Qt widgets and D
 """
 
 import os
+import webbrowser
 from PySide6 import QtWidgets, QtCore, QtGui
 import opsInfo
 import opsActions
@@ -19,7 +20,13 @@ from openpypeline.core.util import prefs
 
 def _get_ui():
     ui_obj = UIObjects.UIObjects()
-    return ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
+    ui = ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
+    if ui:
+        try:
+            ui.objectName() # Check if C++ object is alive
+        except RuntimeError:
+            return None
+    return ui
 
 
 def refresh_ui(*args):
@@ -162,19 +169,42 @@ def update_asset_list(preserve_selection=1, *args):
     ui.ops_asset_scrollList.clear()
     active = False
     assets_list = []
+    ui_dir = os.path.dirname(__file__)
+    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
+    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    
     if selected[0]:
         assets = sorted(opsInfo.get_children(2, selected[0], "", ""))
         for asset in assets:
             active = True
             assets_list.append(asset)
-            post = " +" if opsInfo.has_master(2, selected[0], asset, "") else " -" if opsInfo.has_wip(2, selected[0], asset, "") else ""
-            pre = "* " if opsInfo.get_file_name(2, selected[0], asset, "", "folder") == opsInfo.get_currently_open_path() else ""
-            post += " *" if pre else ""
-            display_str = f"{pre}{asset}{post}"
-            ui.ops_asset_scrollList.addItem(display_str)
+            
+            item = QtWidgets.QListWidgetItem(asset)
+            is_open = (opsInfo.get_file_name(2, selected[0], asset, "", "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(2, selected[0], asset, "")
+            has_wip = opsInfo.has_wip(2, selected[0], asset, "")
+            
+            if is_open:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+                item.setToolTip("Currently Open")
+                
+            if has_master:
+                item.setIcon(master_icon)
+                item.setForeground(QtGui.QColor("#e6b366"))
+                if not is_open: item.setToolTip("Has Published Master")
+            elif has_wip:
+                item.setIcon(wip_icon)
+                item.setForeground(QtGui.QColor("#cc9980"))
+                if not is_open: item.setToolTip("Has WIP")
+            else:
+                item.setForeground(QtGui.QColor("#888888"))
+                if not is_open: item.setToolTip("Empty")
+                
+            ui.ops_asset_scrollList.addItem(item)
             if preserve_selection and selected[1] == asset:
-                items = ui.ops_asset_scrollList.findItems(display_str, QtCore.Qt.MatchExactly)
-                if items: ui.ops_asset_scrollList.setCurrentItem(items[0])
+                ui.ops_asset_scrollList.setCurrentItem(item)
                     
     prefs.set_pref("ops_assets", assets_list)
     ui.ops_assetTypeRemove_btn.setEnabled(bool(selected[0]))
@@ -197,19 +227,42 @@ def asset_selected(preserve_selection=1, *args):
         
     active = False
     comp_list = []
+    ui_dir = os.path.dirname(__file__)
+    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
+    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    
     if is_selected:
         components = sorted(opsInfo.get_children(2, selected[0], selected[1], ""))
         for comp in components:
             active = True
             comp_list.append(comp)
-            post = " +" if opsInfo.has_master(2, selected[0], selected[1], comp) else " -" if opsInfo.has_wip(2, selected[0], selected[1], comp) else ""
-            pre = "* " if opsInfo.get_file_name(2, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path() else ""
-            post += " *" if pre else ""
-            display_str = f"{pre}{comp}{post}"
-            ui.ops_componentScrollList.addItem(display_str)
+            
+            item = QtWidgets.QListWidgetItem(comp)
+            is_open = (opsInfo.get_file_name(2, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(2, selected[0], selected[1], comp)
+            has_wip = opsInfo.has_wip(2, selected[0], selected[1], comp)
+            
+            if is_open:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+                item.setToolTip("Currently Open")
+                
+            if has_master:
+                item.setIcon(master_icon)
+                item.setForeground(QtGui.QColor("#e6b366"))
+                if not is_open: item.setToolTip("Has Published Master")
+            elif has_wip:
+                item.setIcon(wip_icon)
+                item.setForeground(QtGui.QColor("#cc9980"))
+                if not is_open: item.setToolTip("Has WIP")
+            else:
+                item.setForeground(QtGui.QColor("#888888"))
+                if not is_open: item.setToolTip("Empty")
+                
+            ui.ops_componentScrollList.addItem(item)
             if preserve_selection and selected[2] == comp:
-                items = ui.ops_componentScrollList.findItems(display_str, QtCore.Qt.MatchExactly)
-                if items: ui.ops_componentScrollList.setCurrentItem(items[0])
+                ui.ops_componentScrollList.setCurrentItem(item)
                 
     prefs.set_pref("ops_components", comp_list)
     ui.ops_componentScrollList.setEnabled(active)
@@ -251,19 +304,42 @@ def update_shot_list(preserve_selection=1, *args):
     ui.ops_shotScrollList.clear()
     active = False
     shots_list = []
+    ui_dir = os.path.dirname(__file__)
+    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
+    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    
     if selected[0]:
         shots = sorted(opsInfo.get_children(3, selected[0], "", ""))
         for shot in shots:
             active = True
             shots_list.append(shot)
-            post = " +" if opsInfo.has_master(3, selected[0], shot, "") else " -" if opsInfo.has_wip(3, selected[0], shot, "") else ""
-            pre = "* " if opsInfo.get_file_name(3, selected[0], shot, "", "folder") == opsInfo.get_currently_open_path() else ""
-            post += " *" if pre else ""
-            display_str = f"{pre}{shot}{post}"
-            ui.ops_shotScrollList.addItem(display_str)
+            
+            item = QtWidgets.QListWidgetItem(shot)
+            is_open = (opsInfo.get_file_name(3, selected[0], shot, "", "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(3, selected[0], shot, "")
+            has_wip = opsInfo.has_wip(3, selected[0], shot, "")
+            
+            if is_open:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+                item.setToolTip("Currently Open")
+                
+            if has_master:
+                item.setIcon(master_icon)
+                item.setForeground(QtGui.QColor("#e6b366"))
+                if not is_open: item.setToolTip("Has Published Master")
+            elif has_wip:
+                item.setIcon(wip_icon)
+                item.setForeground(QtGui.QColor("#cc9980"))
+                if not is_open: item.setToolTip("Has WIP")
+            else:
+                item.setForeground(QtGui.QColor("#888888"))
+                if not is_open: item.setToolTip("Empty")
+                
+            ui.ops_shotScrollList.addItem(item)
             if preserve_selection and selected[1] == shot:
-                items = ui.ops_shotScrollList.findItems(display_str, QtCore.Qt.MatchExactly)
-                if items: ui.ops_shotScrollList.setCurrentItem(items[0])
+                ui.ops_shotScrollList.setCurrentItem(item)
                 
     prefs.set_pref("ops_shots", shots_list)
     ui.ops_sequenceRemoveButton.setEnabled(bool(selected[0]))
@@ -285,19 +361,42 @@ def shot_selected(preserve_selection=1, *args):
         
     active = False
     s_comp_list = []
+    ui_dir = os.path.dirname(__file__)
+    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
+    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    
     if is_selected:
         components = sorted(opsInfo.get_children(3, selected[0], selected[1], ""))
         for comp in components:
             active = True
             s_comp_list.append(comp)
-            post = " +" if opsInfo.has_master(3, selected[0], selected[1], comp) else " -" if opsInfo.has_wip(3, selected[0], selected[1], comp) else ""
-            pre = "* " if opsInfo.get_file_name(3, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path() else ""
-            post += " *" if pre else ""
-            display_str = f"{pre}{comp}{post}"
-            ui.ops_shotComponentScrollList.addItem(display_str)
+            
+            item = QtWidgets.QListWidgetItem(comp)
+            is_open = (opsInfo.get_file_name(3, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(3, selected[0], selected[1], comp)
+            has_wip = opsInfo.has_wip(3, selected[0], selected[1], comp)
+            
+            if is_open:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+                item.setToolTip("Currently Open")
+                
+            if has_master:
+                item.setIcon(master_icon)
+                item.setForeground(QtGui.QColor("#e6b366"))
+                if not is_open: item.setToolTip("Has Published Master")
+            elif has_wip:
+                item.setIcon(wip_icon)
+                item.setForeground(QtGui.QColor("#cc9980"))
+                if not is_open: item.setToolTip("Has WIP")
+            else:
+                item.setForeground(QtGui.QColor("#888888"))
+                if not is_open: item.setToolTip("Empty")
+                
+            ui.ops_shotComponentScrollList.addItem(item)
             if preserve_selection and selected[2] == comp:
-                items = ui.ops_shotComponentScrollList.findItems(display_str, QtCore.Qt.MatchExactly)
-                if items: ui.ops_shotComponentScrollList.setCurrentItem(items[0])
+                ui.ops_shotComponentScrollList.setCurrentItem(item)
                 
     prefs.set_pref("ops_shotComponents", s_comp_list)
     ui.ops_shotComponentScrollList.setEnabled(active)
@@ -490,7 +589,13 @@ def close_current(*args):
 
 
 def launch_help(*args):
-    cmds.showHelp("http://openpipeline.sourceforge.net/", absolute=True)
+    base_dir = os.path.dirname(__file__)
+    docs_index = os.path.abspath(os.path.join(base_dir, "..", "..", "utilities", "_build", "html", "index.html")).replace("\\", "/")
+    
+    if os.path.exists(docs_index):
+        webbrowser.open(f"file://{docs_index}")
+    else:
+        webbrowser.open("https://stephenanimates.github.io/openPypelineStudio/index.html")
 
 # --- UI Dialog Wrappers ---
 
@@ -794,8 +899,9 @@ def prompt_archive(tab, level, *args):
 
 
 def about_dialog(*args):
-    text = ("openPypeline Studio\n\nAn open source, free, and customizable pipeline for production (in Autodesk Maya).\n\n"
-            "Originally created by Kickstand.\nModernized to Python 3 by the open-source community.\n\n"
-            "More information may be found at:\nhttp://openpipeline.sourceforge.net/")
+    text = ("openPypeline Studio (ops)<br><br>"
+            "An open source, free, and customizable python pipeline tool for production.<br><br>"
+            "Originally created by Kickstand as a MEL code, it has now been modernized to Python 3, with added functionality.<br><br>"
+            "For more information and API documentation, please refer to the <a href='https://stephenanimates.github.io/openPypelineStudio/index.html'>online documentation</a>.")
     ui = _get_ui()
     QtWidgets.QMessageBox.about(ui, "About openPypeline Studio", text)

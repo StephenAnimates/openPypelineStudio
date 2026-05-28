@@ -44,6 +44,22 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         self.setWindowTitle("openPypeline Studio Project Manager")
         self.setObjectName("openPypelineStudioProjectManager")
+        
+        # Clean up orphaned workspace control from any previous instances
+        try:
+            import maya.cmds as cmds
+            workspace_control = self.objectName() + "WorkspaceControl"
+            if cmds.workspaceControl(workspace_control, exists=True):
+                cmds.deleteUI(workspace_control)
+                
+            # Delete any orphaned PySide widgets from previous instances
+            for widget in QtWidgets.QApplication.topLevelWidgets():
+                if widget.objectName() == self.objectName() and widget != self:
+                    widget.close()
+                    widget.deleteLater()
+        except ImportError:
+            pass
+            
         self.setMinimumSize(550, 460)
 
         # Fetch initial paths
@@ -55,6 +71,15 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
     def showWindow(self):
         """Shows the window as a dockable panel."""
+        try:
+            import maya.cmds as cmds
+            workspace_control = self.objectName() + "WorkspaceControl"
+            if cmds.workspaceControl(workspace_control, exists=True):
+                cmds.workspaceControl(workspace_control, edit=True, restore=True)
+                return
+        except ImportError:
+            pass
+            
         self.show(dockable=True, floating=True)
 
     def _build_ui(self):

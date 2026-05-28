@@ -319,6 +319,12 @@ def get_currently_selected_item(tab, depth):
     if not ui:
         return [level1, level2, level3]
     
+    try:
+        # Test if the underlying C++ object has been deleted (e.g., during UI teardown)
+        ui.objectName()
+    except RuntimeError:
+        return [level1, level2, level3]
+
     if tab == TAB_ASSET:
         if depth >= LEVEL_1 and hasattr(ui, "ops_assetType_txtScrollList"):
             types = prefs.get_pref("ops_assetTypes", [])

@@ -123,12 +123,14 @@ def create_or_edit_project(mode, old_name, new_name, new_path, new_description, 
     if not valid_pattern.match(new_name): error += "Project name is not valid (remove spaces and special characters).\n"
     if not valid_pattern.match(new_master_name): error += "Master name is not valid (remove spaces and special characters).\n"
     if not valid_pattern.match(new_wip_name): error += "WIP file name is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_lib_loc): error += "Library sub-folder is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_shot_loc): error += "Shot sub-folder is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_textures_loc): error += "Textures sub-folder is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_scripts_loc): error += "Scripts sub-folder is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_renders_loc): error += "Renders sub-folder is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_particles_loc): error += "Particles sub-folder is not valid (remove spaces and special characters).\n"
+
+    valid_folder_pattern = re.compile(r"^[a-zA-Z0-9_/]*$")
+    if not valid_folder_pattern.match(new_lib_loc): error += "Library sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
+    if not valid_folder_pattern.match(new_shot_loc): error += "Shot sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
+    if not valid_folder_pattern.match(new_textures_loc): error += "Textures sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
+    if not valid_folder_pattern.match(new_scripts_loc): error += "Scripts sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
+    if not valid_folder_pattern.match(new_renders_loc): error += "Renders sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
+    if not valid_folder_pattern.match(new_particles_loc): error += "Particles sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
     
     new_path = os.path.join(new_path, "").replace("\\", "/")
     test_folders = [new_particles_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_shot_loc, new_lib_loc, new_archive_loc, new_deleted_loc]
@@ -653,9 +655,11 @@ def close_file():
 def open_location(tab, level1, level2, level3):
     """Opens an item's folder in the OS's explorer."""
     path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    if os.path.isdir(path):
-        if cmds.about(os=True) == "mac": os.system(f"open -a finder '{path}'")
-        else: os.startfile(path.replace("/", "\\"))
+    if path and os.path.isdir(path):
+        import sys
+        if sys.platform == "darwin": os.system(f"open '{path}'")
+        elif sys.platform == "win32": os.startfile(path.replace("/", "\\"))
+        else: os.system(f"xdg-open '{path}'")
     else: logger.warning(f"Couldn't find folder '{path}'.")
 
 
@@ -703,9 +707,11 @@ def set_custom_notes(tab, level1, level2, level3, notes):
 def view_playblast(tab, level1, level2, level3):
     """Opens the playblast of an item."""
     playblast_file = opsInfo.get_file_name(tab, level1, level2, level3, "playblastFile")
-    if os.path.isfile(playblast_file):
-        if cmds.about(os=True) == "mac": os.system(f"open '{playblast_file}'")
-        else: os.startfile(playblast_file)
+    if playblast_file and os.path.isfile(playblast_file):
+        import sys
+        if sys.platform == "darwin": os.system(f"open '{playblast_file}'")
+        elif sys.platform == "win32": os.startfile(playblast_file.replace("/", "\\"))
+        else: os.system(f"xdg-open '{playblast_file}'")
     else: logger.warning(f"Couldn't find playblast file '{playblast_file}'.")
 
 

@@ -73,6 +73,22 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.UIObjects = UIObjects.UIObjects()
         self.setWindowTitle("openPypeline Studio")
         self.setObjectName("openPypelineUI")
+        
+        # Clean up orphaned workspace control from any previous instances
+        try:
+            import maya.cmds as cmds
+            workspace_control = self.objectName() + "WorkspaceControl"
+            if cmds.workspaceControl(workspace_control, exists=True):
+                cmds.deleteUI(workspace_control)
+                
+            # Delete any orphaned PySide widgets from previous instances
+            for widget in QtWidgets.QApplication.topLevelWidgets():
+                if widget.objectName() == self.objectName() and widget != self:
+                    widget.close()
+                    widget.deleteLater()
+        except ImportError:
+            pass
+            
         self.setMinimumSize(450, 780)
         
         ui_dir = os.path.dirname(__file__)
@@ -134,6 +150,15 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
 
     def showWindow(self):
         """Shows the window as a dockable panel."""
+        try:
+            import maya.cmds as cmds
+            workspace_control = self.objectName() + "WorkspaceControl"
+            if cmds.workspaceControl(workspace_control, exists=True):
+                cmds.workspaceControl(workspace_control, edit=True, restore=True)
+                return
+        except ImportError:
+            pass
+            
         self.show(dockable=True, floating=True)
         # Safely try to refresh the UI in case the wrappers are still using cmds
         try:
@@ -170,13 +195,14 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         tools.addAction("Scene Inventory", self.on_open_scene_inventory)
         
         # Conditionally add Maya tools only if running inside Maya
-        import opsEngine
-        engine = opsEngine.OpsEngine()
-        if engine.host_app == 'maya':
+        try:
             import maya.cmds as cmds
+            import maya.mel as mel
             maya_tools = menubar.addMenu("Maya Tools")
-            maya_tools.addAction("Maya Reference Editor", lambda: cmds.ReferenceEditor())
-            maya_tools.addAction("Maya Project Manager", lambda: cmds.projectSetup(2))
+            maya_tools.addAction("Maya Reference Editor", lambda: mel.eval("ReferenceEditor"))
+            maya_tools.addAction("Maya Project Manager", lambda: mel.eval('projectViewer "NewProject"'))
+        except ImportError:
+            pass
         
         addons = menubar.addMenu("Add-ons")
         addons.addAction("How to add to this menu...", lambda: QtWidgets.QMessageBox.information(self, 'Add-ons', 'Add Python plugins directly to the addons folder.'))
@@ -185,7 +211,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         settings.addAction("Preferences...", self.on_open_settings)
         
         help_menu = menubar.addMenu("Help")
-        help_menu.addAction("About openPipeline...", opsUIWrappers.about_dialog)
+        help_menu.addAction("About openPypeline Studio...", opsUIWrappers.about_dialog)
         help_menu.addAction("Help...", opsUIWrappers.launch_help)
         
         # --- Main Toolbar ---
@@ -333,13 +359,13 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
     def _build_asset_browser_tab(self):
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(tab)
-        cols_layout = QtWidgets.QHBoxLayout()
         
-        self._build_asset_types_column(cols_layout)
-        self._build_assets_column(cols_layout)
-        self._build_asset_components_column(cols_layout)
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self._build_asset_types_column(splitter)
+        self._build_assets_column(splitter)
+        self._build_asset_components_column(splitter)
         
-        layout.addLayout(cols_layout)
+        layout.addWidget(splitter, stretch=1)
         self._build_asset_info_section(layout)
         
         self.ops_mainTabs_tabLayout.addTab(tab, "Asset Browser")
@@ -477,13 +503,13 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
     def _build_shot_browser_tab(self):
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(tab)
-        cols_layout = QtWidgets.QHBoxLayout()
         
-        self._build_sequences_column(cols_layout)
-        self._build_shots_column(cols_layout)
-        self._build_shot_components_column(cols_layout)
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self._build_sequences_column(splitter)
+        self._build_shots_column(splitter)
+        self._build_shot_components_column(splitter)
         
-        layout.addLayout(cols_layout)
+        layout.addWidget(splitter, stretch=1)
         self._build_shot_info_section(layout)
         
         self.ops_mainTabs_tabLayout.addTab(tab, "Shot Browser")

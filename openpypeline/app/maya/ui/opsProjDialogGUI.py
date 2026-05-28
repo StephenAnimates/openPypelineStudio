@@ -10,6 +10,7 @@ License: Common Public License 1.0 (CPL-1.0)
 """
 
 import os
+import re
 from PySide6 import QtWidgets, QtCore
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
 
@@ -48,6 +49,10 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         
         self.mode = 0
         self.old_name = ""
+        
+        self._warning_timer = QtCore.QTimer(self)
+        self._warning_timer.setSingleShot(True)
+        self._warning_timer.timeout.connect(self._clear_warning)
 
         self._build_ui()
 
@@ -77,8 +82,18 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         self.proj_path_field = QtWidgets.QLineEdit()
         self.path_browse_btn = QtWidgets.QPushButton("Browse...")
         self.path_browse_btn.clicked.connect(lambda: self._browse_directory(self.proj_path_field, append_proj_name=True))
+        
+        self.maya_proj_btn = QtWidgets.QPushButton("Use Maya Project")
+        self.maya_proj_btn.clicked.connect(self._populate_from_maya)
+        
         path_layout.addWidget(self.proj_path_field)
         path_layout.addWidget(self.path_browse_btn)
+        
+        try:
+            import maya.cmds
+            path_layout.addWidget(self.maya_proj_btn)
+        except ImportError:
+            pass
 
         self.desc_field = QtWidgets.QLineEdit()
         self.desc_field.setMaxLength(250)
@@ -130,7 +145,7 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         files_layout.addWidget(QtWidgets.QLabel("Format:"), 0, 2)
         self.master_format_combo = QtWidgets.QComboBox()
-        self.master_format_combo.addItems(["mb", "ma", "usd", "usda", "abc"])
+        self.master_format_combo.addItems(["ma", "mb", "usd", "usda", "abc"])
         files_layout.addWidget(self.master_format_combo, 0, 3)
 
         files_layout.addWidget(QtWidgets.QLabel("WIP Name:"), 1, 0)
@@ -139,7 +154,7 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         files_layout.addWidget(QtWidgets.QLabel("Format:"), 1, 2)
         self.wip_format_combo = QtWidgets.QComboBox()
-        self.wip_format_combo.addItems(["mb", "ma", "usd", "usda", "abc"])
+        self.wip_format_combo.addItems(["ma", "mb", "usd", "usda", "abc"])
         files_layout.addWidget(self.wip_format_combo, 1, 3)
 
         main_layout.addWidget(files_group)
@@ -148,11 +163,11 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         subfolders_group = QtWidgets.QGroupBox("Sub-Folder Names")
         subfolders_layout = QtWidgets.QGridLayout(subfolders_group)
 
-        self.asset_lib_field = QtWidgets.QLineEdit("lib")
+        self.asset_lib_field = QtWidgets.QLineEdit("scenes/assets")
         self.scripts_field = QtWidgets.QLineEdit("scripts")
         self.shot_lib_field = QtWidgets.QLineEdit("scenes")
-        self.textures_field = QtWidgets.QLineEdit("textures")
-        self.renders_field = QtWidgets.QLineEdit("renders")
+        self.textures_field = QtWidgets.QLineEdit("sourceimages")
+        self.renders_field = QtWidgets.QLineEdit("images/renders")
         self.particles_field = QtWidgets.QLineEdit("particles")
 
         subfolders_layout.addWidget(QtWidgets.QLabel("Asset Library:"), 0, 0)
@@ -195,6 +210,13 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         main_layout.addWidget(archive_group)
 
+        # --- Validation Warning Label ---
+        self.validation_warning_label = QtWidgets.QLabel("")
+        self.validation_warning_label.setStyleSheet("color: #cc4d4d; font-weight: bold;")
+        self.validation_warning_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.validation_warning_label.setFixedHeight(20)
+        main_layout.addWidget(self.validation_warning_label)
+
         # --- Bottom Action Buttons ---
         btn_layout = QtWidgets.QHBoxLayout()
         self.accept_btn = QtWidgets.QPushButton("Accept")
@@ -211,6 +233,60 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         main_layout.addLayout(btn_layout)
 
+        # --- Real-time Validation Connections ---
+        self.proj_name_field.textEdited.connect(lambda t: self._validate_name_field(t, self.proj_name_field))
+        self.master_name_field.textEdited.connect(lambda t: self._validate_name_field(t, self.master_name_field))
+        self.wip_name_field.textEdited.connect(lambda t: self._validate_name_field(t, self.wip_name_field))
+
+        self.asset_lib_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.asset_lib_field))
+        self.scripts_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.scripts_field))
+        self.shot_lib_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.shot_lib_field))
+        self.textures_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.textures_field))
+        self.renders_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.renders_field))
+        self.particles_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.particles_field))
+        self.archive_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.archive_field))
+        self.deleted_field.textEdited.connect(lambda t: self._validate_folder_field(t, self.deleted_field))
+
+    def _show_warning(self, message):
+        self.validation_warning_label.setText(message)
+        self._warning_timer.start(3500)  # Clear after 3.5 seconds
+
+    def _clear_warning(self):
+        self.validation_warning_label.setText("")
+
+    def _validate_name_field(self, text, line_edit):
+        """Validates strict naming fields, allowing only alphanumeric characters and underscores."""
+        self._apply_validation(text, line_edit, r'[^a-zA-Z0-9_]')
+
+    def _validate_folder_field(self, text, line_edit):
+        """Validates folder names, converting backslashes to forward slashes."""
+        if '\\' in text:
+            text = text.replace('\\', '/')
+            self._show_warning("Backslashes converted to forward slashes.")
+        self._apply_validation(text, line_edit, r'[^a-zA-Z0-9_/]')
+        
+    def _apply_validation(self, text, line_edit, regex_pattern):
+        original_text = text
+        warning_msg = ""
+        
+        if ' ' in text:
+            text = text.replace(' ', '_')
+            warning_msg = "Spaces are not allowed. Replaced with underscores."
+            
+        filtered_text = re.sub(regex_pattern, '', text)
+        if filtered_text != text:
+            text = filtered_text
+            warning_msg = "Special characters are not allowed and were removed."
+            
+        if text != original_text:
+            cursor_pos = line_edit.cursorPosition()
+            diff = len(original_text) - len(text)
+            line_edit.blockSignals(True)
+            line_edit.setText(text)
+            line_edit.blockSignals(False)
+            line_edit.setCursorPosition(max(0, cursor_pos - diff))
+            self._show_warning(warning_msg)
+
     def _browse_directory(self, line_edit, append_proj_name=False):
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Location")
         if dir_path:
@@ -219,6 +295,37 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
                 if proj_name:
                     dir_path = os.path.join(dir_path, proj_name)
             line_edit.setText(dir_path.replace("\\", "/"))
+
+    def _populate_from_maya(self):
+        """Populates the dialog fields using the currently active Maya project workspaces."""
+        try:
+            import maya.cmds as cmds
+            proj_dir = cmds.workspace(query=True, rootDirectory=True)
+            if proj_dir:
+                self.proj_path_field.setText(proj_dir.replace("\\", "/").rstrip("/"))
+                
+            scene_dir = cmds.workspace(fileRuleEntry="scene")
+            if scene_dir:
+                self.shot_lib_field.setText(scene_dir)
+                self.asset_lib_field.setText(f"{scene_dir}/assets")
+                
+            images_dir = cmds.workspace(fileRuleEntry="images")
+            if images_dir:
+                self.renders_field.setText(f"{images_dir}/renders")
+                
+            source_images_dir = cmds.workspace(fileRuleEntry="sourceImages")
+            if source_images_dir:
+                self.textures_field.setText(source_images_dir)
+                
+            scripts_dir = cmds.workspace(fileRuleEntry="scripts")
+            if scripts_dir:
+                self.scripts_field.setText(scripts_dir)
+                
+            particles_dir = cmds.workspace(fileRuleEntry="particles")
+            if particles_dir:
+                self.particles_field.setText(particles_dir)
+        except ImportError:
+            pass
 
     def _toggle_custom_users(self, state):
         is_enabled = bool(state)
