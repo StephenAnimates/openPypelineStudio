@@ -391,8 +391,8 @@ def reference_item(item_type, tab, level1, level2, level3, flags=""):
 
 
 
-def save_workshop(note=""):
-    """Saves a workshop for the currently open item."""
+def save_wip(note=""):
+    """Saves a WIP for the currently open item."""
     ext = prefs.get_pref("ops_wipFormat", "ma")
     w_name = prefs.get_pref("ops_wip", "wip")
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
