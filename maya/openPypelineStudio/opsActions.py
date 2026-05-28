@@ -225,6 +225,10 @@ def remove_project(proj_name):
 
 def create_new_item(tab, level1, level2, level3, mode):
     """Creates a new item within the currently active project."""
+    if not prefs.get_pref("ops_currProjectName", ""):
+        logger.warning("No project is currently active. Cannot create item.")
+        return ""
+        
     error = ""
     item_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
     depth = sum(1 for lvl in [level1, level2, level3] if lvl)

@@ -640,6 +640,9 @@ class ItemCreationDialog(QtWidgets.QDialog):
 
 def prompt_new_asset_type(*args):
     ui = _get_ui()
+    if not prefs.get_pref("ops_currProjectName", ""):
+        QtWidgets.QMessageBox.warning(ui, "Error", "No Project is currently active.")
+        return
     name, ok = QtWidgets.QInputDialog.getText(ui, "New Asset Type", "Asset Type Name\n(no spaces or special characters):")
     if ok and name.strip():
         if opsActions.create_new_item(2, name.strip(), "", "", 0): refresh_ui()
@@ -647,6 +650,9 @@ def prompt_new_asset_type(*args):
 
 def prompt_new_sequence(*args):
     ui = _get_ui()
+    if not prefs.get_pref("ops_currProjectName", ""):
+        QtWidgets.QMessageBox.warning(ui, "Error", "No Project is currently active.")
+        return
     name, ok = QtWidgets.QInputDialog.getText(ui, "New Sequence", "Sequence Name\n(no spaces or special characters):")
     if ok and name.strip():
         if opsActions.create_new_item(3, name.strip(), "", "", 0): refresh_ui()

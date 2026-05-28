@@ -153,7 +153,10 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
     if mode == "parentFolder":
         if depth == LEVEL_3: return get_file_name(tab, level1, level2, "", "folder", 0, 0)
         elif depth == LEVEL_2: return get_file_name(tab, level1, "", "", "folder", 0, 0)
-        elif depth == LEVEL_1: return prefs.get_pref("ops_currProjectPath", "")
+        elif depth == LEVEL_1:
+            if tab == TAB_ASSET: return prefs.get_pref("ops_libPath", "")
+            elif tab == TAB_SHOT: return prefs.get_pref("ops_shotPath", "")
+            else: return prefs.get_pref("ops_currProjectPath", "")
         else: return ""
 
     if tab == TAB_ASSET:
