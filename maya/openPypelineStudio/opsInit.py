@@ -12,7 +12,7 @@ from openpypeline.core.util import prefs
 
 # Define module-level constants instead of global variables
 OPENPIPELINE_NAME = "openPypeline Studio"
-OPENPIPELINE_VERSION = "2.0.0-alpha"
+OPENPIPELINE_VERSION = "2.0.0-beta"
 OPENPIPELINE_PROJ_LIST = "openPypeline_projects.xml"
 OPENPIPELINE_ICON_FILENAME = "openPypelineIcon.png"
 OPENPIPELINE_DEFAULT_PREVIEW_FILENAME = "defaultPreview.png"
