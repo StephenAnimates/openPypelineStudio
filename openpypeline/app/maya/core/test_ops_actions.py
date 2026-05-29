@@ -8,10 +8,10 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 
-# Add the legacy backend directory to the sys.path so we can import the modules
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../maya/openPypelineStudio')))
+# Add the core directory to the sys.path so we can import the modules
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
+import openpypeline.app.maya.core.ops_actions as opsActions
 
 @pytest.mark.parametrize("file_ext, expected_file_type", [
     ("usd", "USD Export"),
@@ -20,10 +20,10 @@ import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
 ])
 @patch('os.makedirs')
 @patch('os.path.isdir')
-@patch('opsInfo.get_file_name')
-@patch('opsInfo.get_category')
+@patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_file_name')
+@patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_category')
 @patch('openpypeline.core.util.prefs.get_pref')
-@patch('opsEngine.OpsEngine')
+@patch('openpypeline.app.maya.core.ops_actions.opsEngine.OpsEngine')
 def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_category, mock_get_file_name, mock_isdir, mock_makedirs, file_ext, expected_file_type):
     """
     Test that OpenUSD and Alembic file formats trigger the correct 
@@ -55,7 +55,7 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
     
     mock_get_category.return_value = "Asset"
 
-    with patch('opsActions.add_event_note'), patch('opsActions.set_custom_notes'):
+    with patch('openpypeline.app.maya.core.ops_actions.add_event_note'), patch('openpypeline.app.maya.core.ops_actions.set_custom_notes'):
         # Mode 2 is export selection
         opsActions.create_new_item(2, "char", "hero", "", 2)
         mock_file_handler.export_file.assert_called_with(f"/dummy/path/item/item_v001.{file_ext}", expected_file_type, selected=True)
@@ -70,10 +70,10 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
     ("usda", "USD Export"),
     ("abc", "Alembic"),
 ])
-@patch('opsInfo.get_version_from_file', return_value=1)
-@patch('opsInfo.get_file_name')
+@patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_version_from_file', return_value=1)
+@patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_file_name')
 @patch('openpypeline.core.util.prefs.get_pref')
-@patch('opsEngine.OpsEngine')
+@patch('openpypeline.app.maya.core.ops_actions.opsEngine.OpsEngine')
 def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_get_version, file_ext, expected_file_type):
     """
     Test that save_wip triggers the correct `export_file` calls for OpenUSD and Alembic.
@@ -94,7 +94,7 @@ def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_na
         return "/dummy/path/other"
     mock_get_file_name.side_effect = mock_get_file_name_call
 
-    with patch('opsActions.add_event_note'):
+    with patch('openpypeline.app.maya.core.ops_actions.add_event_note'):
         opsActions.save_wip("test note")
         mock_file_handler.export_file.assert_called_once_with(f"/dummy/path/item/item_v001.{file_ext}", expected_file_type, selected=False)
 
@@ -106,10 +106,10 @@ def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_na
 ])
 @patch('os.rename')
 @patch('os.path.exists', return_value=False)
-@patch('opsActions.save_wip')
-@patch('opsInfo.get_file_name')
+@patch('openpypeline.app.maya.core.ops_actions.save_wip')
+@patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_file_name')
 @patch('openpypeline.core.util.prefs.get_pref')
-@patch('opsEngine.OpsEngine')
+@patch('openpypeline.app.maya.core.ops_actions.opsEngine.OpsEngine')
 def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_save_wip, mock_exists, mock_rename, file_ext, expected_file_type):
     """
     Test that save_master triggers the correct `export_file` calls for OpenUSD and Alembic.
@@ -132,12 +132,12 @@ def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file
         return "/dummy/path/other"
     mock_get_file_name.side_effect = mock_get_file_name_call
 
-    with patch('opsActions.add_event_note'):
+    with patch('openpypeline.app.maya.core.ops_actions.add_event_note'):
         opsActions.save_master("test note", 0, 0, 0)
         mock_file_handler.export_file.assert_called_once_with(f"/dummy/path/item/master.{file_ext}", expected_file_type, selected=False)
 
-@patch('opsProject.get_projects_data', return_value=[])
-@patch('opsProject.rewrite_proj_file')
+@patch('openpypeline.app.maya.core.ops_actions.opsProject.get_projects_data', return_value=[])
+@patch('openpypeline.app.maya.core.ops_actions.opsProject.rewrite_proj_file')
 @patch('openpypeline.core.util.prefs.get_pref')
 def test_create_new_project(mock_get_pref, mock_rewrite, mock_get_data, tmp_path):
     """

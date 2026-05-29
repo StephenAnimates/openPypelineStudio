@@ -8,18 +8,18 @@ Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
 import os
 import re
 import logging
 from openpypeline.core.util import prefs
+from PySide6 import QtWidgets
 
 logger = logging.getLogger("openPypeline.actions")
 
-import openpypeline.app.maya.core.openPypelineStudio.opsInfo as opsInfo
-import opsLoader
-import openpypeline.app.maya.core.openPypelineStudio.opsUtils as opsUtils
-import openpypeline.app.maya.core.openPypelineStudio.opsProject as opsProject
+from . import ops_info as opsInfo
+from . import ops_loader as opsLoader
+from . import ops_utils as opsUtils
+from . import ops_project as opsProject
 
 
 def activate_project(proj_name):
@@ -76,18 +76,18 @@ def activate_project(proj_name):
 
         if proj_scripts:
             opsLoader.source_mel_module(scripts_path)
-            cmds.workspace(fileRule=['mel', proj_scripts])
             
-        cmds.workspace(fileRule=['scene', proj_shots])
-        
-        if proj_textures:
-            cmds.workspace(fileRule=['textures', proj_textures])
-        if proj_particles:
-            cmds.workspace(fileRule=['particles', proj_particles])
-        if proj_renders:
-            cmds.workspace(fileRule=['renderScenes', proj_renders])
-
-        cmds.workspace(proj_path, openWorkspace=True)
+        import openpypeline.opsEngine as opsEngine
+        engine = opsEngine.OpsEngine()
+        if engine.file_handler and hasattr(engine.file_handler, 'set_workspace'):
+            rules = {
+                'mel': proj_scripts,
+                'scene': proj_shots,
+                'textures': proj_textures,
+                'particles': proj_particles,
+                'renderScenes': proj_renders
+            }
+            engine.file_handler.set_workspace(proj_path, rules)
         return 1
     else:
         logger.warning(f"Couldn't select project '{proj_name}'. Path '{proj_path}' couldn't be found.")
@@ -272,7 +272,7 @@ def create_new_item(tab, level1, level2, level3, mode):
             file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
             file_type = file_type_map.get(ext, "mayaBinary")
 
-            import opsEngine
+            import openpypeline.opsEngine as opsEngine
             engine = opsEngine.OpsEngine()
 
             if mode == 2:
@@ -300,17 +300,21 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
         version = 0
         curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
         
-        if cmds.file(query=True, modified=True) and curr_level1:
+        import openpypeline.opsEngine as opsEngine
+        engine = opsEngine.OpsEngine()
+        is_mod = engine.file_handler.is_modified() if engine.file_handler and hasattr(engine.file_handler, 'is_modified') else False
+
+        if is_mod and curr_level1:
             w_name = prefs.get_pref("ops_wip", "wip")
-            confirm = cmds.confirmDialog(
-                title="openPypeline Studio",
-                message=f"Would you like to Save {w_name} before editing Asset?",
-                button=["Save", "Don't Save", "Cancel"],
-                defaultButton="Save"
+            reply = QtWidgets.QMessageBox.question(
+                None, "openPypeline Studio",
+                f"Would you like to Save {w_name} before editing Asset?",
+                QtWidgets.QMessageBox.StandardButton.Save | QtWidgets.QMessageBox.StandardButton.Discard | QtWidgets.QMessageBox.StandardButton.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Save
             )
-            if confirm == "Save":
+            if reply == QtWidgets.QMessageBox.StandardButton.Save:
                     save_wip("saved before opening new item")
-            elif confirm == "Cancel":
+            elif reply == QtWidgets.QMessageBox.StandardButton.Cancel:
                 return 0
                 
         file_to_open = opsInfo.get_file_name(tab, level1, level2, level3, item_type, version_offset)
@@ -319,26 +323,24 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
         
         if os.path.isfile(file_to_open):
             version = opsInfo.get_version_from_file(file_to_open)
-            import opsEngine
-            engine = opsEngine.OpsEngine()
             if engine.file_handler and hasattr(engine.file_handler, 'open'):
                 engine.file_handler.open(file_to_open)
             else:
                 logger.warning("No DCC file handler available to open files.")
         elif item_type == "workshop" and not os.path.isfile(latest_wip):
-            choice = cmds.confirmDialog(
-                title="Edit Asset",
-                message="You are about to edit an item for the first time. Would you like to start with a new scene, or the currently open scene?",
-                button=["New Scene", "Current Scene", "Cancel"],
-                cancelButton="Cancel",
-                defaultButton="Current Scene"
-            )
-            if choice == "New Scene":
-                import opsEngine
-                engine = opsEngine.OpsEngine()
+            msgBox = QtWidgets.QMessageBox(None)
+            msgBox.setWindowTitle("Edit Asset")
+            msgBox.setText("You are about to edit an item for the first time. Would you like to start with a new scene, or the currently open scene?")
+            new_btn = msgBox.addButton("New Scene", QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+            curr_btn = msgBox.addButton("Current Scene", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+            cancel_btn = msgBox.addButton("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+            msgBox.setDefaultButton(curr_btn)
+            msgBox.exec()
+
+            if msgBox.clickedButton() == new_btn:
                 if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
                     engine.file_handler.new_file()
-            elif choice == "Cancel":
+            elif msgBox.clickedButton() == cancel_btn:
                 return 0
         else:
             logger.warning("File Not Found")
@@ -361,7 +363,7 @@ def import_item(item_type, tab, level1, level2, level3, flags=""):
     """Imports an item into the current scene."""
     file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
     if os.path.isfile(file_path):
-        import opsEngine
+        import openpypeline.opsEngine as opsEngine
         engine = opsEngine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'import_file'):
             return int(engine.file_handler.import_file(file_path))
@@ -377,7 +379,7 @@ def reference_item(item_type, tab, level1, level2, level3, flags=""):
     """References an item into the current scene."""
     file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
     if os.path.isfile(file_path):
-        import opsEngine
+        import openpypeline.opsEngine as opsEngine
         engine = opsEngine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'reference_file'):
             return int(engine.file_handler.reference_file(file_path))
@@ -407,7 +409,7 @@ def save_wip(note=""):
     if ext not in file_type_map:
         logger.warning(f"Invalid file format ({ext}) specified: saving to Maya Binary")
         
-    import opsEngine
+    import openpypeline.opsEngine as opsEngine
     engine = opsEngine.OpsEngine()
     
     if file_type in ["USD Export", "Alembic"]:
@@ -443,7 +445,7 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
     if os.path.exists(master_file):
         os.rename(master_file, destination_file)
         
-    import opsEngine
+    import openpypeline.opsEngine as opsEngine
     engine = opsEngine.OpsEngine()
     
     if flatten and engine.file_handler and hasattr(engine.file_handler, 'flatten_references'):
@@ -478,7 +480,7 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
         
     add_event_note(tab, level1, level2, level3, master_name, 0, comment)
     
-    import openpypeline.app.maya.core.openPypelineStudio.tracker_factory as tracker_factory
+    from . import tracker_factory
     tracker = tracker_factory.get_tracker()
     if tracker and task_id:
         tracker.publish_version(task_id, master_file, 0, comment)
@@ -498,12 +500,13 @@ def remove_item(tab, level1, level2, level3):
     delete_path = prefs.get_pref("ops_deletePath", "")
     name = os.path.basename(original_path.rstrip('/'))
     
-    confirm = cmds.confirmDialog(
-        title="Remove Files",
-        message="Are you sure you want to remove this Item?\n(all files and folders will be moved to the 'deleted' folder)",
-        button=["Yes", "No"], defaultButton="Yes", cancelButton="No"
+    reply = QtWidgets.QMessageBox.question(
+        None, "Remove Files",
+        "Are you sure you want to remove this Item?\n(all files and folders will be moved to the 'deleted' folder)",
+        QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+        QtWidgets.QMessageBox.StandardButton.Yes
     )
-    if confirm == "Yes":
+    if reply == QtWidgets.QMessageBox.StandardButton.Yes:
         os.makedirs(delete_path, exist_ok=True)
         is_current = 0
         if curr_tab == tab and curr_level1 == level1:
@@ -514,11 +517,13 @@ def remove_item(tab, level1, level2, level3):
                     if depth == opsInfo.LEVEL_3: is_current = 1
                     
         if is_current:
-            confirm_close = cmds.confirmDialog(
-                title="Remove Files", message="You are removing an item that is currently open. Continue?",
-                button=["Yes", "No"], defaultButton="Yes", cancelButton="No"
+            confirm_close = QtWidgets.QMessageBox.question(
+                None, "Remove Files",
+                "You are removing an item that is currently open. Continue?",
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.Yes
             )
-            if confirm_close == "Yes": close_file()
+            if confirm_close == QtWidgets.QMessageBox.StandardButton.Yes: close_file()
             else: return 0
                 
         new_path = os.path.join(delete_path, f"{name}_deleted_").replace("\\", "/")
@@ -632,15 +637,20 @@ def close_file():
     """Closes the currently open file."""
     w_name = prefs.get_pref("ops_wip", "wip")
     curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
-    if cmds.file(query=True, modified=True) and curr_level1:
-        confirm = cmds.confirmDialog(
-            title="openPypeline Studio",
-            message=f"Would you like to Save {w_name} before closing?",
-            button=["Save", "Don't Save", "Cancel"],
-            defaultButton="Don't Save"
+
+    import openpypeline.opsEngine as opsEngine
+    engine = opsEngine.OpsEngine()
+    is_mod = engine.file_handler.is_modified() if engine.file_handler and hasattr(engine.file_handler, 'is_modified') else False
+
+    if is_mod and curr_level1:
+        reply = QtWidgets.QMessageBox.question(
+            None, "openPypeline Studio",
+            f"Would you like to Save {w_name} before closing?",
+            QtWidgets.QMessageBox.StandardButton.Save | QtWidgets.QMessageBox.StandardButton.Discard | QtWidgets.QMessageBox.StandardButton.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Discard
         )
-        if confirm == "Save": save_wip("saved before closing")
-        elif confirm == "Cancel": return 1
+        if reply == QtWidgets.QMessageBox.StandardButton.Save: save_wip("saved before closing")
+        elif reply == QtWidgets.QMessageBox.StandardButton.Cancel: return 1
     
     prefs.set_pref("ops_currOpenType", "")
     prefs.set_pref("ops_currOpenVersion", 0)
@@ -649,8 +659,6 @@ def close_file():
     prefs.set_pref("ops_currOpenLevel2", "")
     prefs.set_pref("ops_currOpenLevel3", "")
     prefs.set_pref("ops_currOpenTab", 0)
-    import opsEngine
-    engine = opsEngine.OpsEngine()
     if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
         engine.file_handler.new_file()
     return 1
@@ -670,18 +678,20 @@ def open_location(tab, level1, level2, level3):
 def record_playblast(tab, level1, level2, level3):
     """Records a playblast for an item."""
     playblast_file = opsInfo.get_file_name(tab, level1, level2, level3, "playblastFile")
-    cmds.playblast(filename=playblast_file, forceOverwrite=True, format="movie", viewer=False, showOrnaments=False)
+    import openpypeline.opsEngine as opsEngine
+    engine = opsEngine.OpsEngine()
+    if engine.file_handler and hasattr(engine.file_handler, 'record_playblast'):
+        engine.file_handler.record_playblast(playblast_file)
     return playblast_file
 
 
 def create_thumbnail(tab, level1, level2, level3):
     """Takes a snapshot of the current scene and makes it the thumbnail for an item."""
     file_name = opsInfo.get_file_name(tab, level1, level2, level3, "previewFile")
-    curr_frame = cmds.currentTime(query=True)
-    format_val = cmds.getAttr("defaultRenderGlobals.imageFormat")
-    cmds.setAttr("defaultRenderGlobals.imageFormat", 8)
-    cmds.playblast(frame=curr_frame, format="image", completeFilename=file_name, showOrnaments=False, viewer=False, widthHeight=(164, 105), percent=100)
-    cmds.setAttr("defaultRenderGlobals.imageFormat", format_val)
+    import openpypeline.opsEngine as opsEngine
+    engine = opsEngine.OpsEngine()
+    if engine.file_handler and hasattr(engine.file_handler, 'create_thumbnail'):
+        engine.file_handler.create_thumbnail(file_name)
     return file_name
 
 

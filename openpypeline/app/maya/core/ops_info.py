@@ -29,8 +29,8 @@ LEVEL_3 = 3  # Component
 def get_project_list():
     """Returns the names of all existing projects."""
     try:
-        import openpypeline.app.maya.core.openPypelineStudio.opsProject as opsProject
-        import openpypeline.app.maya.core.openPypelineStudio.opsUtils as opsUtils
+        from . import ops_project as opsProject
+        from . import ops_utils as opsUtils
         proj_data = opsProject.get_projects_data() or []
         return [opsUtils.get_xml_data(proj, "name") for proj in proj_data]
     except Exception:
@@ -42,7 +42,7 @@ def get_custom_notes(tab, level1, level2, level3):
     notes_file = get_file_name(tab, level1, level2, level3, "notesFile")
     if not os.path.isfile(notes_file):
         try:
-            import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
+            from . import ops_actions as opsActions
             opsActions.set_custom_notes(tab, level1, level2, level3, " ")
         except Exception:
             pass
@@ -304,7 +304,7 @@ def get_event_notes(tab, level1, level2, level3):
     history_file = get_file_name(tab, level1, level2, level3, "historyFile")
     if os.path.isfile(history_file):
         try:
-            import openpypeline.app.maya.core.openPypelineStudio.opsNotes as opsNotes
+            from . import ops_notes as opsNotes
             notes_array = opsNotes.read_xml(history_file)
             return "".join(notes_array)
         except Exception:
@@ -315,7 +315,7 @@ def get_event_notes(tab, level1, level2, level3):
 def get_currently_selected_item(tab, depth):
     """Get the currently selected item under the given tab in the UI."""
     level1 = level2 = level3 = ""
-    import UIObjects
+    from ..ui import ui_objects as UIObjects
     ui_obj = UIObjects.UIObjects()
     ui = ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
     

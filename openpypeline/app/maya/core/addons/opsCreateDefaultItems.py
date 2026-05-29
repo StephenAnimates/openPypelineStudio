@@ -63,14 +63,14 @@ def ops_createDefaultItems():
     for item in default_items:
         tab, level1, level2, level3, force = item
         try:
-            import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
+            from .. import ops_actions as opsActions
             opsActions.create_new_item(tab, level1, level2, level3, force)
         except Exception as e:
             cmds.warning(f"Create Default Items Add-on error: {e}")
 
     if cmds.window("openPypelineUI", query=True, exists=True) or cmds.window("openPipelineUI", query=True, exists=True):
         try:
-            import openpypeline.app.maya.core.openPypelineStudio.opsUIWrappers as opsUIWrappers
+            from .. import ops_ui_wrappers as opsUIWrappers
             opsUIWrappers.update_sequence_list()
             opsUIWrappers.update_asset_type_list()
         except Exception as e:

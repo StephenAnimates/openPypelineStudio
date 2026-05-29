@@ -10,13 +10,13 @@ import os
 import re
 from PySide6 import QtWidgets, QtCore
 
-import UIObjects
-import opsProject
-import opsInfo
-import opsUtils
-import opsActions
-import opsUIWrappers
-from openpypeline.app.maya.ui.opsProjDialogGUI import opsProjDialogGUI
+from . import ui_objects as UIObjects
+from ..core import ops_project as opsProject
+from ..core import ops_info as opsInfo
+from ..core import ops_utils as opsUtils
+from ..core import ops_actions as opsActions
+from ..core import ops_ui_wrappers as opsUIWrappers
+from .ops_proj_dialog_gui import opsProjDialogGUI
 
 class OpsProjDialogController(QtCore.QObject):
     def __init__(self):

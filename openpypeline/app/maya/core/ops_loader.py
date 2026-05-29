@@ -265,15 +265,15 @@ def openPypeline():
         
         # Add backend logic and the modernized UI paths to sys.path
         ui_path = os.path.join(base_path, "app", "maya", "ui").replace("\\", "/")
-        backend_path = os.path.join(base_path, "app", "maya", "core", "openPypelineStudio").replace("\\", "/")
+        backend_path = os.path.join(base_path, "app", "maya", "core").replace("\\", "/")
         
         for path in [_root_path, ui_path, backend_path]:
             if path not in sys.path:
                 sys.path.insert(0, path)
 
         try:
-            import UIObjects
-            import opsMainUI
+            import ui_objects as UIObjects
+            import openpypeline.app.maya.ui.ops_main_ui as opsMainUI
             UIObjects.UIObjects().opsMainUI = opsMainUI.opsMainUI()
             UIObjects.UIObjects().opsMainUI.showWindow()
         except Exception as e:

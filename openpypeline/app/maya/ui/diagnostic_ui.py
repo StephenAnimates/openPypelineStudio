@@ -15,33 +15,33 @@ import importlib
 from PySide6 import QtWidgets, QtCore
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
 
-import UIObjects
+from . import ui_objects as UIObjects
 
-import opsSaveMasterController
+from . import ops_save_master_controller as opsSaveMasterController
 importlib.reload(opsSaveMasterController)
 
-import openpypeline.app.maya.ui.opsProjectManagerGUI as opsProjectManagerGUI
+from . import ops_project_manager_gui as opsProjectManagerGUI
 importlib.reload(opsProjectManagerGUI)
 
-import opsProjDialogController
+from . import ops_proj_dialog_controller as opsProjDialogController
 importlib.reload(opsProjDialogController)
 
-import opsMainUI
+from . import ops_main_ui as opsMainUI
 importlib.reload(opsMainUI)
 
-import opsProject
+from ..core import ops_project as opsProject
 importlib.reload(opsProject)
 
-import opsActions
+from ..core import ops_actions as opsActions
 importlib.reload(opsActions)
 
-import opsUIWrappers
+from ..core import ops_ui_wrappers as opsUIWrappers
 importlib.reload(opsUIWrappers)
 
-import opsInfo
+from ..core import ops_info as opsInfo
 importlib.reload(opsInfo)
 
-import opsLoader
+from ..core import ops_loader as opsLoader
 importlib.reload(opsLoader)
 
 class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):

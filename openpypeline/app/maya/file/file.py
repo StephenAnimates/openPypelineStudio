@@ -153,3 +153,44 @@ def delete_display_layers():
     for layer in layers:
         if layer != "defaultLayer":
             cmds.delete(layer)
+
+def set_workspace(proj_path, rules):
+    """Sets the Maya workspace and file rules."""
+    try:
+        for rule_name, rule_path in rules.items():
+            if rule_path:
+                cmds.workspace(fileRule=[rule_name, rule_path])
+        cmds.workspace(proj_path, openWorkspace=True)
+        logger.info(f"Set workspace to {proj_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to set workspace: {e}")
+        return False
+
+def is_modified():
+    """Returns True if the current scene has unsaved changes."""
+    return cmds.file(query=True, modified=True)
+
+def record_playblast(filepath):
+    """Records a playblast to the given filepath."""
+    try:
+        cmds.playblast(filename=filepath, forceOverwrite=True, format="movie", viewer=False, showOrnaments=False)
+        logger.info(f"Playblast recorded to {filepath}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to record playblast: {e}")
+        return False
+
+def create_thumbnail(filepath):
+    """Takes a snapshot of the current scene and saves it to filepath."""
+    try:
+        curr_frame = cmds.currentTime(query=True)
+        format_val = cmds.getAttr("defaultRenderGlobals.imageFormat")
+        cmds.setAttr("defaultRenderGlobals.imageFormat", 8)  # JPEG
+        cmds.playblast(frame=curr_frame, format="image", completeFilename=filepath, showOrnaments=False, viewer=False, widthHeight=(164, 105), percent=100)
+        cmds.setAttr("defaultRenderGlobals.imageFormat", format_val)
+        logger.info(f"Thumbnail created at {filepath}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create thumbnail: {e}")
+        return False

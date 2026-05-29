@@ -4,11 +4,11 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 
 ## Phase 1: Structural Foundation & Packaging (In Progress)
 - [x] Isolate DCC-specific code (Move Maya scripts to `/openpypeline/app/maya/`).
-- [ ] Rename and reorganize the legacy `/openpypeline/app/maya/core/openPypelineStudio` directory and its contents.
+- [x] Rename and reorganize the legacy `/openpypeline/app/maya/core/openPypelineStudio` directory and its contents.
 - [x] Establish a pure agnostic `/openpypeline/core/` directory.
 - [x] Remove legacy OptionVars in favor of JSON-based agnostic preferences.
-- [ ] Clean up Python packaging (Add `__init__.py` files, transition to absolute/relative package imports).
-- [ ] Remove excessive `sys.path` injection from entry scripts (`opsLoader.py`, `begin.py`).
+- [x] Clean up Python packaging (Add `__init__.py` files, transition to absolute/relative package imports).
+- [x] Remove excessive `sys.path` injection from entry scripts (`opsLoader.py`, `begin.py`).
 - [ ] Enforce standard PEP 8 Pythonic naming conventions across all files and directories (`opsActions.py` -> `ops_actions.py`, `camelCase` to `snake_case`).
 
 ## Phase 2: UI Modernization & MVC Architecture (In Progress)
@@ -21,7 +21,7 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [ ] Evaluate and refactor the `UIObjects.py` Singleton pattern (Consider an overarching `App` or `Window Manager` class).
 
 ## Phase 3: Core Agnosticism & Backend Decoupling
-- [ ] Audit `opsActions` and `opsUIWrappers` to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
+- [x] Audit `opsActions` and `opsUIWrappers` to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
 - [ ] Implement a DCC Interface/Adapter pattern (e.g., `core` asks the active `app` adapter to "save file" or "export Alembic").
 - [ ] Upgrade legacy XML-based project tracking to JSON or SQLite for better performance and cross-compatibility.
 - [ ] Implement FBX export/import support alongside USD and Alembic.

@@ -7,15 +7,15 @@ Description:
 """
 
 from PySide6 import QtCore
-import UIObjects
-import opsUIWrappers
+from . import ui_objects
+from ..core import ops_ui_wrappers as opsUIWrappers
 from openpypeline.core.util import prefs
-from openpypeline.app.maya.ui.opsSettingsGUI import opsSettingsGUI
+from .ops_settings_gui import opsSettingsGUI
 
 class OpsSettingsController(QtCore.QObject):
     def __init__(self):
         super().__init__()
-        self.UIObjects = UIObjects.UIObjects()
+        self.UIObjects = ui_objects.UIObjects()
         self.view = opsSettingsGUI()
         
         self._connect_signals()

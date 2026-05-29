@@ -14,9 +14,9 @@ import logging
 from openpypeline.core.util import prefs
 from PySide6 import QtWidgets, QtCore
 
-import openpypeline.app.maya.core.openPypelineStudio.opsInfo as opsInfo
-import openpypeline.app.maya.core.openPypelineStudio.opsUtils as opsUtils
-import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
+from . import ops_info as opsInfo
+from . import ops_utils as opsUtils
+from . import ops_actions as opsActions
 
 logger = logging.getLogger("openPypeline.project")
 

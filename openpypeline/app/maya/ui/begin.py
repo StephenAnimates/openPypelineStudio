@@ -68,7 +68,7 @@ class begin():
         component GUIs of the openPypeline Studio application.
         """
         # Import the diagnostic UI module.
-        import openpypeline.app.maya.ui.diagnosticUI as diagnosticUI
+        from . import diagnostic_ui as diagnosticUI
         # Reload the module to ensure the latest code is used during development.
         importlib.reload(diagnosticUI)
         # Instantiate and show the diagnostic window, passing the source directory.
@@ -85,12 +85,3 @@ class begin():
         if self.srcDir not in sys.path:
             # Insert at the beginning of the list to ensure it's checked first.
             sys.path.insert(0, self.srcDir)
-            
-        # Add backend logic and the modernized UI paths to sys.path so flat imports work
-        maya_path = os.path.join(self.srcDir, "maya").replace("\\", "/")
-        ui_path = os.path.join(self.srcDir, "openpypeline", "app", "maya", "ui").replace("\\", "/")
-        backend_path = os.path.join(self.srcDir, "maya", "openPypelineStudio").replace("\\", "/")
-        
-        for path in [maya_path, ui_path, backend_path]:
-            if path not in sys.path:
-                sys.path.insert(0, path)

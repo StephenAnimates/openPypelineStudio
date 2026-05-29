@@ -1,9 +1,9 @@
 # openpypeline/app/maya/ui/opsMainController.py
 
 from PySide6 import QtWidgets
-import opsUIWrappers
-import opsActions
-from openpypeline.app.maya.ui.opsMainUI import (
+from ..core import ops_ui_wrappers as opsUIWrappers
+from ..core import ops_actions as opsActions
+from .ops_main_ui import (
     opsMainUI,
     TAB_ASSET, TAB_SHOT, LEVEL_1, LEVEL_2, LEVEL_3
 )
@@ -94,7 +94,7 @@ class OpsMainController:
         pass
 
     def on_project_manager_clicked(self):
-        import UIObjects
+        from . import ui_objects as UIObjects
         getattr(UIObjects.UIObjects(), 'opsProjectManagerGUI').showWindow()
 
     def on_project_changed(self, text):
@@ -105,20 +105,20 @@ class OpsMainController:
             print(f"Could not refresh UI after project change: {e}")
 
     def on_open_master_clicked(self):
-        import UIObjects
+        from . import ui_objects as UIObjects
         getattr(UIObjects.UIObjects(), 'opsSaveMasterController').showWindow()
 
     def on_open_scene_inventory(self, *args):
         try:
-            import opsSceneInv
+            from ..core import ops_scene_inv as opsSceneInv
             opsSceneInv.show_window()
         except ImportError:
             print("Scene Inventory module not available.")
 
     def on_open_settings(self, *args):
         import importlib
-        import UIObjects
-        import opsSettingsController
+        from . import ui_objects as UIObjects
+        from . import ops_settings_controller as opsSettingsController
         importlib.reload(opsSettingsController)
         if not hasattr(UIObjects.UIObjects(), 'opsSettingsController'):
             UIObjects.UIObjects().opsSettingsController = opsSettingsController.OpsSettingsController()
