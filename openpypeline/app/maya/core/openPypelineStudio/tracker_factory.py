@@ -39,7 +39,7 @@ def get_tracker(tracker_type=None, url=None, user=None, key=None):
     
     if tracker_type == "shotgrid":
         try:
-            from shotgrid_tracker import ShotGridTracker
+            from openpypeline.app.maya.core.openPypelineStudio.shotgrid_tracker import ShotGridTracker
             tracker = ShotGridTracker(url, user, key)
         except ImportError:
             logger.error("Failed to import ShotGridTracker. Make sure shotgrid_tracker.py is available.")

@@ -29,8 +29,8 @@ LEVEL_3 = 3  # Component
 def get_project_list():
     """Returns the names of all existing projects."""
     try:
-        import opsProject
-        import opsUtils
+        import openpypeline.app.maya.core.openPypelineStudio.opsProject as opsProject
+        import openpypeline.app.maya.core.openPypelineStudio.opsUtils as opsUtils
         proj_data = opsProject.get_projects_data() or []
         return [opsUtils.get_xml_data(proj, "name") for proj in proj_data]
     except Exception:
@@ -42,7 +42,7 @@ def get_custom_notes(tab, level1, level2, level3):
     notes_file = get_file_name(tab, level1, level2, level3, "notesFile")
     if not os.path.isfile(notes_file):
         try:
-            import opsActions
+            import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
             opsActions.set_custom_notes(tab, level1, level2, level3, " ")
         except Exception:
             pass
@@ -304,7 +304,7 @@ def get_event_notes(tab, level1, level2, level3):
     history_file = get_file_name(tab, level1, level2, level3, "historyFile")
     if os.path.isfile(history_file):
         try:
-            import opsNotes
+            import openpypeline.app.maya.core.openPypelineStudio.opsNotes as opsNotes
             notes_array = opsNotes.read_xml(history_file)
             return "".join(notes_array)
         except Exception:

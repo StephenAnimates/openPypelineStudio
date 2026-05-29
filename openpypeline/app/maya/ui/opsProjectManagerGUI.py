@@ -63,7 +63,7 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.setMinimumSize(550, 460)
 
         # Fetch initial paths
-        self.scriptLocation = prefs.get_pref("ops_scriptPath", "Not Set")
+        self.scriptLocation = opsLoader._root_path
         self.projectLocation = prefs.get_pref("ops_projectFilePath", "Not Set")
 
         self._build_ui()
@@ -201,9 +201,9 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         
     def on_new_project(self, *args):
         """Launches the Project Dialog window in 'New' mode."""
-        self.UIObjects.opsProjDialogGUI.mode = 0
-        self.UIObjects.opsProjDialogGUI.old_name = ""
-        self.UIObjects.opsProjDialogGUI.showWindow()
+        self.UIObjects.opsProjDialogController.mode = 0
+        self.UIObjects.opsProjDialogController.old_name = ""
+        self.UIObjects.opsProjDialogController.showWindow()
         
     def on_edit_project(self, *args):
         """Launches the Project Dialog window in 'Edit' mode."""
@@ -211,9 +211,9 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         if not selected_items:
             return
             
-        self.UIObjects.opsProjDialogGUI.mode = 1
-        self.UIObjects.opsProjDialogGUI.old_name = selected_items[0].text()
-        self.UIObjects.opsProjDialogGUI.showWindow()
+        self.UIObjects.opsProjDialogController.mode = 1
+        self.UIObjects.opsProjDialogController.old_name = selected_items[0].text()
+        self.UIObjects.opsProjDialogController.showWindow()
         
     def on_remove_project(self, *args):
         """Prompts the user and removes the selected project configuration."""

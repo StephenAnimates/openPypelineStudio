@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 # Add the legacy backend directory to the sys.path so we can import the modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../maya/openPypelineStudio')))
 
-import opsActions
+import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
 
 @pytest.mark.parametrize("file_ext, expected_file_type", [
     ("usd", "USD Export"),

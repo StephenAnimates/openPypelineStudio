@@ -13,8 +13,8 @@ Status: Fully migrated to PySide6. UI components are now native Qt widgets and D
 import os
 import webbrowser
 from PySide6 import QtWidgets, QtCore, QtGui
-import opsInfo
-import opsActions
+import openpypeline.app.maya.core.openPypelineStudio.opsInfo as opsInfo
+import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
 import UIObjects
 from openpypeline.core.util import prefs
 
@@ -720,7 +720,7 @@ def prompt_rename_asset(*args):
     if not selected[1]: return
     name, ok = QtWidgets.QInputDialog.getText(ui, "Rename Asset", "New Asset Name (no spaces or special chars):")
     if ok and name.strip():
-        import renameAsset
+        import openpypeline.app.maya.core.openPypelineStudio.renameAsset as renameAsset
         asset_path = opsInfo.get_file_name(2, selected[0], selected[1], selected[2], "folder")
         renameAsset.renameAsset(asset_path, name.strip())
         refresh_ui()

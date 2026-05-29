@@ -7,7 +7,7 @@ Description: openPypeline "Archive All" add-on refactored to Python.
 import maya.cmds as cmds
 
 try:
-    import opsInfo
+    import openpypeline.app.maya.core.openPypelineStudio.opsInfo as opsInfo
 except ImportError:
     pass
 
@@ -39,7 +39,7 @@ def _update_ui():
     """Helper function to update the UI after an operation."""
     if cmds.window("openPypelineUI", exists=True) or cmds.window("openPipelineUI", exists=True):
         try:
-            import opsUIWrappers
+            import openpypeline.app.maya.core.openPypelineStudio.opsUIWrappers as opsUIWrappers
             opsUIWrappers.update_currently_open()
         except (ImportError, AttributeError):
             pass
@@ -66,7 +66,7 @@ def _process_all_archives(action):
                     
                 for l1, l2, l3 in levels_to_process:
                     try:
-                        import opsActions
+                        import openpypeline.app.maya.core.openPypelineStudio.opsActions as opsActions
                         if action == 'archive': opsActions.archive_item(tab, l1, l2, l3, 1, 1)
                         elif action == 'retrieve': opsActions.retrieve_archive(tab, l1, l2, l3, 1, 1)
                         elif action == 'delete': opsActions.remove_archive(tab, l1, l2, l3)

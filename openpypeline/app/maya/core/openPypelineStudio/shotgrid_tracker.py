@@ -5,7 +5,7 @@ Description: ShotGrid (Flow Production Tracking) implementation of the Productio
 """
 
 import logging
-from tracker import ProductionTracker
+from openpypeline.app.maya.core.openPypelineStudio.tracker import ProductionTracker
 
 logger = logging.getLogger("openPypeline.tracking.shotgrid")
 

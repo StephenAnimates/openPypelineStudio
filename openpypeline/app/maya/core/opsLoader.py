@@ -16,7 +16,7 @@ import logging
 from PySide6 import QtWidgets, QtCore
 
 # Add the root openPypeline directory to sys.path to access core utilities
-_root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace("\\", "/")
+_root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")).replace("\\", "/")
 if _root_path not in sys.path:
     sys.path.insert(0, _root_path)
 from openpypeline.core.util import prefs
@@ -33,7 +33,6 @@ if not logger.handlers:
 _setup_dialog = None
 
 # --- Constants for preference keys ---
-SCRIPT_PATH_PREF = "ops_scriptPath"
 PROJECT_PATH_PREF = "ops_projectFilePath"
 
 def _migrate_legacy_prefs():
@@ -41,9 +40,7 @@ def _migrate_legacy_prefs():
     try:
         import maya.cmds as cmds
         migrations = [
-            ("openPipeline_scriptPath", SCRIPT_PATH_PREF),
             ("openPipeline_projectFilePath", PROJECT_PATH_PREF),
-            (SCRIPT_PATH_PREF, SCRIPT_PATH_PREF),
             (PROJECT_PATH_PREF, PROJECT_PATH_PREF)
         ]
         for old_var, new_pref in migrations:
@@ -87,24 +84,18 @@ def source_python_module(path):
                 logger.warning(f"Failed to load python module {module_name}: {e}")
 
 
-def is_valid_script_path(folder):
+def is_valid_script_path():
     """
-    Checks if the given folder is a valid script path.
-
-    A valid path contains 'opsLoader.py' and an 'openpypeline' subfolder.
-
-    Args:
-        folder (str): The path to be checked.
+    Checks if the automatically calculated _root_path is valid.
 
     Returns:
         bool: True if the path is a valid script path, False otherwise.
     """
-    if not folder or not isinstance(folder, str) or not os.path.isdir(folder):
+    if not _root_path or not os.path.isdir(_root_path):
         return False
 
-    py_loader_file = os.path.join(folder, "opsLoader.py")
-    root_folder = os.path.dirname(folder.rstrip("/\\"))
-    sub_folder = os.path.join(root_folder, "openpypeline")
+    py_loader_file = os.path.join(_root_path, "openpypeline", "app", "maya", "core", "opsLoader.py").replace("\\", "/")
+    sub_folder = os.path.join(_root_path, "openpypeline").replace("\\", "/")
 
     if not os.path.isfile(py_loader_file):
         return False
@@ -129,44 +120,20 @@ def is_valid_project_file_path(folder):
 
 class OpsSetupDialog(QtWidgets.QDialog):
     """PySide6 dialog for initializing openPypeline Studio paths."""
-    def __init__(self, script_path, project_path, parent=None):
+    def __init__(self, project_path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("openPypeline Studio Setup")
-        self.setMinimumSize(405, 350)
-        self.script_path_initial = script_path
+        self.setMinimumSize(405, 200)
         self.project_path_initial = project_path
         self._build_ui()
         
         # Post-init setup
-        root_folder = os.path.dirname(self.script_path_initial.rstrip("/\\"))
-        if self.project_path_initial and self.project_path_initial != os.path.join(root_folder, "openpypeline/").replace("\\", "/"):
+        default_proj_path = os.path.join(_root_path, "openpypeline/").replace("\\", "/")
+        if self.project_path_initial and self.project_path_initial != default_proj_path:
             self.toggle_project_path_field(force_custom=True, path=self.project_path_initial)
 
     def _build_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
-        
-        # Script Path Setup
-        script_label = QtWidgets.QLabel("Script Path Setup:")
-        script_label.setStyleSheet("font-weight: bold;")
-        layout.addWidget(script_label)
-        
-        script_desc = QtWidgets.QLabel('Please specify the folder in which the "openpypeline" folder and loader scripts are located.')
-        script_desc.setWordWrap(True)
-        layout.addWidget(script_desc)
-        
-        script_layout = QtWidgets.QHBoxLayout()
-        self.script_field = QtWidgets.QLineEdit(self.script_path_initial)
-        script_browse_btn = QtWidgets.QPushButton("Browse...")
-        script_browse_btn.clicked.connect(self.browse_script_path)
-        script_layout.addWidget(self.script_field)
-        script_layout.addWidget(script_browse_btn)
-        layout.addLayout(script_layout)
-        
-        # Separator
-        frame = QtWidgets.QFrame()
-        frame.setFrameShape(QtWidgets.QFrame.HLine)
-        frame.setFrameShadow(QtWidgets.QFrame.Sunken)
-        layout.addWidget(frame)
         
         # Project File Setup
         proj_label = QtWidgets.QLabel("Project File Setup:")
@@ -204,11 +171,6 @@ class OpsSetupDialog(QtWidgets.QDialog):
         btn_layout.addWidget(cancel_btn)
         layout.addLayout(btn_layout)
 
-    def browse_script_path(self):
-        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
-        if dir_path:
-            self.script_field.setText(os.path.join(dir_path, "").replace("\\", "/"))
-
     def browse_proj_path(self):
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
         if dir_path:
@@ -228,25 +190,20 @@ class OpsSetupDialog(QtWidgets.QDialog):
             self.proj_browse_btn.setEnabled(True)
 
     def setup_exec(self):
-        script_path = self.script_field.text()
-        script_path = os.path.join(script_path, "").replace("\\", "/")
-
         if not self.proj_field.isReadOnly():
             proj_file_path = self.proj_field.text()
         else:
-            root_folder = os.path.dirname(script_path.rstrip("/\\"))
-            proj_file_path = os.path.join(root_folder, "openpypeline/").replace("\\", "/")
+            proj_file_path = os.path.join(_root_path, "openpypeline/").replace("\\", "/")
 
         proj_file_path = os.path.join(proj_file_path, "").replace("\\", "/")
 
         error = ""
-        if not is_valid_script_path(script_path):
-            error += f'Script path not valid. Make sure path "{script_path}" exists and contains the "openpypeline" folder and loader script.\n'
+        if not is_valid_script_path():
+            error += f'Core framework path not valid. Missing essential files in "{_root_path}".\n'
         elif not is_valid_project_file_path(proj_file_path):
             error += f'Project File path not valid. Make sure path "{proj_file_path}" exists.\n'
 
         if not error:
-            prefs.set_pref(SCRIPT_PATH_PREF, script_path)
             prefs.set_pref(PROJECT_PATH_PREF, proj_file_path)
             self.accept()
             openPypeline()
@@ -269,10 +226,9 @@ def openPypelineSetup():
     # --- Backward Compatibility Migration ---
     _migrate_legacy_prefs()
 
-    script_path = prefs.get_pref(SCRIPT_PATH_PREF, "")
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
 
-    _setup_dialog = OpsSetupDialog(script_path, project_path)
+    _setup_dialog = OpsSetupDialog(project_path)
     _setup_dialog.show()
 
 
@@ -289,21 +245,18 @@ def openPypeline():
     # --- Backward Compatibility Migration ---
     _migrate_legacy_prefs()
 
-    script_path = prefs.get_pref(SCRIPT_PATH_PREF, "")
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
 
-    scripts_folder_name = "openpypeline"
     error = ""
 
-    if not is_valid_script_path(script_path):
-        error += "Script path has not yet been set or is not valid.\n"
+    if not is_valid_script_path():
+        error += "Core script path is not valid. Essential files missing.\n"
     if not is_valid_project_file_path(project_path):
         error += "Project File path has not yet been set or could not be found.\n"
 
     if not error:
         logger.info("Paths are valid. Sourcing modules...")
-        root_path = os.path.dirname(script_path.rstrip("/\\"))
-        base_path = os.path.join(root_path, scripts_folder_name, "").replace("\\", "/")
+        base_path = os.path.join(_root_path, "openpypeline", "").replace("\\", "/")
         addons_path = os.path.join(base_path, "addons", "").replace("\\", "/")
         custom_path = os.path.join(base_path, "custom", "").replace("\\", "/")
 
@@ -312,8 +265,9 @@ def openPypeline():
         
         # Add backend logic and the modernized UI paths to sys.path
         ui_path = os.path.join(base_path, "app", "maya", "ui").replace("\\", "/")
-        backend_path = os.path.join(script_path, "openPypelineStudio").replace("\\", "/")
-        for path in [root_path, ui_path, backend_path]:
+        backend_path = os.path.join(base_path, "app", "maya", "core", "openPypelineStudio").replace("\\", "/")
+        
+        for path in [_root_path, ui_path, backend_path]:
             if path not in sys.path:
                 sys.path.insert(0, path)
 

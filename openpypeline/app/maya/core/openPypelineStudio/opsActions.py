@@ -16,10 +16,10 @@ from openpypeline.core.util import prefs
 
 logger = logging.getLogger("openPypeline.actions")
 
-import opsInfo
+import openpypeline.app.maya.core.openPypelineStudio.opsInfo as opsInfo
 import opsLoader
-import opsUtils
-import opsProject
+import openpypeline.app.maya.core.openPypelineStudio.opsUtils as opsUtils
+import openpypeline.app.maya.core.openPypelineStudio.opsProject as opsProject
 
 
 def activate_project(proj_name):
@@ -478,7 +478,7 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
         
     add_event_note(tab, level1, level2, level3, master_name, 0, comment)
     
-    import tracker_factory
+    import openpypeline.app.maya.core.openPypelineStudio.tracker_factory as tracker_factory
     tracker = tracker_factory.get_tracker()
     if tracker and task_id:
         tracker.publish_version(task_id, master_file, 0, comment)

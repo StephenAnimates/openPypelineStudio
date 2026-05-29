@@ -17,14 +17,14 @@ from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
 
 import UIObjects
 
-import opsSaveMasterGUI
-importlib.reload(opsSaveMasterGUI)
+import opsSaveMasterController
+importlib.reload(opsSaveMasterController)
 
 import openpypeline.app.maya.ui.opsProjectManagerGUI as opsProjectManagerGUI
 importlib.reload(opsProjectManagerGUI)
 
-import opsProjDialogGUI
-importlib.reload(opsProjDialogGUI)
+import opsProjDialogController
+importlib.reload(opsProjDialogController)
 
 import opsMainUI
 importlib.reload(opsMainUI)
@@ -58,9 +58,9 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         
-        self.UIObjects.opsSaveMasterGUI = opsSaveMasterGUI.opsSaveMasterGUI()
+        self.UIObjects.opsSaveMasterController = opsSaveMasterController.OpsSaveMasterController()
         self.UIObjects.opsProjectManagerGUI = opsProjectManagerGUI.opsProjectManagerGUI()
-        self.UIObjects.opsProjDialogGUI = opsProjDialogGUI.opsProjDialogGUI()
+        self.UIObjects.opsProjDialogController = opsProjDialogController.OpsProjDialogController()
         self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
         
         self._build_ui()
@@ -112,8 +112,8 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         buttons_data = [
             ("Open Pipeline Main GUI", "opsMainUI"),
             ("Project Manager GUI", "opsProjectManagerGUI"),
-            ("Save Master GUI", "opsSaveMasterGUI"),
-            ("Project Dialogue GUI", "opsProjDialogGUI")
+            ("Save Master GUI", "opsSaveMasterController"),
+            ("Project Dialogue GUI", "opsProjDialogController")
         ]
         
         for label, target in buttons_data:
@@ -135,7 +135,7 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         '''
                 
         # Try to close PySide widgets tracked via attributes on UIObjects directly
-        for attr in ['opsSaveMasterGUI', 'opsProjectManagerGUI', 'opsProjDialogGUI', 'opsMainUI']:
+        for attr in ['opsSaveMasterController', 'opsProjectManagerGUI', 'opsProjDialogController', 'opsMainUI']:
             if hasattr(self.UIObjects, attr):
                 ui_obj = getattr(self.UIObjects, attr)
                 if hasattr(ui_obj, 'close'):
@@ -143,9 +143,9 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
                     ui_obj.deleteLater()
 
         self.UIObjects = UIObjects.UIObjects()
-        self.UIObjects.opsSaveMasterGUI = opsSaveMasterGUI.opsSaveMasterGUI()
+        self.UIObjects.opsSaveMasterController = opsSaveMasterController.OpsSaveMasterController()
         self.UIObjects.opsProjectManagerGUI = opsProjectManagerGUI.opsProjectManagerGUI()
-        self.UIObjects.opsProjDialogGUI = opsProjDialogGUI.opsProjDialogGUI()
+        self.UIObjects.opsProjDialogController = opsProjDialogController.OpsProjDialogController()
         self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
         
         self.showWindow()
@@ -162,7 +162,7 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         textFieldString = '---window objects---\n\n'
                 
         # Fallback to display the PySide attribute objects if they aren't explicitly registered
-        for attr in ['opsSaveMasterGUI', 'opsProjectManagerGUI', 'opsProjDialogGUI', 'opsMainUI']:
+        for attr in ['opsSaveMasterController', 'opsProjectManagerGUI', 'opsProjDialogController', 'opsMainUI']:
             if hasattr(self.UIObjects, attr):
                 ui_obj = getattr(self.UIObjects, attr)
                 if hasattr(ui_obj, 'isVisible') and ui_obj.isVisible():
