@@ -141,6 +141,15 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
     def _build_top_menu(self):
         menubar = self.menuBar()
         
+        create_menu = menubar.addMenu(localization.get_string("menu_create"))
+        self.action_new_asset_type = create_menu.addAction(localization.get_string("menu_newAssetType"))
+        self.action_new_asset = create_menu.addAction(localization.get_string("menu_newAsset"))
+        self.action_new_asset_component = create_menu.addAction(localization.get_string("menu_newAssetComponent"))
+        create_menu.addSeparator()
+        self.action_new_sequence = create_menu.addAction(localization.get_string("menu_newSequence"))
+        self.action_new_shot = create_menu.addAction(localization.get_string("menu_newShot"))
+        self.action_new_shot_component = create_menu.addAction(localization.get_string("menu_newShotComponent"))
+        
         tools = menubar.addMenu(localization.get_string("menu_tools"))
         self.action_scene_inventory = tools.addAction(localization.get_string("menu_sceneInventory"))
         
@@ -148,14 +157,15 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         try:
             import maya.cmds as cmds
             import maya.mel as mel
-            maya_tools = menubar.addMenu(localization.get_string("menu_mayaTools"))
-            maya_tools.addAction(localization.get_string("menu_mayaReferenceEditor"), lambda: mel.eval("ReferenceEditor;"))
-            maya_tools.addAction(localization.get_string("menu_mayaProjectWindow"), lambda: mel.eval('ProjectWindow;'))
+            tools.addSection(localization.get_string("menu_mayaTools"))
+            tools.addAction(localization.get_string("menu_mayaReferenceEditor"), lambda: mel.eval("ReferenceEditor;"))
+            tools.addAction(localization.get_string("menu_mayaProjectWindow"), lambda: mel.eval('ProjectWindow;'))
         except ImportError:
             pass
         
-        addons = menubar.addMenu(localization.get_string("menu_addons"))
-        addons.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
+        # Add-ons as a section of Tools
+        tools.addSection(localization.get_string("menu_addons"))
+        tools.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
         
         settings = menubar.addMenu(localization.get_string("menu_settings"))
         self.action_preferences = settings.addAction(localization.get_string("menu_preferences"))
@@ -297,20 +307,20 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         layout.addWidget(splitter, stretch=1)
         self._build_asset_info_section(layout)
         
-        self.ops_mainTabs_tabLayout.addTab(tab, "Asset Browser")
+        self.ops_mainTabs_tabLayout.addTab(tab, localization.get_string("tab_assetBrowser"))
 
     def _build_asset_types_column(self, parent_layout):
-        col1 = QtWidgets.QGroupBox("Asset Types")
+        col1 = QtWidgets.QGroupBox(localization.get_string("grp_assetTypes"))
         col1_layout = QtWidgets.QVBoxLayout(col1)
         self.ops_assetType_txtScrollList = QtWidgets.QListWidget()
         self.ops_assetType_txtScrollList.setToolTip(localization.get_string("anno_assetTypeList"))
         col1_layout.addWidget(self.ops_assetType_txtScrollList)
         
         btn_lyt1 = QtWidgets.QHBoxLayout()
-        self.ops_assetTypeNew_btn = QtWidgets.QPushButton("New...")
+        self.ops_assetTypeNew_btn = QtWidgets.QPushButton(localization.get_string("btn_new"))
         self.ops_assetTypeNew_btn.setProperty("styleClass", "positiveAction")
         self.ops_assetTypeNew_btn.setToolTip(localization.get_string("anno_newAssetType"))
-        self.ops_assetTypeRemove_btn = QtWidgets.QPushButton("Delete")
+        self.ops_assetTypeRemove_btn = QtWidgets.QPushButton(localization.get_string("btn_delete"))
         self.ops_assetTypeRemove_btn.setProperty("styleClass", "negativeAction")
         self.ops_assetTypeRemove_btn.setToolTip(localization.get_string("anno_removeAssetType"))
         btn_lyt1.addWidget(self.ops_assetTypeNew_btn)
@@ -319,7 +329,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col1)
 
     def _build_assets_column(self, parent_layout):
-        col2 = QtWidgets.QGroupBox("Assets")
+        col2 = QtWidgets.QGroupBox(localization.get_string("grp_assets"))
         col2_layout = QtWidgets.QVBoxLayout(col2)
         self.ops_asset_scrollList = QtWidgets.QListWidget()
         self.ops_asset_scrollList.setToolTip(localization.get_string("anno_assetList"))
@@ -327,13 +337,13 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         col2_layout.addWidget(self.ops_asset_scrollList)
         
         btn_lyt2 = QtWidgets.QGridLayout()
-        self.ops_assetNew_btn = QtWidgets.QPushButton("New...")
+        self.ops_assetNew_btn = QtWidgets.QPushButton(localization.get_string("btn_new"))
         self.ops_assetNew_btn.setProperty("styleClass", "positiveAction")
         self.ops_assetNew_btn.setToolTip(localization.get_string("anno_newAsset"))
-        self.ops_assetRemove_btn = QtWidgets.QPushButton("Delete")
+        self.ops_assetRemove_btn = QtWidgets.QPushButton(localization.get_string("btn_delete"))
         self.ops_assetRemove_btn.setProperty("styleClass", "negativeAction")
         self.ops_assetRemove_btn.setToolTip(localization.get_string("anno_removeAsset"))
-        self.ops_assetRename_btn = QtWidgets.QPushButton("Rename...")
+        self.ops_assetRename_btn = QtWidgets.QPushButton(localization.get_string("btn_rename"))
         self.ops_assetRename_btn.setProperty("styleClass", "positiveAction")
         self.ops_assetRename_btn.setToolTip(localization.get_string("anno_renameAsset"))
         btn_lyt2.addWidget(self.ops_assetNew_btn, 0, 0)
@@ -343,7 +353,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col2)
 
     def _build_asset_components_column(self, parent_layout):
-        col3 = QtWidgets.QGroupBox("Components")
+        col3 = QtWidgets.QGroupBox(localization.get_string("grp_components"))
         col3_layout = QtWidgets.QVBoxLayout(col3)
         self.ops_componentScrollList = QtWidgets.QListWidget()
         self.ops_componentScrollList.setToolTip(localization.get_string("anno_componentList"))
@@ -351,10 +361,10 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         col3_layout.addWidget(self.ops_componentScrollList)
         
         btn_lyt3 = QtWidgets.QHBoxLayout()
-        self.ops_componentNewButton = QtWidgets.QPushButton("New...")
+        self.ops_componentNewButton = QtWidgets.QPushButton(localization.get_string("btn_new"))
         self.ops_componentNewButton.setProperty("styleClass", "positiveAction")
         self.ops_componentNewButton.setToolTip(localization.get_string("anno_newComponent"))
-        self.ops_componentRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_componentRemoveButton = QtWidgets.QPushButton(localization.get_string("btn_delete"))
         self.ops_componentRemoveButton.setProperty("styleClass", "negativeAction")
         self.ops_componentRemoveButton.setToolTip(localization.get_string("anno_removeComponent"))
         btn_lyt3.addWidget(self.ops_componentNewButton)
@@ -364,25 +374,25 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
 
     def _build_asset_info_section(self, parent_layout):
         info_layout = QtWidgets.QHBoxLayout()
-        prev_group = QtWidgets.QGroupBox("Preview")
+        prev_group = QtWidgets.QGroupBox(localization.get_string("grp_preview"))
         prev_layout = QtWidgets.QVBoxLayout(prev_group)
         self.ops_assetPreviewImage = QtWidgets.QLabel()
         self.ops_assetPreviewImage.setPixmap(QtGui.QPixmap(self.ops_defaultPreview_filePath))
         prev_layout.addWidget(self.ops_assetPreviewImage)
-        self.ops_assetViewPlayblastAssetButton = QtWidgets.QPushButton("View Playblast")
+        self.ops_assetViewPlayblastAssetButton = QtWidgets.QPushButton(localization.get_string("btn_viewPlayblast"))
         prev_layout.addWidget(self.ops_assetViewPlayblastAssetButton)
         info_layout.addWidget(prev_group)
         
-        hist_group = QtWidgets.QGroupBox("History & Notes")
+        hist_group = QtWidgets.QGroupBox(localization.get_string("grp_historyNotes"))
         hist_layout = QtWidgets.QVBoxLayout(hist_group)
         self.ops_commentField = QtWidgets.QTextEdit()
         self.ops_commentField.setReadOnly(True)
-        hist_layout.addWidget(QtWidgets.QLabel("History:"))
+        hist_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_history")))
         hist_layout.addWidget(self.ops_commentField)
         self.ops_assetNoteField = QtWidgets.QTextEdit()
         self.ops_assetNoteField.setReadOnly(True)
         self.ops_assetNoteField.setMaximumHeight(60)
-        hist_layout.addWidget(QtWidgets.QLabel("Notes:"))
+        hist_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_notes")))
         hist_layout.addWidget(self.ops_assetNoteField)
         info_layout.addWidget(hist_group)
         parent_layout.addLayout(info_layout)
@@ -391,10 +401,10 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         loc_row = QtWidgets.QHBoxLayout()
         self.ops_assetLocationField = QtWidgets.QLineEdit()
         self.ops_assetLocationField.setReadOnly(True)
-        self.ops_exploreAssetsButton = QtWidgets.QPushButton("explore...")
+        self.ops_exploreAssetsButton = QtWidgets.QPushButton(localization.get_string("btn_explore"))
         loc_row.addWidget(self.ops_assetLocationField)
         loc_row.addWidget(self.ops_exploreAssetsButton)
-        loc_layout.addRow("Location:", loc_row)
+        loc_layout.addRow(localization.get_string("lbl_location"), loc_row)
         parent_layout.addLayout(loc_layout)
 
     def _build_shot_browser_tab(self):
@@ -409,20 +419,20 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         layout.addWidget(splitter, stretch=1)
         self._build_shot_info_section(layout)
         
-        self.ops_mainTabs_tabLayout.addTab(tab, "Shot Browser")
+        self.ops_mainTabs_tabLayout.addTab(tab, localization.get_string("tab_shotBrowser"))
 
     def _build_sequences_column(self, parent_layout):
-        col1 = QtWidgets.QGroupBox("Sequence")
+        col1 = QtWidgets.QGroupBox(localization.get_string("grp_sequence"))
         col1_layout = QtWidgets.QVBoxLayout(col1)
         self.ops_sequenceScrollList = QtWidgets.QListWidget()
         self.ops_sequenceScrollList.setToolTip(localization.get_string("anno_sequenceList"))
         col1_layout.addWidget(self.ops_sequenceScrollList)
         
         btn_lyt1 = QtWidgets.QHBoxLayout()
-        self.ops_sequenceNewButton = QtWidgets.QPushButton("New...")
+        self.ops_sequenceNewButton = QtWidgets.QPushButton(localization.get_string("btn_new"))
         self.ops_sequenceNewButton.setProperty("styleClass", "positiveAction")
         self.ops_sequenceNewButton.setToolTip(localization.get_string("anno_newSequence"))
-        self.ops_sequenceRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_sequenceRemoveButton = QtWidgets.QPushButton(localization.get_string("btn_delete"))
         self.ops_sequenceRemoveButton.setProperty("styleClass", "negativeAction")
         self.ops_sequenceRemoveButton.setToolTip(localization.get_string("anno_removeSequence"))
         btn_lyt1.addWidget(self.ops_sequenceNewButton)
@@ -431,7 +441,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col1)
 
     def _build_shots_column(self, parent_layout):
-        col2 = QtWidgets.QGroupBox("Shot")
+        col2 = QtWidgets.QGroupBox(localization.get_string("grp_shot"))
         col2_layout = QtWidgets.QVBoxLayout(col2)
         self.ops_shotScrollList = QtWidgets.QListWidget()
         self.ops_shotScrollList.setToolTip(localization.get_string("anno_shotList"))
@@ -439,10 +449,10 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         col2_layout.addWidget(self.ops_shotScrollList)
         
         btn_lyt2 = QtWidgets.QHBoxLayout()
-        self.ops_shotNewButton = QtWidgets.QPushButton("New...")
+        self.ops_shotNewButton = QtWidgets.QPushButton(localization.get_string("btn_new"))
         self.ops_shotNewButton.setProperty("styleClass", "positiveAction")
         self.ops_shotNewButton.setToolTip(localization.get_string("anno_newShot"))
-        self.ops_shotRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_shotRemoveButton = QtWidgets.QPushButton(localization.get_string("btn_delete"))
         self.ops_shotRemoveButton.setProperty("styleClass", "negativeAction")
         self.ops_shotRemoveButton.setToolTip(localization.get_string("anno_removeShot"))
         btn_lyt2.addWidget(self.ops_shotNewButton)
@@ -451,7 +461,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col2)
 
     def _build_shot_components_column(self, parent_layout):
-        col3 = QtWidgets.QGroupBox("Components")
+        col3 = QtWidgets.QGroupBox(localization.get_string("grp_components"))
         col3_layout = QtWidgets.QVBoxLayout(col3)
         self.ops_shotComponentScrollList = QtWidgets.QListWidget()
         self.ops_shotComponentScrollList.setToolTip(localization.get_string("anno_shotComponentList"))
@@ -459,10 +469,10 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         col3_layout.addWidget(self.ops_shotComponentScrollList)
         
         btn_lyt3 = QtWidgets.QHBoxLayout()
-        self.ops_shotComponentNewButton = QtWidgets.QPushButton("New...")
+        self.ops_shotComponentNewButton = QtWidgets.QPushButton(localization.get_string("btn_new"))
         self.ops_shotComponentNewButton.setProperty("styleClass", "positiveAction")
         self.ops_shotComponentNewButton.setToolTip(localization.get_string("anno_newShotComponent"))
-        self.ops_shotComponentRemoveButton = QtWidgets.QPushButton("Delete")
+        self.ops_shotComponentRemoveButton = QtWidgets.QPushButton(localization.get_string("btn_delete"))
         self.ops_shotComponentRemoveButton.setProperty("styleClass", "negativeAction")
         self.ops_shotComponentRemoveButton.setToolTip(localization.get_string("anno_removeShotComponent"))
         btn_lyt3.addWidget(self.ops_shotComponentNewButton)
@@ -472,25 +482,25 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
 
     def _build_shot_info_section(self, parent_layout):
         info_layout = QtWidgets.QHBoxLayout()
-        prev_group = QtWidgets.QGroupBox("Preview")
+        prev_group = QtWidgets.QGroupBox(localization.get_string("grp_preview"))
         prev_layout = QtWidgets.QVBoxLayout(prev_group)
         self.ops_shotPreviewImage = QtWidgets.QLabel()
         self.ops_shotPreviewImage.setPixmap(QtGui.QPixmap(self.ops_defaultPreview_filePath))
         prev_layout.addWidget(self.ops_shotPreviewImage)
-        self.ops_shotViewPlayblastButton = QtWidgets.QPushButton("View Playblast")
+        self.ops_shotViewPlayblastButton = QtWidgets.QPushButton(localization.get_string("btn_viewPlayblast"))
         prev_layout.addWidget(self.ops_shotViewPlayblastButton)
         info_layout.addWidget(prev_group)
         
-        hist_group = QtWidgets.QGroupBox("History & Notes")
+        hist_group = QtWidgets.QGroupBox(localization.get_string("grp_historyNotes"))
         hist_layout = QtWidgets.QVBoxLayout(hist_group)
         self.ops_shotCommentField = QtWidgets.QTextEdit()
         self.ops_shotCommentField.setReadOnly(True)
-        hist_layout.addWidget(QtWidgets.QLabel("History:"))
+        hist_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_history")))
         hist_layout.addWidget(self.ops_shotCommentField)
         self.ops_shotInfoField = QtWidgets.QTextEdit()
         self.ops_shotInfoField.setReadOnly(True)
         self.ops_shotInfoField.setMaximumHeight(60)
-        hist_layout.addWidget(QtWidgets.QLabel("Notes:"))
+        hist_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_notes")))
         hist_layout.addWidget(self.ops_shotInfoField)
         info_layout.addWidget(hist_group)
         parent_layout.addLayout(info_layout)
@@ -499,18 +509,18 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         loc_row = QtWidgets.QHBoxLayout()
         self.ops_shotLocationField = QtWidgets.QLineEdit()
         self.ops_shotLocationField.setReadOnly(True)
-        self.ops_exploreShotsButton = QtWidgets.QPushButton("explore...")
+        self.ops_exploreShotsButton = QtWidgets.QPushButton(localization.get_string("btn_explore"))
         loc_row.addWidget(self.ops_shotLocationField)
         loc_row.addWidget(self.ops_exploreShotsButton)
-        loc_layout.addRow("Location:", loc_row)
+        loc_layout.addRow(localization.get_string("lbl_location"), loc_row)
         parent_layout.addLayout(loc_layout)
 
     def _build_bottom_buttons(self, parent_layout):
         bottom_layout = QtWidgets.QHBoxLayout()
-        self.ops_refreshUIButton = QtWidgets.QPushButton("Refresh UI")
+        self.ops_refreshUIButton = QtWidgets.QPushButton(localization.get_string("btn_refreshUi"))
         self.ops_refreshUIButton.setMinimumHeight(35)
         
-        self.ops_closeUIButton = QtWidgets.QPushButton("Close")
+        self.ops_closeUIButton = QtWidgets.QPushButton(localization.get_string("btn_close"))
         self.ops_closeUIButton.setMinimumHeight(35)
         self.ops_closeUIButton.setToolTip(localization.get_string("anno_close"))
         

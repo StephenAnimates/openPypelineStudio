@@ -1,5 +1,5 @@
 """
-File: begin.py
+File: ops_dev_launcher.py
 Description:
     This script provides a developer-focused entry point for launching and testing
     the openPypeline Studio Maya GUI components. It prompts the user to select
@@ -7,16 +7,16 @@ Description:
     a diagnostic UI to manage and view the various GUI windows.
 
     This is primarily intended for development and debugging, not as the main
-    entry point for artists. The main entry point is `opsLoader.py`.
+    entry point for artists. The main entry point is `ops_loader.py`.
 
 Usage:
     To use this developer tool, execute the following in a Maya Python tab:
 
-    from openpypeline.app.maya.ui import begin
+    from openpypeline.app.maya.ui import ops_dev_launcher
     import importlib
-    importlib.reload(begin)
+    importlib.reload(ops_dev_launcher)
 
-    dev_launcher = begin.begin()
+    dev_launcher = ops_dev_launcher.OpsDevLauncher()
 
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
@@ -30,7 +30,7 @@ from PySide6 import QtWidgets
 # TODO: Remember to run the end-to-end manual test for OpenUSD (.usd, .usda) 
 #       and Alembic (.abc) project creation and export using this diagnostic launcher!
 
-class begin():
+class OpsDevLauncher:
 
     def __init__(self):
         '''

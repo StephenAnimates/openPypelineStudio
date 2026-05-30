@@ -10,10 +10,6 @@ import sys
 
 # Add the project root to the sys.path so Sphinx can import openPypeline modules
 sys.path.insert(0, os.path.abspath('../'))
-# Also add the maya directory so Sphinx can find Maya-specific modules (like opsLoader)
-sys.path.insert(0, os.path.abspath('../maya'))
-# Add the core openpypeline directory so absolute imports (like 'from core.file...') resolve correctly
-sys.path.insert(0, os.path.abspath('../openpypeline'))
 
 # -- Project information -----------------------------------------------------
 project = 'openPypeline Studio'

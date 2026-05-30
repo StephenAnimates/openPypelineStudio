@@ -27,7 +27,7 @@ Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framew
 * Python 3.11+ (Native to modern Maya)
 
 ## 🚀 Installation & Setup
-1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory.
+1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory. Example `/Users/Shared/Autodesk/maya/scripts`
 2. Open **Autodesk Maya**.
 3. Open the **Script Editor** (Python tab).
 4. Run the following code to initialize the setup UI, replacing the path with your actual installation directory:
@@ -35,22 +35,22 @@ Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framew
 ```python
 import sys
 
-# Path to the directory containing the 'openpypeline' folder
-repo_path = "/path/to/openPypeline/maya"
+# Path to the directory containing the 'openpypeline' folder (install root)
+ops_install_path = "/Users/Shared/Autodesk/maya/scripts/openPypeline"
 
-if repo_path not in sys.path:
-    sys.path.insert(0, repo_path)
+if ops_install_path not in sys.path:
+    sys.path.insert(0, ops_install_path)
     
-import opsLoader
-opsLoader.openPypelineSetup()
+from openpypeline.app.maya.core import ops_loader
+ops_loader.openPypelineSetup()
 ```
 5. Follow the on-screen prompts to define your Script Path and Project Path.
 
 ## 📖 Usage
 Once installed and configured, you can launch the main UI at any time using:
 ```python
-import opsLoader
-opsLoader.openPypeline()
+from openpypeline.app.maya.core import ops_loader
+ops_loader.openPypeline()
 ```
 *(Tip: Highlight the snippet above and drag it to a Maya shelf to create a quick-launch button!)*
 

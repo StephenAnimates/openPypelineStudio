@@ -29,6 +29,9 @@ importlib.reload(opsProjDialogController)
 from . import ops_main_ui as opsMainUI
 importlib.reload(opsMainUI)
 
+from . import ops_main_controller as opsMainController
+importlib.reload(opsMainController)
+
 from ..core import ops_project as opsProject
 importlib.reload(opsProject)
 
@@ -61,7 +64,8 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self.UIObjects.opsSaveMasterController = opsSaveMasterController.OpsSaveMasterController()
         self.UIObjects.opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
         self.UIObjects.opsProjDialogController = opsProjDialogController.OpsProjDialogController()
-        self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
+        self.UIObjects.opsMainController = opsMainController.OpsMainController()
+        self.UIObjects.opsMainUI = self.UIObjects.opsMainController.view
         
         self._build_ui()
 
@@ -110,7 +114,7 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         
         # Data-driven button creation (Pythonic DRY principle)
         buttons_data = [
-            ("Open Pipeline Main GUI", "opsMainUI"),
+            ("Main GUI", "opsMainController"),
             ("Project Manager GUI", "opsProjectManagerController"),
             ("Save Master GUI", "opsSaveMasterController"),
             ("Project Dialogue GUI", "opsProjDialogController")
@@ -146,7 +150,8 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self.UIObjects.opsSaveMasterController = opsSaveMasterController.OpsSaveMasterController()
         self.UIObjects.opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
         self.UIObjects.opsProjDialogController = opsProjDialogController.OpsProjDialogController()
-        self.UIObjects.opsMainUI = opsMainUI.opsMainUI()
+        self.UIObjects.opsMainController = opsMainController.OpsMainController()
+        self.UIObjects.opsMainUI = self.UIObjects.opsMainController.view
         
         self.showWindow()
         self.updateTextField()

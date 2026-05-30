@@ -8,7 +8,7 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [x] Establish a pure agnostic `/openpypeline/core/` directory.
 - [x] Remove legacy OptionVars in favor of JSON-based agnostic preferences.
 - [x] Clean up Python packaging (Add `__init__.py` files, transition to absolute/relative package imports).
-- [x] Remove excessive `sys.path` injection from entry scripts (`ops_loader.py` formerly `opsLoader.py`, `begin.py`).
+- [x] Remove excessive `sys.path` injection from entry scripts (`ops_loader.py`, `ops_dev_launcher.py`).
 - [x] Enforce standard PEP 8 Pythonic naming conventions across all files and directories (`opsActions.py` -> `ops_actions.py`, `camelCase` to `snake_case`).
 
 ## Phase 2: UI Modernization & MVC Architecture (In Progress)

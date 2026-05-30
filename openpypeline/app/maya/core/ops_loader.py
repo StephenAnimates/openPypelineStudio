@@ -62,7 +62,7 @@ def source_python_module(path):
         None
     """
     if not os.path.isdir(path):
-        logger.warning(f"Cannot source Python modules from non-existent path: {path}")
+        logger.debug(f"Optional module path not found (skipping): {path}")
         return
 
     # Add path to sys.path if it's not already there
@@ -94,7 +94,7 @@ def is_valid_script_path():
     if not _root_path or not os.path.isdir(_root_path):
         return False
 
-    py_loader_file = os.path.join(_root_path, "openpypeline", "app", "maya", "core", "opsLoader.py").replace("\\", "/")
+    py_loader_file = os.path.join(_root_path, "openpypeline", "app", "maya", "core", "ops_loader.py").replace("\\", "/")
     sub_folder = os.path.join(_root_path, "openpypeline").replace("\\", "/")
 
     if not os.path.isfile(py_loader_file):
@@ -256,26 +256,23 @@ def openPypeline():
 
     if not error:
         logger.info("Paths are valid. Sourcing modules...")
-        base_path = os.path.join(_root_path, "openpypeline", "").replace("\\", "/")
-        addons_path = os.path.join(base_path, "addons", "").replace("\\", "/")
-        custom_path = os.path.join(base_path, "custom", "").replace("\\", "/")
+        maya_core_path = os.path.dirname(__file__)
+        addons_path = os.path.join(maya_core_path, "addons", "").replace("\\", "/")
+        custom_path = os.path.join(maya_core_path, "custom", "").replace("\\", "/")
 
         source_python_module(addons_path)
         source_python_module(custom_path)
         
-        # Add backend logic and the modernized UI paths to sys.path
-        ui_path = os.path.join(base_path, "app", "maya", "ui").replace("\\", "/")
-        backend_path = os.path.join(base_path, "app", "maya", "core").replace("\\", "/")
-        
-        for path in [_root_path, ui_path, backend_path]:
-            if path not in sys.path:
-                sys.path.insert(0, path)
+        if _root_path not in sys.path:
+            sys.path.insert(0, _root_path)
 
         try:
-            import ui_objects as UIObjects
-            import openpypeline.app.maya.ui.ops_main_ui as opsMainUI
-            UIObjects.UIObjects().opsMainUI = opsMainUI.opsMainUI()
-            UIObjects.UIObjects().opsMainUI.showWindow()
+            from openpypeline.app.maya.ui import ui_objects as UIObjects
+            from openpypeline.app.maya.ui import ops_main_controller as opsMainController
+            controller = opsMainController.OpsMainController()
+            UIObjects.UIObjects().opsMainController = controller
+            UIObjects.UIObjects().opsMainUI = controller.view
+            controller.showWindow()
         except Exception as e:
             logger.error(f"Failed to launch openPypelineUI: {e}")
 
