@@ -589,7 +589,7 @@ def close_current(*args):
 
 def launch_help(*args):
     base_dir = os.path.dirname(__file__)
-    docs_index = os.path.abspath(os.path.join(base_dir, "..", "..", "utilities", "_build", "html", "index.html")).replace("\\", "/")
+    docs_index = os.path.abspath(os.path.join(base_dir, "..", "..", "docs", "_build", "html", "index.html")).replace("\\", "/")
     
     if os.path.exists(docs_index):
         webbrowser.open(f"file://{docs_index}")
