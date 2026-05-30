@@ -1,5 +1,5 @@
 """
-Module: opsSaveMasterGUI.py
+Module: ops_save_master_gui.py
 
 Description:
     Launches the UI for Mastering

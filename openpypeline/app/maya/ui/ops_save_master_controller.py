@@ -1,9 +1,12 @@
 """
-Module: opsSaveMasterController.py
+Module: ops_save_master_controller.py
 
 Description:
     The Controller class for the openPypeline Studio Save Master Dialog.
     Handles logic, comment capturing, and validation for saving master files.
+
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 from PySide6 import QtCore

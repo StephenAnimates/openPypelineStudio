@@ -1,5 +1,5 @@
 """
-Module: opsProjDialogGUI.py
+Module: ops_proj_dialog_gui.py
 
 Description:
     Opens the Project Dialog Window. This is used either for creating a new project 

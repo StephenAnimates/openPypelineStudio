@@ -1,5 +1,5 @@
 """
-Module: openPipelineMainUI.py
+Module: ops_main_ui.py
 
 Description: 
     Creates and manages the main openPypeline Studio UI in Maya.
@@ -87,61 +87,12 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             
         self.setMinimumSize(450, 780)
         
-        ui_dir = os.path.dirname(__file__)
-        self.ops_icon_filePath = os.path.join(ui_dir, 'ops_banner.png').replace("\\", "/")
-        self.ops_currOpenPreview_filePath = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
-        self.ops_defaultPreview_filePath = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
+        base_dir = os.path.dirname(__file__)
+        resources_dir = os.path.abspath(os.path.join(base_dir, "..", "..", "..", "resources")).replace("\\", "/")
+        self.ops_icon_filePath = os.path.join(resources_dir, 'images', 'ops_banner.png').replace("\\", "/")
+        self.ops_currOpenPreview_filePath = os.path.join(resources_dir, 'images', 'ops_no_preview.png').replace("\\", "/")
+        self.ops_defaultPreview_filePath = os.path.join(resources_dir, 'images', 'ops_default_preview.png').replace("\\", "/")
         
-        self.anno_projectList="Select from the available Projects."
-        self.anno_projectManager="Open the Project Manager, where you can add or remove Projects."
-        self.anno_saveWorkshop="Save a WIP file for the current Asset/Shot/Component."
-        self.anno_master="Save a master file for the current Asset/Shot/Component."
-        self.anno_revive="Revive an old version of the current Asset/Shot/Component."
-        self.anno_closeFile="Close the currently open file."
-        self.anno_assetTypeList="Choose an Asset Type."
-        self.anno_newAssetType="Create a new Asset Type"
-        self.anno_removeAssetType="Remove the selected Asset Type(s) from the inventory."
-        self.anno_removeAsset="Remove the selected Asset from the inventory."
-        self.anno_editAsset="Open the Asset for editing."
-        self.anno_viewAsset="Open the master file for the Asset."
-        self.anno_importAssetWorkshop="Import the Asset's latest WIP file into the current scene."
-        self.anno_importAssetMaster="Import the Asset's master file into the current scene."
-        self.anno_referenceAssetWorkshop="Reference the Asset's latest WIP file into the current scene."
-        self.anno_referenceAssetMaster="Reference the Asset's master file into the current scene."
-        self.anno_assetList="Double-click to edit Asset. Hold right mouse button for more options."
-        self.anno_renameAsset="Rename the selected Asset."
-        self.anno_editComponent="Open the Component for editing."
-        self.anno_viewComponent="Open the master file for the Component."
-        self.anno_importComponentWorkshop="Import the Component's latest WIP file into the current scene."
-        self.anno_importComponentMaster="Import the Component's master file into the current scene."
-        self.anno_referenceComponentWorkshop="Reference the Component's latest WIP file into the current scene."
-        self.anno_referenceComponentMaster="Reference the Component's master file into the current scene."
-        self.anno_componentList="Double-click to edit Component. Hold down right mouse button for more options."
-        self.anno_newComponent="Create a new Component for the selected Asset."
-        self.anno_removeComponent="Remove the selected Component from the inventory."
-        self.anno_close="Close openPipeline."
-        self.anno_sequenceList="Choose a Sequence."
-        self.anno_newSequence="Create a new Sequence"
-        self.anno_removeSequence="Remove the selected Sequence from the inventory."
-        self.anno_editShotComponent="Open the Component for editing."
-        self.anno_viewShot="Open the master file for the Shot."
-        self.anno_importShotWorkshop="Import the Shot's latest WIP file into the current scene."
-        self.anno_editShot="Open the Shot for editing."
-        self.anno_importShotMaster="Import the Shot's master file into the current scene."
-        self.anno_referenceShotWorkshop="Reference the Shot's latest WIP file into the current scene."
-        self.anno_referenceShotMaster="Reference the Shot's master file into the current scene."
-        self.anno_shotList="Double-click to Edit Shot. Hold down right mouse button for more options."
-        self.anno_newShot="Create a new Shot."
-        self.anno_removeShot="Remove the selected Shot."
-        self.anno_viewShotComponent="Open the master file for the Component."
-        self.anno_importShotComponentWorkshop="Import the Component's latest WIP file into the current scene."
-        self.anno_importShotComponentMaster="Import the Component's master file into the current scene."
-        self.anno_referenceShotComponentWorkshop="Reference the Component's latest WIP file into the current scene."
-        self.anno_referenceShotComponentMaster="Reference the Component's master file into the current scene."
-        self.anno_shotComponentList="Double-click to edit Component. Hold down right mouse button for more options."
-        self.anno_newShotComponent="Create a new Component for the selected Asset."
-        self.anno_removeShotComponent="Remove the selected Component from the inventory."
-    
         # Load localization strings
         localization.load_language()
 
@@ -171,6 +122,12 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.main_layout.setContentsMargins(5, 5, 5, 5)
         self.main_layout.setSpacing(5)
         
+        # --- Banner Image at the top ---
+        self.ops_icon_image = QtWidgets.QLabel()
+        self.ops_icon_image.setPixmap(QtGui.QPixmap(self.ops_icon_filePath))
+        self.ops_icon_image.setAlignment(QtCore.Qt.AlignCenter)
+        self.main_layout.addWidget(self.ops_icon_image)
+
         self._build_basic_info(self.main_layout)
         
         self.ops_mainTabs_tabLayout = QtWidgets.QTabWidget()
@@ -184,34 +141,31 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
     def _build_top_menu(self):
         menubar = self.menuBar()
         
-        tools = menubar.addMenu("Tools")
-        self.action_scene_inventory = tools.addAction("Scene Inventory")
+        tools = menubar.addMenu(localization.get_string("menu_tools"))
+        self.action_scene_inventory = tools.addAction(localization.get_string("menu_sceneInventory"))
         
         # Conditionally add Maya tools only if running inside Maya
         try:
             import maya.cmds as cmds
             import maya.mel as mel
-            maya_tools = menubar.addMenu("Maya Tools")
-            maya_tools.addAction("Maya Reference Editor", lambda: mel.eval("ReferenceEditor"))
-            maya_tools.addAction("Maya Project Manager", lambda: mel.eval('projectViewer "NewProject"'))
+            maya_tools = menubar.addMenu(localization.get_string("menu_mayaTools"))
+            maya_tools.addAction(localization.get_string("menu_mayaReferenceEditor"), lambda: mel.eval("ReferenceEditor;"))
+            maya_tools.addAction(localization.get_string("menu_mayaProjectWindow"), lambda: mel.eval('ProjectWindow;'))
         except ImportError:
             pass
         
-        addons = menubar.addMenu("Add-ons")
-        addons.addAction("How to add to this menu...", lambda: QtWidgets.QMessageBox.information(self, 'Add-ons', 'Add Python plugins directly to the addons folder.'))
+        addons = menubar.addMenu(localization.get_string("menu_addons"))
+        addons.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
         
-        settings = menubar.addMenu("Settings")
-        self.action_preferences = settings.addAction("Preferences...")
+        settings = menubar.addMenu(localization.get_string("menu_settings"))
+        self.action_preferences = settings.addAction(localization.get_string("menu_preferences"))
         
-        help_menu = menubar.addMenu("Help")
-        self.action_about = help_menu.addAction("About openPypeline Studio...")
-        self.action_help = help_menu.addAction("Help...")
+        window_menu = menubar.addMenu(localization.get_string("menu_window"))
+        self.action_reset_window_size = window_menu.addAction(localization.get_string("menu_resetWindowSize"))
         
-        # --- Main Toolbar ---
-        toolbar = QtWidgets.QToolBar("openPypeline Tools")
-        toolbar.setMovable(False)
-        self.addToolBar(toolbar)
-        self.action_toolbar_scene_inventory = toolbar.addAction("Scene Inventory")
+        help_menu = menubar.addMenu(localization.get_string("menu_help"))
+        self.action_about = help_menu.addAction(localization.get_string("menu_about"))
+        self.action_help = help_menu.addAction(localization.get_string("menu_helpAction"))
 
     def _build_basic_info(self, parent_layout):
         header_layout = QtWidgets.QHBoxLayout()
@@ -219,28 +173,23 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         
         self.ops_userName_optionMenu = QtWidgets.QComboBox()
         self.ops_userName_optionMenu.setEnabled(False)
-        info_layout.addRow("User Name:", self.ops_userName_optionMenu)
+        info_layout.addRow(localization.get_string("lbl_userName"), self.ops_userName_optionMenu)
         
         proj_layout = QtWidgets.QHBoxLayout()
         self.ops_projName_optionMenu = QtWidgets.QComboBox()
         self.ops_projName_optionMenu.setToolTip(localization.get_string("anno_projectList"))
         
-        self.ops_projManager_btn = QtWidgets.QPushButton("Project Manager...")
+        self.ops_projManager_btn = QtWidgets.QPushButton(localization.get_string("btn_projectManager"))
         self.ops_projManager_btn.setToolTip(localization.get_string("anno_projectManager"))
         
         proj_layout.addWidget(self.ops_projName_optionMenu)
         proj_layout.addWidget(self.ops_projManager_btn)
-        info_layout.addRow("Project Name:", proj_layout)
+        info_layout.addRow(localization.get_string("lbl_projectName"), proj_layout)
         
         self.ops_projPath_txtField = QtWidgets.QLineEdit()
         self.ops_projPath_txtField.setReadOnly(True)
-        info_layout.addRow("Project Path:", self.ops_projPath_txtField)
+        info_layout.addRow(localization.get_string("lbl_projectPath"), self.ops_projPath_txtField)
         header_layout.addLayout(info_layout)
-        
-        self.ops_icon_image = QtWidgets.QLabel()
-        self.ops_icon_image.setPixmap(QtGui.QPixmap(self.ops_icon_filePath))
-        self.ops_icon_image.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        header_layout.addWidget(self.ops_icon_image)
         
         parent_layout.addLayout(header_layout)
 
@@ -249,7 +198,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(tab)
         
         header_lyt = QtWidgets.QHBoxLayout()
-        self.ops_currOpenHeading_txt = QtWidgets.QLabel("CURRENTLY OPEN:")
+        self.ops_currOpenHeading_txt = QtWidgets.QLabel(localization.get_string("lbl_currentlyOpen"))
         self.ops_currOpenHeading_txt.setProperty("styleClass", "headingBold")
         self.ops_currOpenHeadingVersion_txt = QtWidgets.QLabel(" ")
         self.ops_currOpenHeadingVersion_txt.setProperty("styleClass", "headingBold")
@@ -259,22 +208,22 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         layout.addLayout(header_lyt)
         
         top_row = QtWidgets.QHBoxLayout()
-        actions_group = QtWidgets.QGroupBox("Actions")
+        actions_group = QtWidgets.QGroupBox(localization.get_string("grp_actions"))
         actions_layout = QtWidgets.QGridLayout(actions_group)
         
-        self.ops_currOpenSaveWorkshop_btn = QtWidgets.QPushButton("Save WIP...")
+        self.ops_currOpenSaveWorkshop_btn = QtWidgets.QPushButton(localization.get_string("btn_saveWip"))
         self.ops_currOpenSaveWorkshop_btn.setProperty("styleClass", "saveWipBtn")
         self.ops_currOpenSaveWorkshop_btn.setToolTip(localization.get_string("anno_saveWorkshop"))
         
-        self.ops_currOpenMaster_btn = QtWidgets.QPushButton("MASTER...")
+        self.ops_currOpenMaster_btn = QtWidgets.QPushButton(localization.get_string("btn_master"))
         self.ops_currOpenMaster_btn.setProperty("styleClass", "masterBtn")
         self.ops_currOpenMaster_btn.setToolTip(localization.get_string("anno_master"))
         
-        self.ops_currOpenRevive_btn = QtWidgets.QPushButton("Revive...")
+        self.ops_currOpenRevive_btn = QtWidgets.QPushButton(localization.get_string("btn_revive"))
         self.ops_currOpenRevive_btn.setProperty("styleClass", "reviveBtn")
         self.ops_currOpenRevive_btn.setToolTip(localization.get_string("anno_revive"))
         
-        self.ops_currOpenClose_btn = QtWidgets.QPushButton("Close")
+        self.ops_currOpenClose_btn = QtWidgets.QPushButton(localization.get_string("btn_close"))
         self.ops_currOpenClose_btn.setProperty("styleClass", "neutralAction")
         self.ops_currOpenClose_btn.setToolTip(localization.get_string("anno_closeFile"))
         
@@ -284,7 +233,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         actions_layout.addWidget(self.ops_currOpenClose_btn, 2, 1)
         top_row.addWidget(actions_group)
         
-        history_group = QtWidgets.QGroupBox("History")
+        history_group = QtWidgets.QGroupBox(localization.get_string("grp_history"))
         history_layout = QtWidgets.QVBoxLayout(history_group)
         self.ops_currOpenAssetNote_scrollField = QtWidgets.QTextEdit()
         self.ops_currOpenAssetNote_scrollField.setReadOnly(True)
@@ -293,31 +242,31 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         layout.addLayout(top_row)
         
         mid_row = QtWidgets.QHBoxLayout()
-        preview_group = QtWidgets.QGroupBox("Preview")
+        preview_group = QtWidgets.QGroupBox(localization.get_string("grp_preview"))
         preview_layout = QtWidgets.QVBoxLayout(preview_group)
         self.ops_currOpenPreview_img = QtWidgets.QLabel()
         self.ops_currOpenPreview_img.setPixmap(QtGui.QPixmap(self.ops_currOpenPreview_filePath))
         preview_layout.addWidget(self.ops_currOpenPreview_img)
         
-        self.ops_currOpenSnapshot_btn = QtWidgets.QPushButton("Take Snapshot")
+        self.ops_currOpenSnapshot_btn = QtWidgets.QPushButton(localization.get_string("btn_takeSnapshot"))
         preview_layout.addWidget(self.ops_currOpenSnapshot_btn)
         
         pb_row = QtWidgets.QHBoxLayout()
-        self.ops_currOpenRecordPlayblast_btn = QtWidgets.QPushButton("Rec Playblast")
-        self.ops_currOpenViewPlayblast_btn = QtWidgets.QPushButton("View Playblast")
+        self.ops_currOpenRecordPlayblast_btn = QtWidgets.QPushButton(localization.get_string("btn_recPlayblast"))
+        self.ops_currOpenViewPlayblast_btn = QtWidgets.QPushButton(localization.get_string("btn_viewPlayblast"))
         pb_row.addWidget(self.ops_currOpenRecordPlayblast_btn)
         pb_row.addWidget(self.ops_currOpenViewPlayblast_btn)
         preview_layout.addLayout(pb_row)
         mid_row.addWidget(preview_group)
         
-        notes_group = QtWidgets.QGroupBox("Notes")
+        notes_group = QtWidgets.QGroupBox(localization.get_string("grp_notes"))
         notes_layout = QtWidgets.QVBoxLayout(notes_group)
         self.ops_currOpen_scrollField = QtWidgets.QTextEdit()
         notes_layout.addWidget(self.ops_currOpen_scrollField)
         
         note_btn_row = QtWidgets.QHBoxLayout()
-        self.ops_currOpenClearNote_btn = QtWidgets.QPushButton("Clear")
-        self.ops_currOpenSaveNote_btn = QtWidgets.QPushButton("Save")
+        self.ops_currOpenClearNote_btn = QtWidgets.QPushButton(localization.get_string("btn_clear"))
+        self.ops_currOpenSaveNote_btn = QtWidgets.QPushButton(localization.get_string("btn_save"))
         note_btn_row.addWidget(self.ops_currOpenClearNote_btn)
         note_btn_row.addWidget(self.ops_currOpenSaveNote_btn)
         notes_layout.addLayout(note_btn_row)
@@ -328,13 +277,13 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         loc_row = QtWidgets.QHBoxLayout()
         self.ops_currOpenLocation_txtField = QtWidgets.QLineEdit()
         self.ops_currOpenLocation_txtField.setReadOnly(True)
-        self.ops_currOpenExplore_btn = QtWidgets.QPushButton("explore...")
+        self.ops_currOpenExplore_btn = QtWidgets.QPushButton(localization.get_string("btn_explore"))
         loc_row.addWidget(self.ops_currOpenLocation_txtField)
         loc_row.addWidget(self.ops_currOpenExplore_btn)
-        loc_layout.addRow("Location:", loc_row)
+        loc_layout.addRow(localization.get_string("lbl_location"), loc_row)
         layout.addLayout(loc_layout)
         
-        self.ops_mainTabs_tabLayout.addTab(tab, "Currently Open")
+        self.ops_mainTabs_tabLayout.addTab(tab, localization.get_string("tab_currentlyOpen"))
 
     def _build_asset_browser_tab(self):
         tab = QtWidgets.QWidget()

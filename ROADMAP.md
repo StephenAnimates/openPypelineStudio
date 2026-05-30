@@ -8,31 +8,34 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [x] Establish a pure agnostic `/openpypeline/core/` directory.
 - [x] Remove legacy OptionVars in favor of JSON-based agnostic preferences.
 - [x] Clean up Python packaging (Add `__init__.py` files, transition to absolute/relative package imports).
-- [x] Remove excessive `sys.path` injection from entry scripts (`opsLoader.py`, `begin.py`).
-- [ ] Enforce standard PEP 8 Pythonic naming conventions across all files and directories (`opsActions.py` -> `ops_actions.py`, `camelCase` to `snake_case`).
+- [x] Remove excessive `sys.path` injection from entry scripts (`ops_loader.py` formerly `opsLoader.py`, `begin.py`).
+- [x] Enforce standard PEP 8 Pythonic naming conventions across all files and directories (`opsActions.py` -> `ops_actions.py`, `camelCase` to `snake_case`).
 
 ## Phase 2: UI Modernization & MVC Architecture (In Progress)
 - [x] Port all legacy UIs to PySide6.
-- [x] Implement MVC for `opsMainUI` (Separating View from Controller).
-- [x] Implement MVC for `opsProjDialogGUI`.
-- [x] Implement MVC for `opsSaveMasterGUI` (Moved async TaskFetcher to controller).
-- [x] Implement MVC for `opsSettingsGUI`.
-- [ ] Implement MVC for `opsProjectManagerGUI`.
-- [ ] Evaluate and refactor the `UIObjects.py` Singleton pattern (Consider an overarching `App` or `Window Manager` class).
+- [x] Implement MVC for `ops_main_ui` (formerly `opsMainUI`) (Separating View from Controller).
+- [x] Implement MVC for `ops_proj_dialog_gui` (formerly `opsProjDialogGUI`).
+- [x] Implement MVC for `ops_save_master_gui` (formerly `opsSaveMasterGUI`) (Moved async TaskFetcher to controller).
+- [x] Implement MVC for `ops_settings_gui` (formerly `opsSettingsGUI`).
+- [x] Implement MVC for `ops_project_manager_gui` (formerly `opsProjectManagerGUI`).
+- [x] Evaluate and refactor the `ui_objects.py` (formerly `UIObjects.py`) Singleton pattern (Consider an overarching `App` or `Window Manager` class).
 
 ## Phase 3: Core Agnosticism & Backend Decoupling
-- [x] Audit `opsActions` and `opsUIWrappers` to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
+- [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
 - [ ] Implement a DCC Interface/Adapter pattern (e.g., `core` asks the active `app` adapter to "save file" or "export Alembic").
 - [ ] Upgrade legacy XML-based project tracking to JSON or SQLite for better performance and cross-compatibility.
 - [ ] Implement FBX export/import support alongside USD and Alembic.
 
 ## Phase 4: Localization & Polish
 - [x] Create a core localization manager (`localization.py`).
-- [x] Apply localization to `opsMainUI` tooltips.
+- [x] Apply localization to `ops_main_ui` (formerly `opsMainUI`) tooltips.
 - [ ] Extract all hardcoded UI text strings across all View files into localization dictionary files.
 - [ ] Extract controller warning/error messages into localization.
+- [x] Centralize UI assets (images/icons) into a DCC-agnostic `/resources/` folder and enforce `snake_case` naming.
+- [ ] Test the centralized UI assets across different DCCs and display resolutions.
 - [ ] Update application and UI icons to modern, high-resolution formats.
-- [ ] Implement language hot-swapping in `opsSettingsGUI`.
+- [ ] Implement language hot-swapping in `ops_settings_gui` (formerly `opsSettingsGUI`).
+- [ ] Evaluate supporting regional dialects for localization (e.g., `en_us.json` vs `en_uk.json`).
 
 ## Phase 5: Quality Assurance & Pipeline Testing
 - [ ] Write Unit Tests for Controller classes (Mocking the Views).

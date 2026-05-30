@@ -1,5 +1,5 @@
 """
-File: opsEngine.py
+File: ops_engine.py
 Description: The central, DCC-agnostic pipeline engine for openPypeline Studio.
              This module orchestrates the core data flow, detects the host application
              dynamically, and delegates file operations to the appropriate application handlers.
@@ -9,11 +9,11 @@ Usage Example (Testing):
 import sys
 sys.path.append("/path/to/openPypeline/openpypeline")
 
-import opsEngine
+import ops_engine
 import importlib
-importlib.reload(opsEngine)
+importlib.reload(ops_engine)
 
-opsEngine.OpsEngine().ui()
+ops_engine.OpsEngine().ui()
 '''
 
 Original Framework: openPipeline by Kickstand

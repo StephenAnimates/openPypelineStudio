@@ -77,8 +77,8 @@ def activate_project(proj_name):
         if proj_scripts:
             opsLoader.source_mel_module(scripts_path)
             
-        import openpypeline.opsEngine as opsEngine
-        engine = opsEngine.OpsEngine()
+        import openpypeline.ops_engine as ops_engine
+        engine = ops_engine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'set_workspace'):
             rules = {
                 'mel': proj_scripts,
@@ -272,8 +272,8 @@ def create_new_item(tab, level1, level2, level3, mode):
             file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
             file_type = file_type_map.get(ext, "mayaBinary")
 
-            import openpypeline.opsEngine as opsEngine
-            engine = opsEngine.OpsEngine()
+            import openpypeline.ops_engine as ops_engine
+            engine = ops_engine.OpsEngine()
 
             if mode == 2:
                 if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
@@ -300,8 +300,8 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
         version = 0
         curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
         
-        import openpypeline.opsEngine as opsEngine
-        engine = opsEngine.OpsEngine()
+        import openpypeline.ops_engine as ops_engine
+        engine = ops_engine.OpsEngine()
         is_mod = engine.file_handler.is_modified() if engine.file_handler and hasattr(engine.file_handler, 'is_modified') else False
 
         if is_mod and curr_level1:
@@ -363,8 +363,8 @@ def import_item(item_type, tab, level1, level2, level3, flags=""):
     """Imports an item into the current scene."""
     file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
     if os.path.isfile(file_path):
-        import openpypeline.opsEngine as opsEngine
-        engine = opsEngine.OpsEngine()
+        import openpypeline.ops_engine as ops_engine
+        engine = ops_engine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'import_file'):
             return int(engine.file_handler.import_file(file_path))
         else:
@@ -379,8 +379,8 @@ def reference_item(item_type, tab, level1, level2, level3, flags=""):
     """References an item into the current scene."""
     file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
     if os.path.isfile(file_path):
-        import openpypeline.opsEngine as opsEngine
-        engine = opsEngine.OpsEngine()
+        import openpypeline.ops_engine as ops_engine
+        engine = ops_engine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'reference_file'):
             return int(engine.file_handler.reference_file(file_path))
         else:
@@ -409,8 +409,8 @@ def save_wip(note=""):
     if ext not in file_type_map:
         logger.warning(f"Invalid file format ({ext}) specified: saving to Maya Binary")
         
-    import openpypeline.opsEngine as opsEngine
-    engine = opsEngine.OpsEngine()
+    import openpypeline.ops_engine as ops_engine
+    engine = ops_engine.OpsEngine()
     
     if file_type in ["USD Export", "Alembic"]:
         if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
@@ -445,8 +445,8 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
     if os.path.exists(master_file):
         os.rename(master_file, destination_file)
         
-    import openpypeline.opsEngine as opsEngine
-    engine = opsEngine.OpsEngine()
+    import openpypeline.ops_engine as ops_engine
+    engine = ops_engine.OpsEngine()
     
     if flatten and engine.file_handler and hasattr(engine.file_handler, 'flatten_references'):
         w_name = prefs.get_pref("ops_wip", "wip")
@@ -638,8 +638,8 @@ def close_file():
     w_name = prefs.get_pref("ops_wip", "wip")
     curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
 
-    import openpypeline.opsEngine as opsEngine
-    engine = opsEngine.OpsEngine()
+    import openpypeline.ops_engine as ops_engine
+    engine = ops_engine.OpsEngine()
     is_mod = engine.file_handler.is_modified() if engine.file_handler and hasattr(engine.file_handler, 'is_modified') else False
 
     if is_mod and curr_level1:
@@ -678,8 +678,8 @@ def open_location(tab, level1, level2, level3):
 def record_playblast(tab, level1, level2, level3):
     """Records a playblast for an item."""
     playblast_file = opsInfo.get_file_name(tab, level1, level2, level3, "playblastFile")
-    import openpypeline.opsEngine as opsEngine
-    engine = opsEngine.OpsEngine()
+    import openpypeline.ops_engine as ops_engine
+    engine = ops_engine.OpsEngine()
     if engine.file_handler and hasattr(engine.file_handler, 'record_playblast'):
         engine.file_handler.record_playblast(playblast_file)
     return playblast_file
@@ -688,8 +688,8 @@ def record_playblast(tab, level1, level2, level3):
 def create_thumbnail(tab, level1, level2, level3):
     """Takes a snapshot of the current scene and makes it the thumbnail for an item."""
     file_name = opsInfo.get_file_name(tab, level1, level2, level3, "previewFile")
-    import openpypeline.opsEngine as opsEngine
-    engine = opsEngine.OpsEngine()
+    import openpypeline.ops_engine as ops_engine
+    engine = ops_engine.OpsEngine()
     if engine.file_handler and hasattr(engine.file_handler, 'create_thumbnail'):
         engine.file_handler.create_thumbnail(file_name)
     return file_name

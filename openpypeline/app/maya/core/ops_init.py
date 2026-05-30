@@ -14,9 +14,9 @@ from openpypeline.core.util import prefs
 OPENPIPELINE_NAME = "openPypeline Studio"
 OPENPIPELINE_VERSION = "2.0.0-beta"
 OPENPIPELINE_PROJ_LIST = "openPypeline_projects.xml"
-OPENPIPELINE_ICON_FILENAME = "openPypelineIcon.png"
-OPENPIPELINE_DEFAULT_PREVIEW_FILENAME = "defaultPreview.png"
-OPENPIPELINE_NO_PREVIEW_FILENAME = "noPreview.png"
+OPENPIPELINE_ICON_FILENAME = "ops_icon.png"
+OPENPIPELINE_DEFAULT_PREVIEW_FILENAME = "ops_default_preview.png"
+OPENPIPELINE_NO_PREVIEW_FILENAME = "ops_no_preview.png"
 
 # --- Pipeline System Options ---
 DEFAULT_WIP_DIR_NAME = "wip"     # Originally "workshop"

@@ -1,4 +1,15 @@
-# openpypeline/app/maya/ui/opsMainController.py
+"""
+Module: ops_main_controller.py
+
+Description:
+    The Controller class for the main openPypeline Studio UI.
+    Handles the signal connections, event routing, and context menus for the 
+    Asset Browser, Shot Browser, and "Currently Open" tabs. It acts as the 
+    bridge between the `opsMainUI` View and the core backend logic.
+
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
+"""
 
 from PySide6 import QtWidgets
 from ..core import ops_ui_wrappers as opsUIWrappers
@@ -20,36 +31,36 @@ class OpsMainController:
         self._populate_initial_data()
 
     def _connect_signals(self):
-        # Connect buttons and widgets from the View to backend logic
+        # --- General UI Connections ---
         self.view.ops_projManager_btn.clicked.connect(self.on_project_manager_clicked)
         self.view.ops_projName_optionMenu.currentTextChanged.connect(self.on_project_changed)
         self.view.ops_refreshUIButton.clicked.connect(opsUIWrappers.refresh_ui)
         self.view.ops_closeUIButton.clicked.connect(self.view.close)
         
-        # Context Menus
+        # --- Context Menus ---
         self.view.ops_asset_scrollList.customContextMenuRequested.connect(self._asset_context_menu)
         self.view.ops_componentScrollList.customContextMenuRequested.connect(self._asset_comp_context_menu)
         self.view.ops_shotScrollList.customContextMenuRequested.connect(self._shot_context_menu)
         self.view.ops_shotComponentScrollList.customContextMenuRequested.connect(self._shot_comp_context_menu)
         
-        # Tab Selection
+        # --- Tab Selection ---
         self.view.ops_mainTabs_tabLayout.currentChanged.connect(opsUIWrappers.update_working_tab)
 
-        # Asset Browser List Selections & Actions
+        # --- Asset Browser List Selections & Actions ---
         self.view.ops_assetType_txtScrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.update_asset_list(preserve_selection=0))
         self.view.ops_asset_scrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.asset_selected(preserve_selection=0))
         self.view.ops_asset_scrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
         self.view.ops_componentScrollList.itemSelectionChanged.connect(opsUIWrappers.component_selected)
         self.view.ops_componentScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
 
-        # Shot Browser List Selections & Actions
+        # --- Shot Browser List Selections & Actions ---
         self.view.ops_sequenceScrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.update_shot_list(preserve_selection=0))
         self.view.ops_shotScrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.shot_selected(preserve_selection=0))
         self.view.ops_shotScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
         self.view.ops_shotComponentScrollList.itemSelectionChanged.connect(opsUIWrappers.shot_component_selected)
         self.view.ops_shotComponentScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
         
-        # Currently Open Tab Actions
+        # --- Currently Open Tab Actions ---
         self.view.ops_currOpenSaveWorkshop_btn.clicked.connect(opsUIWrappers.prompt_save_wip)
         self.view.ops_currOpenMaster_btn.clicked.connect(self.on_open_master_clicked)
         self.view.ops_currOpenRevive_btn.clicked.connect(opsUIWrappers.prompt_revive)
@@ -61,7 +72,7 @@ class OpsMainController:
         self.view.ops_currOpenSaveNote_btn.clicked.connect(opsUIWrappers.save_note)
         self.view.ops_currOpenExplore_btn.clicked.connect(opsUIWrappers.explore_current)
 
-        # Asset Browser Buttons
+        # --- Asset Browser Buttons ---
         self.view.ops_assetTypeNew_btn.clicked.connect(opsUIWrappers.prompt_new_asset_type)
         self.view.ops_assetTypeRemove_btn.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_1))
         self.view.ops_assetNew_btn.clicked.connect(opsUIWrappers.prompt_new_asset)
@@ -72,7 +83,7 @@ class OpsMainController:
         self.view.ops_assetViewPlayblastAssetButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(TAB_ASSET))
         self.view.ops_exploreAssetsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(TAB_ASSET))
 
-        # Shot Browser Buttons
+        # --- Shot Browser Buttons ---
         self.view.ops_sequenceNewButton.clicked.connect(opsUIWrappers.prompt_new_sequence)
         self.view.ops_sequenceRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_1))
         self.view.ops_shotNewButton.clicked.connect(opsUIWrappers.prompt_new_shot)
@@ -82,22 +93,30 @@ class OpsMainController:
         self.view.ops_shotViewPlayblastButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(TAB_SHOT))
         self.view.ops_exploreShotsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(TAB_SHOT))
 
-        # Top Menu Actions
+        # --- Top Menu Actions ---
         self.view.action_scene_inventory.triggered.connect(self.on_open_scene_inventory)
-        self.view.action_toolbar_scene_inventory.triggered.connect(self.on_open_scene_inventory)
+        self.view.action_reset_window_size.triggered.connect(self.on_reset_window_size)
         self.view.action_preferences.triggered.connect(self.on_open_settings)
         self.view.action_about.triggered.connect(opsUIWrappers.about_dialog)
         self.view.action_help.triggered.connect(opsUIWrappers.launch_help)
 
     def _populate_initial_data(self):
         # Initialize the UI with data from the Model
+        # (Note: Current initialization is handled via external ui_wrapper refresh calls)
         pass
 
     def on_project_manager_clicked(self):
+        """Launches the Project Manager UI."""
+        import importlib
         from . import ui_objects as UIObjects
-        getattr(UIObjects.UIObjects(), 'opsProjectManagerGUI').showWindow()
+        from . import ops_project_manager_controller as opsProjectManagerController
+        importlib.reload(opsProjectManagerController)
+        if not hasattr(UIObjects.UIObjects(), 'opsProjectManagerController'):
+            UIObjects.UIObjects().opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
+        UIObjects.UIObjects().opsProjectManagerController.showWindow()
 
     def on_project_changed(self, text):
+        """Handles project switching from the main dropdown."""
         opsActions.activate_project(text)
         try:
             opsUIWrappers.refresh_ui()
@@ -105,10 +124,12 @@ class OpsMainController:
             print(f"Could not refresh UI after project change: {e}")
 
     def on_open_master_clicked(self):
+        """Opens the Save Master Dialog."""
         from . import ui_objects as UIObjects
         getattr(UIObjects.UIObjects(), 'opsSaveMasterController').showWindow()
 
     def on_open_scene_inventory(self, *args):
+        """Launches the Scene Inventory tool."""
         try:
             from ..core import ops_scene_inv as opsSceneInv
             opsSceneInv.show_window()
@@ -116,15 +137,40 @@ class OpsMainController:
             print("Scene Inventory module not available.")
 
     def on_open_settings(self, *args):
-        import importlib
-        from . import ui_objects as UIObjects
-        from . import ops_settings_controller as opsSettingsController
-        importlib.reload(opsSettingsController)
-        if not hasattr(UIObjects.UIObjects(), 'opsSettingsController'):
-            UIObjects.UIObjects().opsSettingsController = opsSettingsController.OpsSettingsController()
-        UIObjects.UIObjects().opsSettingsController.showWindow()
+        """Launches the Global Settings Dialog."""
+        try:
+            import importlib
+            from . import ui_objects as UIObjects
+            from . import ops_settings_controller as opsSettingsController
+            importlib.reload(opsSettingsController)
+            if not hasattr(UIObjects.UIObjects(), 'opsSettingsController'):
+                UIObjects.UIObjects().opsSettingsController = opsSettingsController.OpsSettingsController()
+            UIObjects.UIObjects().opsSettingsController.showWindow()
+        except Exception as e:
+            import traceback
+            print(f"Error launching preferences UI: {e}")
+            traceback.print_exc()
+
+    def on_reset_window_size(self, *args):
+        """Resets the Main UI window to its default starting dimensions."""
+        # 1. Resize the internal widget (Works in Standalone mode)
+        self.view.resize(450, 780)
+        
+        # 2. Resize the top-level parent window (Works for most generic DCC wrappers)
+        if self.view.window():
+            self.view.window().resize(450, 780)
+            
+        # 3. Maya-specific fallback for Workspace Controls
+        try:
+            import maya.cmds as cmds
+            workspace_control = self.view.objectName() + "WorkspaceControl"
+            if cmds.workspaceControl(workspace_control, exists=True):
+                cmds.workspaceControl(workspace_control, edit=True, resizeWidth=450, resizeHeight=780)
+        except ImportError:
+            pass
 
     def _asset_context_menu(self, position):
+        """Builds and displays the right-click context menu for Assets."""
         menu = QtWidgets.QMenu()
         menu.addAction("Edit Asset", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
         menu.addAction("Open Master", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'master', version_offset=0))
@@ -138,6 +184,7 @@ class OpsMainController:
         menu.exec(self.view.ops_asset_scrollList.mapToGlobal(position))
 
     def _asset_comp_context_menu(self, position):
+        """Builds and displays the right-click context menu for Asset Components."""
         menu = QtWidgets.QMenu()
         menu.addAction("Edit Component", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
         menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'master', version_offset=0))
@@ -151,6 +198,7 @@ class OpsMainController:
         menu.exec(self.view.ops_componentScrollList.mapToGlobal(position))
 
     def _shot_context_menu(self, position):
+        """Builds and displays the right-click context menu for Shots."""
         menu = QtWidgets.QMenu()
         menu.addAction("Edit Shot", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
         menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'master', version_offset=0))
@@ -164,6 +212,7 @@ class OpsMainController:
         menu.exec(self.view.ops_shotScrollList.mapToGlobal(position))
 
     def _shot_comp_context_menu(self, position):
+        """Builds and displays the right-click context menu for Shot Components."""
         menu = QtWidgets.QMenu()
         menu.addAction("Edit Shot Component", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
         menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'master', version_offset=0))
@@ -177,4 +226,5 @@ class OpsMainController:
         menu.exec(self.view.ops_shotComponentScrollList.mapToGlobal(position))
 
     def show(self):
+        """Displays the Main UI Window."""
         self.view.showWindow()

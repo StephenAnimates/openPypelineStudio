@@ -1,9 +1,12 @@
 """
-Module: opsSettingsGUI.py
+Module: ops_settings_gui.py
 
 Description:
     Global Preferences and Settings UI for openPypeline Studio.
     Allows users to customize localization and pipeline defaults.
+    
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 from PySide6 import QtWidgets, QtCore

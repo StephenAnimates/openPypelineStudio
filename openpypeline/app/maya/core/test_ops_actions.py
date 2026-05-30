@@ -23,7 +23,7 @@ import openpypeline.app.maya.core.ops_actions as opsActions
 @patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_file_name')
 @patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_category')
 @patch('openpypeline.core.util.prefs.get_pref')
-@patch('openpypeline.app.maya.core.ops_actions.opsEngine.OpsEngine')
+@patch('openpypeline.app.maya.core.ops_actions.ops_engine.OpsEngine')
 def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_category, mock_get_file_name, mock_isdir, mock_makedirs, file_ext, expected_file_type):
     """
     Test that OpenUSD and Alembic file formats trigger the correct 
@@ -73,7 +73,7 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
 @patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_version_from_file', return_value=1)
 @patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_file_name')
 @patch('openpypeline.core.util.prefs.get_pref')
-@patch('openpypeline.app.maya.core.ops_actions.opsEngine.OpsEngine')
+@patch('openpypeline.app.maya.core.ops_actions.ops_engine.OpsEngine')
 def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_get_version, file_ext, expected_file_type):
     """
     Test that save_wip triggers the correct `export_file` calls for OpenUSD and Alembic.
@@ -109,7 +109,7 @@ def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_na
 @patch('openpypeline.app.maya.core.ops_actions.save_wip')
 @patch('openpypeline.app.maya.core.ops_actions.opsInfo.get_file_name')
 @patch('openpypeline.core.util.prefs.get_pref')
-@patch('openpypeline.app.maya.core.ops_actions.opsEngine.OpsEngine')
+@patch('openpypeline.app.maya.core.ops_actions.ops_engine.OpsEngine')
 def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_name, mock_save_wip, mock_exists, mock_rename, file_ext, expected_file_type):
     """
     Test that save_master triggers the correct `export_file` calls for OpenUSD and Alembic.

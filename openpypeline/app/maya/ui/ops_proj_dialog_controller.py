@@ -1,9 +1,12 @@
 """
-Module: opsProjDialogController.py
+Module: ops_proj_dialog_controller.py
 
 Description:
     The Controller class for the openPypeline Studio Project Dialog.
     Handles logic, data population, and validation for creating or editing projects.
+    
+Original Framework: openPipeline by Kickstand
+License: Common Public License 1.0 (CPL-1.0)
 """
 
 import os
@@ -288,7 +291,7 @@ class OpsProjDialogController(QtCore.QObject):
         if result:
             self.view.close()
             opsUIWrappers.refresh_ui()
-            if hasattr(self.UIObjects, 'opsProjectManagerGUI'):
+            if hasattr(self.UIObjects, 'opsProjectManagerController'):
                 try: 
-                    self.UIObjects.opsProjectManagerGUI.on_refresh_list()
+                    self.UIObjects.opsProjectManagerController.on_refresh_list()
                 except: pass

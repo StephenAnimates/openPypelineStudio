@@ -18,6 +18,12 @@ from . import ops_actions as opsActions
 from ..ui import ui_objects as UIObjects
 from openpypeline.core.util import prefs
 
+def _get_resource(folder, filename):
+    """Dynamically resolves the absolute path to the centralized /resources directory."""
+    base_dir = os.path.dirname(__file__)
+    # Go up 3 directories (core -> maya -> app -> openpypeline) and into 'resources'
+    return os.path.abspath(os.path.join(base_dir, "..", "..", "..", "resources", folder, filename)).replace("\\", "/")
+
 def _get_ui():
     ui_obj = UIObjects.UIObjects()
     ui = ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
@@ -66,9 +72,8 @@ def update_currently_open(*args):
     tab = prefs.get_pref("ops_currOpenTab", 0)
 
     curr_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    ui_dir = os.path.dirname(__file__)
-    default_preview = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
-    no_preview = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
+    default_preview = _get_resource('images', 'ops_default_preview.png')
+    no_preview = _get_resource('images', 'ops_no_preview.png')
 
     if not level1:
         clear_current_history()
@@ -169,9 +174,8 @@ def update_asset_list(preserve_selection=1, *args):
     ui.ops_asset_scrollList.clear()
     active = False
     assets_list = []
-    ui_dir = os.path.dirname(__file__)
-    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
-    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    master_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_master.png"))
+    wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if selected[0]:
         assets = sorted(opsInfo.get_children(2, selected[0], "", ""))
@@ -227,9 +231,8 @@ def asset_selected(preserve_selection=1, *args):
         
     active = False
     comp_list = []
-    ui_dir = os.path.dirname(__file__)
-    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
-    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    master_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_master.png"))
+    wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if is_selected:
         components = sorted(opsInfo.get_children(2, selected[0], selected[1], ""))
@@ -304,9 +307,8 @@ def update_shot_list(preserve_selection=1, *args):
     ui.ops_shotScrollList.clear()
     active = False
     shots_list = []
-    ui_dir = os.path.dirname(__file__)
-    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
-    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    master_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_master.png"))
+    wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if selected[0]:
         shots = sorted(opsInfo.get_children(3, selected[0], "", ""))
@@ -361,9 +363,8 @@ def shot_selected(preserve_selection=1, *args):
         
     active = False
     s_comp_list = []
-    ui_dir = os.path.dirname(__file__)
-    master_icon = QtGui.QIcon(os.path.join(ui_dir, "masterIcon.png").replace("\\", "/"))
-    wip_icon = QtGui.QIcon(os.path.join(ui_dir, "wipIcon.png").replace("\\", "/"))
+    master_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_master.png"))
+    wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if is_selected:
         components = sorted(opsInfo.get_children(3, selected[0], selected[1], ""))
@@ -419,14 +420,13 @@ def asset_information(*args):
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(2, 3)
-    ui_dir = os.path.dirname(__file__)
-    preview_file = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
+    preview_file = _get_resource("images", "ops_default_preview.png")
     output_text = ""
     
     if selected[1]:
         thumb = opsInfo.get_thumbnail(2, selected[0], selected[1], selected[2])
         if os.path.isfile(thumb): preview_file = thumb
-        else: preview_file = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
+        else: preview_file = _get_resource("images", "ops_no_preview.png")
         output_text = opsInfo.get_custom_notes(2, selected[0], selected[1], selected[2])
         ui.ops_assetViewPlayblastAssetButton.setEnabled(opsInfo.has_playblast(2, selected[0], selected[1], selected[2]))
     else:
@@ -442,14 +442,13 @@ def shot_information(*args):
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(3, 3)
-    ui_dir = os.path.dirname(__file__)
-    preview_file = os.path.join(ui_dir, 'defaultPreview.png').replace("\\", "/")
+    preview_file = _get_resource("images", "ops_default_preview.png")
     output_text = ""
     
     if selected[1]:
         thumb = opsInfo.get_thumbnail(3, selected[0], selected[1], selected[2])
         if os.path.isfile(thumb): preview_file = thumb
-        else: preview_file = os.path.join(ui_dir, 'noPreview.png').replace("\\", "/")
+        else: preview_file = _get_resource("images", "ops_no_preview.png")
         output_text = opsInfo.get_custom_notes(3, selected[0], selected[1], selected[2])
         ui.ops_shotViewPlayblastButton.setEnabled(opsInfo.has_playblast(3, selected[0], selected[1], selected[2]))
     else:
