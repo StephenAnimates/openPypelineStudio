@@ -141,31 +141,42 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
     def _build_top_menu(self):
         menubar = self.menuBar()
         
+        file_menu = menubar.addMenu(localization.get_string("menu_file"))
+        self.action_save_wip = file_menu.addAction(localization.get_string("menu_saveWip"))
+        self.action_save_master = file_menu.addAction(localization.get_string("menu_saveMaster"))
+        file_menu.addSeparator()
+        self.action_close = file_menu.addAction(localization.get_string("menu_close"))
+        
+        project_menu = menubar.addMenu(localization.get_string("menu_project"))
+        self.action_project_manager = project_menu.addAction(localization.get_string("menu_projectManager"))
+        self.action_edit_users = project_menu.addAction(localization.get_string("menu_editUsers"))
+        
         create_menu = menubar.addMenu(localization.get_string("menu_create"))
+        create_menu.addSection(localization.get_string("menu_createAssets"))
         self.action_new_asset_type = create_menu.addAction(localization.get_string("menu_newAssetType"))
         self.action_new_asset = create_menu.addAction(localization.get_string("menu_newAsset"))
         self.action_new_asset_component = create_menu.addAction(localization.get_string("menu_newAssetComponent"))
-        create_menu.addSeparator()
+        create_menu.addSection(localization.get_string("menu_createShots"))
         self.action_new_sequence = create_menu.addAction(localization.get_string("menu_newSequence"))
         self.action_new_shot = create_menu.addAction(localization.get_string("menu_newShot"))
         self.action_new_shot_component = create_menu.addAction(localization.get_string("menu_newShotComponent"))
         
-        tools = menubar.addMenu(localization.get_string("menu_tools"))
-        self.action_scene_inventory = tools.addAction(localization.get_string("menu_sceneInventory"))
+        self.menu_tools = menubar.addMenu(localization.get_string("menu_tools"))
+        self.action_scene_inventory = self.menu_tools.addAction(localization.get_string("menu_sceneInventory"))
         
         # Conditionally add Maya tools only if running inside Maya
         try:
             import maya.cmds as cmds
             import maya.mel as mel
-            tools.addSection(localization.get_string("menu_mayaTools"))
-            tools.addAction(localization.get_string("menu_mayaReferenceEditor"), lambda: mel.eval("ReferenceEditor;"))
-            tools.addAction(localization.get_string("menu_mayaProjectWindow"), lambda: mel.eval('ProjectWindow;'))
+            self.menu_tools.addSection(localization.get_string("menu_mayaTools"))
+            self.menu_tools.addAction(localization.get_string("menu_mayaReferenceEditor"), lambda: mel.eval("ReferenceEditor;"))
+            self.menu_tools.addAction(localization.get_string("menu_mayaProjectWindow"), lambda: mel.eval('ProjectWindow;'))
         except ImportError:
             pass
         
         # Add-ons as a section of Tools
-        tools.addSection(localization.get_string("menu_addons"))
-        tools.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
+        self.menu_tools.addSection(localization.get_string("menu_addons"))
+        self.menu_tools.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
         
         settings = menubar.addMenu(localization.get_string("menu_settings"))
         self.action_preferences = settings.addAction(localization.get_string("menu_preferences"))
@@ -185,16 +196,9 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.ops_userName_optionMenu.setEnabled(False)
         info_layout.addRow(localization.get_string("lbl_userName"), self.ops_userName_optionMenu)
         
-        proj_layout = QtWidgets.QHBoxLayout()
         self.ops_projName_optionMenu = QtWidgets.QComboBox()
         self.ops_projName_optionMenu.setToolTip(localization.get_string("anno_projectList"))
-        
-        self.ops_projManager_btn = QtWidgets.QPushButton(localization.get_string("btn_projectManager"))
-        self.ops_projManager_btn.setToolTip(localization.get_string("anno_projectManager"))
-        
-        proj_layout.addWidget(self.ops_projName_optionMenu)
-        proj_layout.addWidget(self.ops_projManager_btn)
-        info_layout.addRow(localization.get_string("lbl_projectName"), proj_layout)
+        info_layout.addRow(localization.get_string("lbl_projectName"), self.ops_projName_optionMenu)
         
         self.ops_projPath_txtField = QtWidgets.QLineEdit()
         self.ops_projPath_txtField.setReadOnly(True)

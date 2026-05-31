@@ -1,18 +1,20 @@
 """
-File: opsCreateDefaultItems.py
+File: ops_create_default_items.py
 Description: openPypeline "Create Default Items" add-on refactored to Python.
              Populates the current project with a default set of assets and shots.
 """
 
 import maya.cmds as cmds
 
-def ops_createDefaultItems():
+ADDON_NAME = "Create Default Items"
+
+def run():
     """
     Prompts the user and then populates the current project with default items.
     """
     result = cmds.confirmDialog(
         title="Create Default Items",
-        message="This procedure will populate the current project with some default items.\nTo see how this script works and to change it to fit your own specifications, see the file 'opsCreateDefaultItems.py'",
+        message="This procedure will populate the current project with some default items.\nTo see how this script works and to change it to fit your own specifications, see the file 'ops_create_default_items.py'",
         button=["Continue", "Cancel"],
         defaultButton="Continue",
         cancelButton="Cancel",

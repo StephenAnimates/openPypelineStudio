@@ -20,6 +20,7 @@ from ..core import ops_utils as opsUtils
 from ..core import ops_actions as opsActions
 from ..core import ops_ui_wrappers as opsUIWrappers
 from .ops_proj_dialog_gui import opsProjDialogGUI
+from openpypeline.core.localization import localization
 
 class OpsProjDialogController(QtCore.QObject):
     def __init__(self):
@@ -39,9 +40,10 @@ class OpsProjDialogController(QtCore.QObject):
     def showWindow(self):
         """Configures the dialog state based on mode and shows it."""
         if self.mode == 1:
-            self.view.setWindowTitle(f"Edit Project: {self.old_name}")
+            win_title = localization.get_string("win_editProject", "Edit Project: {0}")
+            self.view.setWindowTitle(win_title.format(self.old_name))
         else:
-            self.view.setWindowTitle("Create New Project")
+            self.view.setWindowTitle(localization.get_string("win_createProject", "Create New Project"))
             
         self._populate_fields()
         self.view.show()

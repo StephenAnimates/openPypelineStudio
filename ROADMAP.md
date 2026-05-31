@@ -19,6 +19,7 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [x] Implement MVC for `ops_settings_gui` (formerly `opsSettingsGUI`).
 - [x] Implement MVC for `ops_project_manager_gui` (formerly `opsProjectManagerGUI`).
 - [x] Evaluate and refactor the `ui_objects.py` (formerly `UIObjects.py`) Singleton pattern (Consider an overarching `App` or `Window Manager` class).
+- [x] Consolidate Main UI menus (Added `File`, `Project`, and `Create` menus, reorganized `Tools`).
 
 ## Phase 3: Core Agnosticism & Backend Decoupling
 - [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.

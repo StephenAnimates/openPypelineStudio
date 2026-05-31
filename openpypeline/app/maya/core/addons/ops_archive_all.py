@@ -1,5 +1,5 @@
 """
-File: opsArchiveAll.py
+File: ops_archive_all.py
 Description: openPypeline "Archive All" add-on refactored to Python.
              Archives, retrieves, or deletes all items in the library.
 """
@@ -11,8 +11,9 @@ try:
 except ImportError:
     pass
 
+ADDON_NAME = "Archive All"
 
-def ops_archiveAll():
+def run():
     if cmds.window("ops_secondaryUI", exists=True):
         cmds.deleteUI("ops_secondaryUI")
 

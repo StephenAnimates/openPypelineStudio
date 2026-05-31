@@ -1,8 +1,17 @@
-# openpypeline/app/maya/ui/opsMainController.py
+"""
+Module: ops_main_controller.py
+
+Description:
+    The Controller class for the main openPypeline Studio UI.
+    Handles signal routing between the ops_main_ui View and the core backend.
+
+License: Common Public License 1.0 (CPL-1.0)
+"""
 
 from PySide6 import QtWidgets
 from ..core import ops_ui_wrappers as opsUIWrappers
 from ..core import ops_actions as opsActions
+from ..core import ops_project as opsProject
 from .ops_main_ui import (
     opsMainUI,
     TAB_ASSET, TAB_SHOT, LEVEL_1, LEVEL_2, LEVEL_3
@@ -21,7 +30,6 @@ class OpsMainController:
 
     def _connect_signals(self):
         # Connect buttons and widgets from the View to backend logic
-        self.view.ops_projManager_btn.clicked.connect(self.on_project_manager_clicked)
         self.view.ops_projName_optionMenu.currentTextChanged.connect(self.on_project_changed)
         self.view.ops_refreshUIButton.clicked.connect(opsUIWrappers.refresh_ui)
         self.view.ops_closeUIButton.clicked.connect(self.view.close)
@@ -82,9 +90,18 @@ class OpsMainController:
         self.view.ops_shotViewPlayblastButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(TAB_SHOT))
         self.view.ops_exploreShotsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(TAB_SHOT))
 
+        # --- Top Menu: File Actions ---
+        self.view.action_save_wip.triggered.connect(opsUIWrappers.prompt_save_wip)
+        self.view.action_save_master.triggered.connect(self.on_open_master_clicked)
+        self.view.action_close.triggered.connect(self.view.close)
+        
+        # --- Top Menu: Project Actions ---
+        self.view.action_project_manager.triggered.connect(self.on_project_manager_clicked)
+        self.view.action_edit_users.triggered.connect(opsProject.proj_edit_users)
+
         # Top Menu Actions
         self.view.action_scene_inventory.triggered.connect(self.on_open_scene_inventory)
-        self.view.action_toolbar_scene_inventory.triggered.connect(self.on_open_scene_inventory)
+        self.view.action_reset_window_size.triggered.connect(self.on_reset_window_size)
         self.view.action_preferences.triggered.connect(self.on_open_settings)
         self.view.action_about.triggered.connect(opsUIWrappers.about_dialog)
         self.view.action_help.triggered.connect(opsUIWrappers.launch_help)
@@ -99,95 +116,210 @@ class OpsMainController:
 
     def _populate_initial_data(self):
         # Initialize the UI with data from the Model
-        pass
+        self._load_addons()
+
+    def _load_addons(self):
+        """Dynamically discovers and loads add-ons into the Tools menu."""
+        import os
+        import importlib
+        
+        addons_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core", "addons")).replace("\\", "/")
+        if not os.path.exists(addons_dir):
+            return
+            
+        for filename in os.listdir(addons_dir):
+            if filename.endswith(".py") and not filename.startswith("__"):
+                mod_name = f"openpypeline.app.maya.core.addons.{filename[:-3]}"
+                try:
+                    mod = importlib.import_module(mod_name)
+                    importlib.reload(mod) # Hot-reload for developers
+                    if hasattr(mod, 'run'):
+                        addon_name = getattr(mod, 'ADDON_NAME', filename[:-3].replace('_', ' ').title())
+                        action = self.view.menu_tools.addAction(addon_name)
+                        action.triggered.connect(mod.run)
+                except Exception as e:
+                    print(f"Failed to load addon {filename}: {e}")
 
     def on_project_manager_clicked(self):
+        """Launches the Project Manager UI and ensures it is loaded into memory."""
+        # Defer imports to avoid circular dependencies and speed up initial load
         import importlib
         from . import ui_objects as UIObjects
         from . import ops_project_manager_controller as opsProjectManagerController
+        
+        # Hot-reload the controller module for development iteration
         importlib.reload(opsProjectManagerController)
+        
+        # Check if the Window Manager (UIObjects singleton) already tracks this controller instance
         if not hasattr(UIObjects.UIObjects(), 'opsProjectManagerController'):
+            # If not tracked, instantiate it and store it to prevent garbage collection
             UIObjects.UIObjects().opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
+            
+        # Call the controller's method to bring its view to the front
         UIObjects.UIObjects().opsProjectManagerController.showWindow()
 
     def on_project_changed(self, text):
+        """
+        Handles project switching from the main dropdown.
+        Activates the newly selected project and refreshes the entire UI to reflect its contents.
+        """
+        # Tell the backend to switch active project paths and configurations
         opsActions.activate_project(text)
         try:
+            # Refresh all UI elements (dropdowns, lists, labels) to show the new project's data
             opsUIWrappers.refresh_ui()
         except Exception as e:
             print(f"Could not refresh UI after project change: {e}")
 
     def on_open_master_clicked(self):
+        """Opens the Save Master Dialog."""
         from . import ui_objects as UIObjects
+        
+        # Retrieve the Save Master Controller from the Window Manager and display it
         getattr(UIObjects.UIObjects(), 'opsSaveMasterController').showWindow()
 
     def on_open_scene_inventory(self, *args):
+        """Launches the Scene Inventory tool."""
         try:
+            # Defer import since this tool is an independent module
             from ..core import ops_scene_inv as opsSceneInv
             opsSceneInv.show_window()
         except ImportError:
             print("Scene Inventory module not available.")
 
+    def on_reset_window_size(self, *args):
+        """Resets the Main UI window to its default starting dimensions."""
+        self.view.resize(450, 780)
+        if self.view.window():
+            self.view.window().resize(450, 780)
+        try:
+            import maya.cmds as cmds
+            workspace_control = self.view.objectName() + "WorkspaceControl"
+            if cmds.workspaceControl(workspace_control, exists=True):
+                cmds.workspaceControl(workspace_control, edit=True, resizeWidth=450, resizeHeight=780)
+        except ImportError:
+            pass
+
     def on_open_settings(self, *args):
+        """Launches the Global Settings Dialog."""
+        # Defer imports to avoid circular dependencies
         import importlib
         from . import ui_objects as UIObjects
         from . import ops_settings_controller as opsSettingsController
+        
+        # Hot-reload the controller module
         importlib.reload(opsSettingsController)
+        
+        # Ensure the Window Manager is tracking a living instance of the Settings Controller
         if not hasattr(UIObjects.UIObjects(), 'opsSettingsController'):
             UIObjects.UIObjects().opsSettingsController = opsSettingsController.OpsSettingsController()
+            
+        # Command the tracked controller to show its view
         UIObjects.UIObjects().opsSettingsController.showWindow()
 
     def _asset_context_menu(self, position):
+        """
+        Builds and displays the right-click context menu for Assets.
+        Triggered when the user right-clicks an item in the Asset browser list.
+        """
+        # Create the popup menu instance
         menu = QtWidgets.QMenu()
-        menu.addAction("Edit Asset", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
-        menu.addAction("Open Master", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'master', version_offset=0))
-        imp = menu.addMenu("Import")
-        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'workshop'))
-        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'master'))
-        ref = menu.addMenu("Reference")
-        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'workshop'))
-        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'master'))
-        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_2))
+        
+        # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
+        menu.addAction(localization.get_string("ctx_editAsset"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_openMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'master', version_offset=0))
+        
+        # Build the 'Import' sub-menu
+        imp = menu.addMenu(localization.get_string("ctx_import"))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'master'))
+        
+        # Build the 'Reference' sub-menu
+        ref = menu.addMenu(localization.get_string("ctx_reference"))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'master'))
+        
+        # Add the Archive action to the root menu
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_2))
+        
+        # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_asset_scrollList.mapToGlobal(position))
 
     def _asset_comp_context_menu(self, position):
+        """Builds and displays the right-click context menu for Asset Components."""
+        # Create the popup menu instance
         menu = QtWidgets.QMenu()
-        menu.addAction("Edit Component", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
-        menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'master', version_offset=0))
-        imp = menu.addMenu("Import")
-        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'workshop'))
-        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'master'))
-        ref = menu.addMenu("Reference")
-        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'workshop'))
-        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'master'))
-        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_3))
+        
+        # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
+        menu.addAction(localization.get_string("ctx_editComponent"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'master', version_offset=0))
+        
+        # Build the 'Import' sub-menu
+        imp = menu.addMenu(localization.get_string("ctx_import"))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'master'))
+        
+        # Build the 'Reference' sub-menu
+        ref = menu.addMenu(localization.get_string("ctx_reference"))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'master'))
+        
+        # Add the Archive action to the root menu
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_3))
+        
+        # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_componentScrollList.mapToGlobal(position))
 
     def _shot_context_menu(self, position):
+        """Builds and displays the right-click context menu for Shots."""
+        # Create the popup menu instance
         menu = QtWidgets.QMenu()
-        menu.addAction("Edit Shot", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
-        menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'master', version_offset=0))
-        imp = menu.addMenu("Import")
-        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'workshop'))
-        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'master'))
-        ref = menu.addMenu("Reference")
-        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'workshop'))
-        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'master'))
-        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_2))
+        
+        # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
+        menu.addAction(localization.get_string("ctx_editShot"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'master', version_offset=0))
+        
+        # Build the 'Import' sub-menu
+        imp = menu.addMenu(localization.get_string("ctx_import"))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'master'))
+        
+        # Build the 'Reference' sub-menu
+        ref = menu.addMenu(localization.get_string("ctx_reference"))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'master'))
+        
+        # Add the Archive action to the root menu
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_2))
+        
+        # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_shotScrollList.mapToGlobal(position))
 
     def _shot_comp_context_menu(self, position):
+        """Builds and displays the right-click context menu for Shot Components."""
+        # Create the popup menu instance
         menu = QtWidgets.QMenu()
-        menu.addAction("Edit Shot Component", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
-        menu.addAction("View Master", lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'master', version_offset=0))
-        imp = menu.addMenu("Import")
-        imp.addAction("WIP", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'workshop'))
-        imp.addAction("Master", lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'master'))
-        ref = menu.addMenu("Reference")
-        ref.addAction("WIP", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'workshop'))
-        ref.addAction("Master", lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'master'))
-        menu.addAction("Archive...", lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_3))
+        
+        # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
+        menu.addAction(localization.get_string("ctx_editShotComponent"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'master', version_offset=0))
+        
+        # Build the 'Import' sub-menu
+        imp = menu.addMenu(localization.get_string("ctx_import"))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'master'))
+        
+        # Build the 'Reference' sub-menu
+        ref = menu.addMenu(localization.get_string("ctx_reference"))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'master'))
+        
+        # Add the Archive action to the root menu
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_3))
+        
+        # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_shotComponentScrollList.mapToGlobal(position))
 
-    def show(self):
+    def showWindow(self):
+        """Displays the Main UI Window."""
         self.view.showWindow()

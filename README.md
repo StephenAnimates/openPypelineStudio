@@ -13,7 +13,9 @@ Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio*
 * **Modern Python API:** Extensible and fully accessible via Python 3.
 
 ## 🗺️ Roadmap & Planned Integrations
-Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framework. Planned upcoming features include:
+Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framework. 
+For a detailed, step-by-step checklist of our progress, please see the [Project Roadmap](ROADMAP.md). 
+Planned upcoming features include:
 * **VFX Reference Platform Standards:** Full support for **OpenUSD** (Universal Scene Description), **OpenColorIO (OCIO)**, **OpenImageIO (OIIO)**, and **Alembic (.abc)**.
 * **Production Tracking:** Abstracted API support for major trackers including **Autodesk Flow Production Tracking (ShotGrid)**, **Ftrack**, and **Kitsu**.
 * **Expanded DCC Support:**
