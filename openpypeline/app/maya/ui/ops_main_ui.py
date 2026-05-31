@@ -25,13 +25,6 @@ from openpypeline.core.localization import localization
 
 logger = logging.getLogger(__name__)
 
-# --- UI Index Constants ---
-TAB_ASSET = 2
-TAB_SHOT = 3
-LEVEL_1 = 1  # Asset Type / Sequence
-LEVEL_2 = 2  # Asset / Shot
-LEVEL_3 = 3  # Component
-
 # --- UI Stylesheet ---
 OPS_STYLESHEET = """
     QLabel[styleClass="headingBold"] {

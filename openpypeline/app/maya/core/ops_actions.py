@@ -10,7 +10,12 @@ License: Common Public License 1.0 (CPL-1.0)
 
 import os
 import re
+import json
 import logging
+from functools import wraps
+from openpypeline.core.models import ItemContext, ProjectConfig, Level
+import dataclasses
+from openpypeline.core.localization import localization
 from openpypeline.core.util import prefs
 from PySide6 import QtWidgets
 
@@ -22,28 +27,50 @@ from . import ops_utils as opsUtils
 from . import ops_project as opsProject
 
 
+def _ensure_context(func):
+    """Decorator to support both ItemContext objects and legacy (tab, level1, level2, level3) arguments."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if args and isinstance(args[0], ItemContext):
+            return func(*args, **kwargs)
+        
+        args_list = list(args)
+        if len(args_list) >= 4 and isinstance(args_list[0], int):
+            context = ItemContext(tab=args_list[0], level1=args_list[1], level2=args_list[2], level3=args_list[3])
+            return func(context, *args_list[4:], **kwargs)
+        elif len(args_list) >= 5 and isinstance(args_list[1], int):
+            context = ItemContext(tab=args_list[1], level1=args_list[2], level2=args_list[3], level3=args_list[4])
+            return func(context, args_list[0], *args_list[5:], **kwargs)
+        return func(*args, **kwargs)
+    return wrapper
+
+
 def activate_project(proj_name):
     """Selects a project to work in and updates all associated optionVars and workspaces."""
-    proj_xml = opsProject.get_single_project_xml(proj_name)
-    proj_path = opsUtils.get_xml_data(proj_xml, "path")
+    project = opsProject.get_project(proj_name)
+    if not project:
+        logger.warning(localization.get_string("err_projSelectFail").format(proj_name, "Unknown"))
+        return 0
+        
+    proj_path = project.get("path", "")
     
     if proj_path and not proj_path.endswith('/'):
         proj_path += '/'
         
     if os.path.isdir(proj_path):
-        proj_lib = opsUtils.get_xml_data(proj_xml, "libraryfolder")
-        proj_shots = opsUtils.get_xml_data(proj_xml, "scenesfolder")
-        proj_scripts = opsUtils.get_xml_data(proj_xml, "scriptsfolder")
-        proj_renders = opsUtils.get_xml_data(proj_xml, "rendersfolder")
-        proj_particles = opsUtils.get_xml_data(proj_xml, "particlesfolder")
-        proj_textures = opsUtils.get_xml_data(proj_xml, "texturesfolder")
-        proj_archive = opsUtils.get_xml_data(proj_xml, "archivefolder")
-        proj_deleted = opsUtils.get_xml_data(proj_xml, "deletedfolder")
-        proj_m_format = opsUtils.get_xml_data(proj_xml, "masterformat")
-        proj_w_format = opsUtils.get_xml_data(proj_xml, "wipformat") or opsUtils.get_xml_data(proj_xml, "workshopformat")
-        proj_m_name = opsUtils.get_xml_data(proj_xml, "mastername")
-        proj_w_name = opsUtils.get_xml_data(proj_xml, "wipname") or opsUtils.get_xml_data(proj_xml, "workshopname")
-        proj_users = opsUtils.get_xml_data(proj_xml, "users")
+        proj_lib = project.get("libraryfolder", "")
+        proj_shots = project.get("scenesfolder", "")
+        proj_scripts = project.get("scriptsfolder", "")
+        proj_renders = project.get("rendersfolder", "")
+        proj_particles = project.get("particlesfolder", "")
+        proj_textures = project.get("texturesfolder", "")
+        proj_archive = project.get("archivefolder", "")
+        proj_deleted = project.get("deletedfolder", "")
+        proj_m_format = project.get("masterformat", "")
+        proj_w_format = project.get("wipformat", project.get("workshopformat", ""))
+        proj_m_name = project.get("mastername", "")
+        proj_w_name = project.get("wipname", project.get("workshopname", ""))
+        proj_users = project.get("users", "")
 
         lib_path = os.path.join(proj_path, proj_lib, "").replace("\\", "/")
         shot_path = os.path.join(proj_path, proj_shots, "").replace("\\", "/")
@@ -90,112 +117,103 @@ def activate_project(proj_name):
             engine.file_handler.set_workspace(proj_path, rules)
         return 1
     else:
-        logger.warning(f"Couldn't select project '{proj_name}'. Path '{proj_path}' couldn't be found.")
+        logger.warning(localization.get_string("err_projSelectFail").format(proj_name, proj_path))
         return 0
 
 
-def create_or_edit_project(mode, old_name, new_name, new_path, new_description, new_status, new_date, new_deadline, new_master_name, new_master_format, new_wip_name, new_wip_format, new_lib_loc, new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc, new_archive_loc, new_deleted_loc, new_users, user_mode):
-    """Creates a new project or edits the properties of an existing project."""
+def create_or_edit_project(mode, old_name, config: ProjectConfig):
+    """Creates a new project or edits the properties of an existing project using a ProjectConfig dataclass."""
     mode_names = ["created", "edited"]
     active_project_name = prefs.get_pref("ops_currProjectName", "")
     proj_data = opsProject.get_projects_data() or []
     error = ""
     
     # Input validations
-    if len(new_name) > 22: error += "Project name cannot exceed 22 characters.\n"
-    if len(new_master_name) > 18: error += "Master name cannot exceed 18 characters.\n"
-    if len(new_wip_name) > 18: error += "WIP file name cannot exceed 18 characters.\n"
-    if len(new_lib_loc) > 22: error += "Library sub-folder name cannot exceed 22 characters.\n"
-    if len(new_shot_loc) > 22: error += "Shot sub-folder name cannot exceed 22 characters.\n"
-    if len(new_scripts_loc) > 22: error += "Scripts sub-folder name cannot exceed 22 characters.\n"
-    if len(new_renders_loc) > 22: error += "Renders sub-folder name cannot exceed 22 characters.\n"
-    if len(new_particles_loc) > 22: error += "Particles sub-folder name cannot exceed 22 characters.\n"
-    if len(new_textures_loc) > 22: error += "Textures sub-folder name cannot exceed 22 characters.\n"
-    if len(new_date) > 18: error += "Date cannot exceed 18 characters.\n"
-    if len(new_deadline) > 18: error += "Deadline exceeds 18 characters.\n"
-    if len(new_description) > 250: error += "Description exceeds 250 characters.\n"
+    if len(config.name) > 22: error += localization.get_string("err_projNameLen")
+    if len(config.mastername) > 18: error += localization.get_string("err_masterNameLen")
+    if len(config.wipname) > 18: error += localization.get_string("err_wipNameLen")
+    if len(config.libraryfolder) > 22: error += localization.get_string("err_libLocLen")
+    if len(config.scenesfolder) > 22: error += localization.get_string("err_shotLocLen")
+    if len(config.scriptsfolder) > 22: error += localization.get_string("err_scriptLocLen")
+    if len(config.rendersfolder) > 22: error += localization.get_string("err_renderLocLen")
+    if len(config.particlesfolder) > 22: error += localization.get_string("err_particleLocLen")
+    if len(config.texturesfolder) > 22: error += localization.get_string("err_textureLocLen")
+    if len(config.date) > 18: error += localization.get_string("err_dateLen")
+    if len(config.deadline) > 18: error += localization.get_string("err_deadlineLen")
+    if len(config.description) > 250: error += localization.get_string("err_descLen")
 
-    test_path = new_path.rstrip(new_name).rstrip("/").rstrip("\\")
+    test_path = config.path.rstrip(config.name).rstrip("/").rstrip("\\")
     if not os.path.exists(test_path):
-        error += "Project path is not valid (a valid base path is required).\n"
+        error += localization.get_string("err_projPathInvalid")
         
     valid_pattern = re.compile(r"^[a-zA-Z0-9_]*$")
-    if not valid_pattern.match(new_name): error += "Project name is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_master_name): error += "Master name is not valid (remove spaces and special characters).\n"
-    if not valid_pattern.match(new_wip_name): error += "WIP file name is not valid (remove spaces and special characters).\n"
+    if not valid_pattern.match(config.name): error += localization.get_string("err_projNameInvalid")
+    if not valid_pattern.match(config.mastername): error += localization.get_string("err_masterNameInvalid")
+    if not valid_pattern.match(config.wipname): error += localization.get_string("err_wipNameInvalid")
 
     valid_folder_pattern = re.compile(r"^[a-zA-Z0-9_/]*$")
-    if not valid_folder_pattern.match(new_lib_loc): error += "Library sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
-    if not valid_folder_pattern.match(new_shot_loc): error += "Shot sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
-    if not valid_folder_pattern.match(new_textures_loc): error += "Textures sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
-    if not valid_folder_pattern.match(new_scripts_loc): error += "Scripts sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
-    if not valid_folder_pattern.match(new_renders_loc): error += "Renders sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
-    if not valid_folder_pattern.match(new_particles_loc): error += "Particles sub-folder is not valid (remove spaces and special characters, slashes are allowed).\n"
+    if not valid_folder_pattern.match(config.libraryfolder): error += localization.get_string("err_libLocInvalid")
+    if not valid_folder_pattern.match(config.scenesfolder): error += localization.get_string("err_shotLocInvalid")
+    if not valid_folder_pattern.match(config.texturesfolder): error += localization.get_string("err_textureLocInvalid")
+    if not valid_folder_pattern.match(config.scriptsfolder): error += localization.get_string("err_scriptLocInvalid")
+    if not valid_folder_pattern.match(config.rendersfolder): error += localization.get_string("err_renderLocInvalid")
+    if not valid_folder_pattern.match(config.particlesfolder): error += localization.get_string("err_particleLocInvalid")
     
-    new_path = os.path.join(new_path, "").replace("\\", "/")
-    test_folders = [new_particles_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_shot_loc, new_lib_loc, new_archive_loc, new_deleted_loc]
+    new_path = os.path.join(config.path, "").replace("\\", "/")
+    test_folders = [config.particlesfolder, config.rendersfolder, config.scriptsfolder, config.texturesfolder, config.scenesfolder, config.libraryfolder, config.archivefolder, config.deletedfolder]
     if len(test_folders) != len(set(test_folders)):
-        error += "Sub-folders must have unique names.\n"
+        error += localization.get_string("err_subfolderUnique")
         
     os.makedirs(new_path, exist_ok=True)
     if os.path.exists(new_path):
-        try: os.makedirs(new_archive_loc if os.path.isabs(new_archive_loc) else os.path.join(new_path, new_archive_loc), exist_ok=True)
-        except Exception: error += "Archive Path is invalid. It does not exist and could not be created.\n"
+        try: os.makedirs(config.archivefolder if os.path.isabs(config.archivefolder) else os.path.join(new_path, config.archivefolder), exist_ok=True)
+        except Exception: error += localization.get_string("err_archivePathInvalid")
         
-        try: os.makedirs(new_deleted_loc if os.path.isabs(new_deleted_loc) else os.path.join(new_path, new_deleted_loc), exist_ok=True)
-        except Exception: error += "Deleted Items Path is invalid. It does not exist and could not be created.\n"
+        try: os.makedirs(config.deletedfolder if os.path.isabs(config.deletedfolder) else os.path.join(new_path, config.deletedfolder), exist_ok=True)
+        except Exception: error += localization.get_string("err_deletedPathInvalid")
         
-        for loc in [new_lib_loc, new_shot_loc, new_textures_loc, new_renders_loc, new_scripts_loc, new_particles_loc]:
+        for loc in [config.libraryfolder, config.scenesfolder, config.texturesfolder, config.rendersfolder, config.scriptsfolder, config.particlesfolder]:
             try: os.makedirs(os.path.join(new_path, loc), exist_ok=True)
-            except Exception: error += f"{loc} Sub-folder is invalid. It does not exist and could not be created.\n"
+            except Exception: error += localization.get_string("err_locPathInvalid").format(loc)
     else:
-        error += "Project Path is invalid. It does not exist and could not be created.\n"
+        error += localization.get_string("err_projPathCreate")
 
     found = False
     for project in proj_data:
-        curr_proj_name = opsUtils.get_xml_data(project, "name")
-        if new_name == curr_proj_name and curr_proj_name != old_name:
+        curr_proj_name = project.get("name")
+        if config.name == curr_proj_name and curr_proj_name != old_name:
             found = True
             break
             
     if found:
-        error += "Project name already exists. Please try a different name."
+        error += localization.get_string("err_projExists")
 
     if not error:
-        new_line = f"<name>{new_name}</name><path>{new_path}</path><description>{new_description}</description>" \
-                   f"<date>{new_date}</date><deadline>{new_deadline}</deadline><status>{new_status}</status>" \
-                   f"<mastername>{new_master_name}</mastername><masterformat>{new_master_format}</masterformat>" \
-                   f"<wipname>{new_wip_name}</wipname><wipformat>{new_wip_format}</wipformat>" \
-                   f"<libraryfolder>{new_lib_loc}</libraryfolder><scenesfolder>{new_shot_loc}</scenesfolder>" \
-                   f"<archivefolder>{new_archive_loc}</archivefolder><deletedfolder>{new_deleted_loc}</deletedfolder>" \
-                   f"<scriptsfolder>{new_scripts_loc}</scriptsfolder><rendersfolder>{new_renders_loc}</rendersfolder>" \
-                   f"<particlesfolder>{new_particles_loc}</particlesfolder><texturesfolder>{new_textures_loc}</texturesfolder>" \
-                   f"<users>{new_users}</users><userMode>{user_mode}</userMode>"
+        new_project = dataclasses.asdict(config)
                    
         index = -1
         if not mode:
-            index = len(proj_data)
-            proj_data.append(new_line)
+            proj_data.append(new_project)
         else:
             for i, project in enumerate(proj_data):
-                if opsUtils.get_xml_data(project, "name") == old_name:
+                if project.get("name") == old_name:
                     index = i
                     break
             if index == -1:
-                logger.error(f"Couldn't edit Project. Can't find Project with name '{old_name}'.")
+                logger.error(localization.get_string("err_projNotFoundEdit").format(old_name))
                 return 0
-            proj_data[index] = new_line
+            proj_data[index] = new_project
             
         opsProject.rewrite_proj_file(proj_data)
         
         if active_project_name == old_name:
-            prefs.set_pref("ops_currProjectName", new_name)
-            activate_project(new_name)
+            prefs.set_pref("ops_currProjectName", config.name)
+            activate_project(config.name)
             
-        logger.info(f"Project {mode_names[mode]}.")
+        logger.info(localization.get_string("msg_projMode").format(mode_names[mode]))
         return 1
     else:
-        logger.error(f"Project could not be {mode_names[mode]} because:\n{error}")
+        logger.error(localization.get_string("err_projModeFail").format(mode_names[mode], error))
         return 0
 
 
@@ -207,7 +225,7 @@ def remove_project(proj_name):
     removed = False
     
     for project in projects_data:
-        if opsUtils.get_xml_data(project, "name") != proj_name:
+        if project.get("name") != proj_name:
             new_projects_data.append(project)
         else:
             removed = True
@@ -218,47 +236,47 @@ def remove_project(proj_name):
             prefs.set_pref("ops_currProjectPath", "")
         opsProject.rewrite_proj_file(new_projects_data)
     else:
-        logger.warning(f"Couldn't remove project '{proj_name}'. Project not found.")
+        logger.warning(localization.get_string("err_projNotFoundRemove").format(proj_name))
         
     return int(removed)
 
 
-def create_new_item(tab, level1, level2, level3, mode):
+@_ensure_context
+def create_new_item(context, mode):
     """Creates a new item within the currently active project."""
     if not prefs.get_pref("ops_currProjectName", ""):
-        logger.warning("No project is currently active. Cannot create item.")
+        logger.warning(localization.get_string("err_noActiveProj"))
         return ""
         
     error = ""
-    item_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    depth = sum(1 for lvl in [level1, level2, level3] if lvl)
+    item_path = opsInfo.get_file_name(context, "folder")
     item_name = os.path.basename(item_path.rstrip('/'))
-    parent_path = opsInfo.get_file_name(tab, level1, level2, level3, "parentFolder")
-    version_folder = opsInfo.get_file_name(tab, level1, level2, level3, "versionFolder")
-    component_folder = opsInfo.get_file_name(tab, level1, level2, level3, "componentFolder")
-    note_folder = opsInfo.get_file_name(tab, level1, level2, level3, "noteFolder")
-    wip_folder = opsInfo.get_file_name(tab, level1, level2, level3, "workshopFolder")
-    destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
-    category = opsInfo.get_category(tab, level1, level2, level3)
+    parent_path = opsInfo.get_file_name(context, "parentFolder")
+    version_folder = opsInfo.get_file_name(context, "versionFolder")
+    component_folder = opsInfo.get_file_name(context, "componentFolder")
+    note_folder = opsInfo.get_file_name(context, "noteFolder")
+    wip_folder = opsInfo.get_file_name(context, "workshopFolder")
+    destination_file = opsInfo.get_file_name(context, "nextWorkshop")
+    category = opsInfo.get_category(context)
     w_name = prefs.get_pref("ops_wip", "wip")
 
-    if depth and item_path:
+    if context.depth and item_path:
         if not re.match(r"^[a-zA-Z0-9_]*$", item_name):
-            error += f"Invalid {category} Name (no special characters or spaces allowed).\n"
+            error += localization.get_string("err_invalidItemName").format(category)
         elif os.path.isdir(item_path):
-            error += f"{category} '{item_name}' already exists!\n"
+            error += localization.get_string("err_itemExists").format(category, item_name)
         elif not os.path.isdir(parent_path):
-            if depth == opsInfo.LEVEL_2: create_new_item(tab, level1, "", "", 1)
-            elif depth == opsInfo.LEVEL_3: create_new_item(tab, level1, level2, "", 1)
-            else: error += f"Item '{parent_path}' doesn't exist. Can't create new {category} under it.\n"
+            if context.depth == Level.ASSET_OR_SHOT: create_new_item(ItemContext(context.tab, context.level1), 1)
+            elif context.depth == Level.COMPONENT: create_new_item(ItemContext(context.tab, context.level1, context.level2), 1)
+            else: error += localization.get_string("err_parentNotFound").format(parent_path, category)
         
         if error:
             logger.warning(error.strip())
             return ""
             
         os.makedirs(item_path, exist_ok=True)
-        if depth == opsInfo.LEVEL_2: os.makedirs(component_folder, exist_ok=True)
-        if depth >= opsInfo.LEVEL_2:
+        if context.depth == Level.ASSET_OR_SHOT: os.makedirs(component_folder, exist_ok=True)
+        if context.depth >= Level.ASSET_OR_SHOT:
             os.makedirs(wip_folder, exist_ok=True)
             os.makedirs(version_folder, exist_ok=True)
             os.makedirs(note_folder, exist_ok=True)
@@ -266,7 +284,7 @@ def create_new_item(tab, level1, level2, level3, mode):
             prefs.set_pref("ops_creationPath", f"{item_path}/")
             prefs.set_pref("ops_creationType", category)
             
-            add_event_note(tab, level1, level2, level3, "created", 0, "")
+            add_event_note(context, "created", 0, "")
             
             ext = prefs.get_pref("ops_wipFormat", "ma")
             file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
@@ -278,25 +296,25 @@ def create_new_item(tab, level1, level2, level3, mode):
             if mode == 2:
                 if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
                     engine.file_handler.export_file(destination_file, file_type, selected=True)
-                add_event_note(tab, level1, level2, level3, w_name, 1, f"Selection exported as first {w_name} file.")
+                add_event_note(context, w_name, 1, localization.get_string("msg_exportSelFirst").format(w_name))
             elif mode == 3:
                 if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
                     engine.file_handler.export_file(destination_file, file_type, selected=False)
-                add_event_note(tab, level1, level2, level3, w_name, 1, f"Scene exported as first {w_name} file.")
+                add_event_note(context, w_name, 1, localization.get_string("msg_exportAllFirst").format(w_name))
             
-            set_custom_notes(tab, level1, level2, level3, " ")
+            set_custom_notes(context, " ")
         return item_path
     else:
-        logger.warning("Parameters incorrect, no new item created.")
+        logger.warning(localization.get_string("err_paramIncorrect"))
         return ""
 
 
-def open_item(item_type, tab, level1, level2, level3, version_offset):
+@_ensure_context
+def open_item(context, item_type, version_offset):
     """Opens an item for editing."""
-    folder = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    depth = sum(1 for lvl in [level1, level2, level3] if lvl)
+    folder = opsInfo.get_file_name(context, "folder")
     
-    if depth >= opsInfo.LEVEL_2 and os.path.isdir(folder) and item_type in ["workshop", "master"]:
+    if context.depth >= Level.ASSET_OR_SHOT and os.path.isdir(folder) and item_type in ["workshop", "master"]:
         version = 0
         curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
         
@@ -307,33 +325,33 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
         if is_mod and curr_level1:
             w_name = prefs.get_pref("ops_wip", "wip")
             reply = QtWidgets.QMessageBox.question(
-                None, "openPypeline Studio",
-                f"Would you like to Save {w_name} before editing Asset?",
+                None, localization.get_string("win_opsStudio"),
+                localization.get_string("msg_saveBeforeEdit").format(w_name),
                 QtWidgets.QMessageBox.StandardButton.Save | QtWidgets.QMessageBox.StandardButton.Discard | QtWidgets.QMessageBox.StandardButton.Cancel,
                 QtWidgets.QMessageBox.StandardButton.Save
             )
             if reply == QtWidgets.QMessageBox.StandardButton.Save:
-                    save_wip("saved before opening new item")
+                    save_wip(localization.get_string("msg_savedBeforeOpen"))
             elif reply == QtWidgets.QMessageBox.StandardButton.Cancel:
                 return 0
                 
-        file_to_open = opsInfo.get_file_name(tab, level1, level2, level3, item_type, version_offset)
-        latest_wip = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
-        category = opsInfo.get_category(tab, level1, level2, level3)
+        file_to_open = opsInfo.get_file_name(context, item_type, version_offset)
+        latest_wip = opsInfo.get_file_name(context, item_type)
+        category = opsInfo.get_category(context)
         
         if os.path.isfile(file_to_open):
             version = opsInfo.get_version_from_file(file_to_open)
             if engine.file_handler and hasattr(engine.file_handler, 'open'):
                 engine.file_handler.open(file_to_open)
             else:
-                logger.warning("No DCC file handler available to open files.")
+                logger.warning(localization.get_string("err_noDccOpen"))
         elif item_type == "workshop" and not os.path.isfile(latest_wip):
             msgBox = QtWidgets.QMessageBox(None)
-            msgBox.setWindowTitle("Edit Asset")
-            msgBox.setText("You are about to edit an item for the first time. Would you like to start with a new scene, or the currently open scene?")
-            new_btn = msgBox.addButton("New Scene", QtWidgets.QMessageBox.ButtonRole.AcceptRole)
-            curr_btn = msgBox.addButton("Current Scene", QtWidgets.QMessageBox.ButtonRole.RejectRole)
-            cancel_btn = msgBox.addButton("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+            msgBox.setWindowTitle(localization.get_string("win_editAsset"))
+            msgBox.setText(localization.get_string("msg_firstTimeEdit"))
+            new_btn = msgBox.addButton(localization.get_string("btn_newScene"), QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+            curr_btn = msgBox.addButton(localization.get_string("btn_currentScene"), QtWidgets.QMessageBox.ButtonRole.RejectRole)
+            cancel_btn = msgBox.addButton(localization.get_string("btn_cancel"), QtWidgets.QMessageBox.ButtonRole.RejectRole)
             msgBox.setDefaultButton(curr_btn)
             msgBox.exec()
 
@@ -343,51 +361,53 @@ def open_item(item_type, tab, level1, level2, level3, version_offset):
             elif msgBox.clickedButton() == cancel_btn:
                 return 0
         else:
-            logger.warning("File Not Found")
+            logger.warning(localization.get_string("err_fileNotFound"))
             return 0
             
         prefs.set_pref("ops_currOpenType", item_type)
         prefs.set_pref("ops_currOpenVersion", version)
         prefs.set_pref("ops_currOpenCategory", category)
-        prefs.set_pref("ops_currOpenLevel1", level1)
-        prefs.set_pref("ops_currOpenLevel2", level2)
-        prefs.set_pref("ops_currOpenLevel3", level3)
-        prefs.set_pref("ops_currOpenTab", tab)
+        prefs.set_pref("ops_currOpenLevel1", context.level1)
+        prefs.set_pref("ops_currOpenLevel2", context.level2)
+        prefs.set_pref("ops_currOpenLevel3", context.level3)
+        prefs.set_pref("ops_currOpenTab", context.tab)
     else:
-        logger.warning("Invalid command or Item doesn't exist.")
+        logger.warning(localization.get_string("err_invalidCmdItem"))
         return 0
     return 1
 
 
-def import_item(item_type, tab, level1, level2, level3, flags=""):
+@_ensure_context
+def import_item(context, item_type, flags=""):
     """Imports an item into the current scene."""
-    file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
+    file_path = opsInfo.get_file_name(context, item_type)
     if os.path.isfile(file_path):
         import openpypeline.ops_engine as ops_engine
         engine = ops_engine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'import_file'):
             return int(engine.file_handler.import_file(file_path))
         else:
-            logger.warning("No DCC file handler available for import.")
+            logger.warning(localization.get_string("err_noDccImport"))
             return 0
     else:
-        logger.warning(f"Could not find file to import: {file_path}")
+        logger.warning(localization.get_string("err_importFail").format(file_path))
         return 0
 
 
-def reference_item(item_type, tab, level1, level2, level3, flags=""):
+@_ensure_context
+def reference_item(context, item_type, flags=""):
     """References an item into the current scene."""
-    file_path = opsInfo.get_file_name(tab, level1, level2, level3, item_type)
+    file_path = opsInfo.get_file_name(context, item_type)
     if os.path.isfile(file_path):
         import openpypeline.ops_engine as ops_engine
         engine = ops_engine.OpsEngine()
         if engine.file_handler and hasattr(engine.file_handler, 'reference_file'):
             return int(engine.file_handler.reference_file(file_path))
         else:
-            logger.warning("No DCC file handler available for reference.")
+            logger.warning(localization.get_string("err_noDccRef"))
             return 0
     else:
-        logger.warning(f"Could not find file to reference: {file_path}")
+        logger.warning(localization.get_string("err_refFail").format(file_path))
         return 0
 
 
@@ -401,13 +421,14 @@ def save_wip(note=""):
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
     tab = prefs.get_pref("ops_currOpenTab", 0)
+    context = ItemContext(tab, level1, level2, level3)
     
-    destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextWorkshop")
+    destination_file = opsInfo.get_file_name(context, "nextWorkshop")
     
     file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
     file_type = file_type_map.get(ext, "mayaBinary")
     if ext not in file_type_map:
-        logger.warning(f"Invalid file format ({ext}) specified: saving to Maya Binary")
+        logger.warning(localization.get_string("err_invalidFormat").format(ext))
         
     import openpypeline.ops_engine as ops_engine
     engine = ops_engine.OpsEngine()
@@ -416,15 +437,15 @@ def save_wip(note=""):
         if engine.file_handler and hasattr(engine.file_handler, 'export_file'):
             engine.file_handler.export_file(destination_file, file_type, selected=False)
         else:
-            logger.warning("No DCC file handler available for exporting files.")
+            logger.warning(localization.get_string("err_noDccExport"))
     else:
         if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
             engine.file_handler.save_as(destination_file, file_type)
         else:
-            logger.warning("No DCC file handler available for saving files.")
+            logger.warning(localization.get_string("err_noDccSave"))
     latest_version = opsInfo.get_version_from_file(destination_file)
     prefs.set_pref("ops_currOpenVersion", latest_version)
-    add_event_note(tab, level1, level2, level3, w_name, latest_version, note)
+    add_event_note(context, w_name, latest_version, note)
     return 1
 
 
@@ -435,10 +456,11 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
     tab = prefs.get_pref("ops_currOpenTab", 0)
+    context = ItemContext(tab, level1, level2, level3)
     master_name = prefs.get_pref("ops_masterName", "master")
     
-    master_file = opsInfo.get_file_name(tab, level1, level2, level3, "master")
-    destination_file = opsInfo.get_file_name(tab, level1, level2, level3, "nextVersion")
+    master_file = opsInfo.get_file_name(context, "master")
+    destination_file = opsInfo.get_file_name(context, "nextVersion")
     
     save_wip(comment)
     
@@ -456,10 +478,10 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
         engine.file_handler.delete_display_layers()
                 
     if custom_command:
-        logger.info(f"Begin custom command {custom_command}")
+        logger.info(localization.get_string("msg_beginCmd").format(custom_command))
         try: exec(custom_command)
-        except Exception as e: logger.warning(f"Custom command failed: {e}")
-        logger.info(f"End custom command {custom_command}")
+        except Exception as e: logger.warning(localization.get_string("err_cmdFail").format(e))
+        logger.info(localization.get_string("msg_endCmd").format(custom_command))
         
     file_type_map = {"ma": "mayaAscii", "mb": "mayaBinary", "usd": "USD Export", "usda": "USD Export", "abc": "Alembic"}
     file_type = file_type_map.get(ext, "mayaBinary")
@@ -471,14 +493,14 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
         if engine.file_handler and hasattr(engine.file_handler, 'save_as'):
             engine.file_handler.save_as(master_file, file_type)
     
-    if after == 1: open_item("workshop", tab, level1, level2, level3, 0)
+    if after == 1: open_item(context, "workshop", 0)
     elif after == 2: prefs.set_pref("ops_currOpenType", "master")
     elif after == 3:
         close_file()
         if engine.file_handler and hasattr(engine.file_handler, 'new_file'):
             engine.file_handler.new_file()
         
-    add_event_note(tab, level1, level2, level3, master_name, 0, comment)
+    add_event_note(context, master_name, 0, comment)
     
     from . import tracker_factory
     tracker = tracker_factory.get_tracker()
@@ -488,38 +510,38 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
     return 1
 
 
-def remove_item(tab, level1, level2, level3):
+@_ensure_context
+def remove_item(context):
     """Moves the files and folders under the selected item to the 'deleted' folder."""
-    depth = sum(1 for lvl in [level1, level2, level3] if lvl)
     curr_level1 = prefs.get_pref("ops_currOpenLevel1", "")
     curr_level2 = prefs.get_pref("ops_currOpenLevel2", "")
     curr_level3 = prefs.get_pref("ops_currOpenLevel3", "")
     curr_tab = prefs.get_pref("ops_currOpenTab", 0)
     
-    original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
+    original_path = opsInfo.get_file_name(context, "folder")
     delete_path = prefs.get_pref("ops_deletePath", "")
     name = os.path.basename(original_path.rstrip('/'))
     
     reply = QtWidgets.QMessageBox.question(
-        None, "Remove Files",
-        "Are you sure you want to remove this Item?\n(all files and folders will be moved to the 'deleted' folder)",
+        None, localization.get_string("win_removeFiles"),
+        localization.get_string("msg_confirmRemoveItem"),
         QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
         QtWidgets.QMessageBox.StandardButton.Yes
     )
     if reply == QtWidgets.QMessageBox.StandardButton.Yes:
         os.makedirs(delete_path, exist_ok=True)
         is_current = 0
-        if curr_tab == tab and curr_level1 == level1:
-            if depth == opsInfo.LEVEL_1: is_current = 1
-            elif curr_level2 == level2:
-                if depth == opsInfo.LEVEL_2: is_current = 1
-                elif curr_level3 == level3:
-                    if depth == opsInfo.LEVEL_3: is_current = 1
+        if curr_tab == context.tab and curr_level1 == context.level1:
+            if context.depth == Level.TYPE_OR_SEQUENCE: is_current = 1
+            elif curr_level2 == context.level2:
+                if context.depth == Level.ASSET_OR_SHOT: is_current = 1
+                elif curr_level3 == context.level3:
+                    if context.depth == Level.COMPONENT: is_current = 1
                     
         if is_current:
             confirm_close = QtWidgets.QMessageBox.question(
-                None, "Remove Files",
-                "You are removing an item that is currently open. Continue?",
+                None, localization.get_string("win_removeFiles"),
+                localization.get_string("msg_confirmRemoveOpen"),
                 QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
                 QtWidgets.QMessageBox.StandardButton.Yes
             )
@@ -533,16 +555,17 @@ def remove_item(tab, level1, level2, level3):
         
         try:
             os.rename(original_path, new_path)
-            return remove_archive(tab, level1, level2, level3)
+            return remove_archive(context)
         except Exception as e:
-            logger.error(f"Remove failed. Folder {original_path} could not be moved to the 'deleted' folder. {e}")
+            logger.error(localization.get_string("err_removeFail").format(original_path, e))
             return 0
     return 0
 
 
-def remove_archive(tab, level1, level2, level3):
+@_ensure_context
+def remove_archive(context):
     """Moves the archived files and folders under the selected item to the 'deleted' folder."""
-    archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
+    archive_path = opsInfo.get_file_name(context, "folder", archive=1)
     delete_path = prefs.get_pref("ops_deletePath", "")
     name = os.path.basename(archive_path.rstrip('/'))
     
@@ -556,20 +579,21 @@ def remove_archive(tab, level1, level2, level3):
             os.rename(archive_path, new_path)
             return 1
         except Exception as e:
-            logger.error(f"Remove archive failed. Folder {archive_path} could not be moved to the 'deleted' folder. {e}")
+            logger.error(localization.get_string("err_removeArchiveFail").format(archive_path, e))
             return 0
     return 1
 
 
-def archive_item(tab, level1, level2, level3, keep_wips, keep_versions):
+@_ensure_context
+def archive_item(context, keep_wips, keep_versions):
     """Archives old versions of an item."""
     w_name = prefs.get_pref("ops_wip", "wip")
-    path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
+    path = opsInfo.get_file_name(context, "folder")
+    archive_path = opsInfo.get_file_name(context, "folder", archive=1)
     w_attempts = w_successes = v_attempts = v_successes = 0
     
     if keep_wips:
-        wip_files = opsInfo.get_wips(tab, level1, level2, level3)
+        wip_files = opsInfo.get_wips(context)
         for i in range(keep_wips, len(wip_files)):
             file_path = wip_files[i]
             w_attempts += 1
@@ -581,7 +605,7 @@ def archive_item(tab, level1, level2, level3, keep_wips, keep_versions):
             except: pass
             
     if keep_versions:
-        version_files = opsInfo.get_versions(tab, level1, level2, level3)
+        version_files = opsInfo.get_versions(context)
         for i in range(keep_versions, len(version_files)):
             file_path = version_files[i]
             v_attempts += 1
@@ -592,21 +616,22 @@ def archive_item(tab, level1, level2, level3, keep_wips, keep_versions):
                 v_successes += 1
             except: pass
             
-    msg = f"{w_successes} / {w_attempts} {w_name} files successfully moved to the archive.\n"
-    msg += f"{v_successes} / {v_attempts} version files successfully moved to the archive.\n"
+    msg = localization.get_string("msg_archiveWipSuccess").format(w_successes, w_attempts, w_name)
+    msg += localization.get_string("msg_archiveVerSuccess").format(v_successes, v_attempts)
     logger.info(msg.strip())
     return 1
 
 
-def retrieve_archive(tab, level1, level2, level3, do_wips, do_versions):
+@_ensure_context
+def retrieve_archive(context, do_wips, do_versions):
     """Restores all archived files of an item."""
     w_attempts = w_successes = v_attempts = v_successes = 0
     w_name = prefs.get_pref("ops_wip", "wip")
-    original_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
-    archive_path = opsInfo.get_file_name(tab, level1, level2, level3, "folder", archive=1)
+    original_path = opsInfo.get_file_name(context, "folder")
+    archive_path = opsInfo.get_file_name(context, "folder", archive=1)
     
     if do_wips:
-        archived_wips = opsInfo.get_wips(tab, level1, level2, level3, archive=1)
+        archived_wips = opsInfo.get_wips(context, archive=1)
         for file_path in archived_wips:
             w_attempts += 1
             new_name = file_path.replace(archive_path, original_path)
@@ -617,7 +642,7 @@ def retrieve_archive(tab, level1, level2, level3, do_wips, do_versions):
             except: pass
             
     if do_versions:
-        archived_versions = opsInfo.get_versions(tab, level1, level2, level3, archive=1)
+        archived_versions = opsInfo.get_versions(context, archive=1)
         for file_path in archived_versions:
             v_attempts += 1
             new_name = file_path.replace(archive_path, original_path)
@@ -627,8 +652,8 @@ def retrieve_archive(tab, level1, level2, level3, do_wips, do_versions):
                 v_successes += 1
             except: pass
             
-    msg = f"{w_successes} / {w_attempts} {w_name} files successfully retrieved from the archive.\n"
-    msg += f"{v_successes} / {v_attempts} version files successfully retrieved from the archive.\n"
+    msg = localization.get_string("msg_retrieveWipSuccess").format(w_successes, w_attempts, w_name)
+    msg += localization.get_string("msg_retrieveVerSuccess").format(v_successes, v_attempts)
     logger.info(msg.strip())
     return 1
 
@@ -644,12 +669,12 @@ def close_file():
 
     if is_mod and curr_level1:
         reply = QtWidgets.QMessageBox.question(
-            None, "openPypeline Studio",
-            f"Would you like to Save {w_name} before closing?",
+            None, localization.get_string("win_opsStudio"),
+            localization.get_string("msg_saveBeforeClose").format(w_name),
             QtWidgets.QMessageBox.StandardButton.Save | QtWidgets.QMessageBox.StandardButton.Discard | QtWidgets.QMessageBox.StandardButton.Cancel,
             QtWidgets.QMessageBox.StandardButton.Discard
         )
-        if reply == QtWidgets.QMessageBox.StandardButton.Save: save_wip("saved before closing")
+        if reply == QtWidgets.QMessageBox.StandardButton.Save: save_wip(localization.get_string("msg_savedBeforeClose"))
         elif reply == QtWidgets.QMessageBox.StandardButton.Cancel: return 1
     
     prefs.set_pref("ops_currOpenType", "")
@@ -664,20 +689,22 @@ def close_file():
     return 1
 
 
-def open_location(tab, level1, level2, level3):
+@_ensure_context
+def open_location(context):
     """Opens an item's folder in the OS's explorer."""
-    path = opsInfo.get_file_name(tab, level1, level2, level3, "folder")
+    path = opsInfo.get_file_name(context, "folder")
     if path and os.path.isdir(path):
         import sys
         if sys.platform == "darwin": os.system(f"open '{path}'")
         elif sys.platform == "win32": os.startfile(path.replace("/", "\\"))
         else: os.system(f"xdg-open '{path}'")
-    else: logger.warning(f"Couldn't find folder '{path}'.")
+    else: logger.warning(localization.get_string("err_folderNotFound").format(path))
 
 
-def record_playblast(tab, level1, level2, level3):
+@_ensure_context
+def record_playblast(context):
     """Records a playblast for an item."""
-    playblast_file = opsInfo.get_file_name(tab, level1, level2, level3, "playblastFile")
+    playblast_file = opsInfo.get_file_name(context, "playblastFile")
     import openpypeline.ops_engine as ops_engine
     engine = ops_engine.OpsEngine()
     if engine.file_handler and hasattr(engine.file_handler, 'record_playblast'):
@@ -685,9 +712,10 @@ def record_playblast(tab, level1, level2, level3):
     return playblast_file
 
 
-def create_thumbnail(tab, level1, level2, level3):
+@_ensure_context
+def create_thumbnail(context):
     """Takes a snapshot of the current scene and makes it the thumbnail for an item."""
-    file_name = opsInfo.get_file_name(tab, level1, level2, level3, "previewFile")
+    file_name = opsInfo.get_file_name(context, "previewFile")
     import openpypeline.ops_engine as ops_engine
     engine = ops_engine.OpsEngine()
     if engine.file_handler and hasattr(engine.file_handler, 'create_thumbnail'):
@@ -695,56 +723,68 @@ def create_thumbnail(tab, level1, level2, level3):
     return file_name
 
 
-def set_custom_notes(tab, level1, level2, level3, notes):
+@_ensure_context
+def set_custom_notes(context, notes):
     """Set the custom notes for an item."""
-    notes_file = opsInfo.get_file_name(tab, level1, level2, level3, "notesFile")
-    new_text = notes.replace("<", " ").replace(">", " ").replace("\r", "<br>").replace("\n", "<br>")
+    notes_file = opsInfo.get_file_name(context, "notesFile")
     
-    if not os.path.isfile(notes_file):
-        try:
-            with open(notes_file, "w") as f:
-                f.write("<!--This file is automatically generated by openPipeline. Edit at your own risk!-->\n")
-                f.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-                f.write("<?xml-stylesheet type=\"text/xsl\" href=\"xsl/plStylesheet.xsl\"?>\n")
-                f.write("<openPipeline_objectInfo>\n\t\t<description>\n")
-                f.write(f"\t\t\t{new_text}\n\t\t</description>\n</openPipeline_objectInfo>")
-        except Exception as e: logger.warning(f"Could not create notes file: {e}")
-    else:
-        try:
-            with open(notes_file, "r") as f: content = f.read()
-            content = re.sub(r'<description>.*?</description>', f'<description>\n\t\t\t{new_text}\n\t\t</description>', content, flags=re.DOTALL)
-            with open(notes_file, "w") as f: f.write(content)
-        except Exception as e: logger.warning(f"Could not update notes file: {e}")
+    # Clean up any leftover XML-specific breaks or tags if they exist
+    new_text = notes.replace("<", " ").replace(">", " ").replace("<br>", "\n")
+    
+    try:
+        os.makedirs(os.path.dirname(notes_file), exist_ok=True)
+        with open(notes_file, "w", encoding="utf-8") as f:
+            json.dump({"description": new_text}, f, indent=4)
+    except Exception as e:
+        logger.warning(localization.get_string("err_updateNotesFail").format(e))
+        
     return 1
 
 
-def view_playblast(tab, level1, level2, level3):
+@_ensure_context
+def view_playblast(context):
     """Opens the playblast of an item."""
-    playblast_file = opsInfo.get_file_name(tab, level1, level2, level3, "playblastFile")
+    playblast_file = opsInfo.get_file_name(context, "playblastFile")
     if playblast_file and os.path.isfile(playblast_file):
         import sys
         if sys.platform == "darwin": os.system(f"open '{playblast_file}'")
         elif sys.platform == "win32": os.startfile(playblast_file.replace("/", "\\"))
         else: os.system(f"xdg-open '{playblast_file}'")
-    else: logger.warning(f"Couldn't find playblast file '{playblast_file}'.")
+    else: logger.warning(localization.get_string("err_playblastNotFound").format(playblast_file))
 
 
-def add_event_note(tab, level1, level2, level3, event, version, comment):
+@_ensure_context
+def add_event_note(context, event, version, comment):
     """Adds an event note to an item's history."""
-    history_file = opsInfo.get_file_name(tab, level1, level2, level3, "historyFile")
+    history_file = opsInfo.get_file_name(context, "historyFile")
     user_name = prefs.get_pref("ops_currentUser", "default")
     date_str = opsInfo.get_date()
     time_str = opsInfo.get_time()
     
+    note = {
+        "author": user_name,
+        "date": date_str,
+        "time": time_str,
+        "event": event,
+        "version": str(version) if version else "",
+        "comment": comment
+    }
+    
+    notes_list = []
+    if os.path.isfile(history_file):
+        try:
+            with open(history_file, "r", encoding="utf-8") as f:
+                notes_list = json.load(f)
+        except Exception:
+            pass
+            
+    notes_list.append(note)
+    
     try:
-        with open(history_file, "a") as f:
-            f.write("\t<note>\n")
-            f.write(f"\t\t<author>{user_name}</author>\n")
-            f.write(f"\t\t<date>{date_str}</date>\n")
-            f.write(f"\t\t<time>{time_str}</time>\n")
-            f.write(f"\t\t<event>{event}</event>\n")
-            if version: f.write(f"\t\t<version>{version}</version>\n")
-            f.write(f"\t\t<comment>{comment}</comment>\n")
-            f.write("\t</note>\n")
-    except Exception as e: logger.warning(f"Could not write to history file: {e}")
+        os.makedirs(os.path.dirname(history_file), exist_ok=True)
+        with open(history_file, "w", encoding="utf-8") as f:
+            json.dump(notes_list, f, indent=4)
+    except Exception as e:
+        logger.warning(localization.get_string("err_historyWriteFail").format(e))
+        
     return 1

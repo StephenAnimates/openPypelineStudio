@@ -14,47 +14,55 @@ import sys
 import glob
 import datetime
 import re
+import json
+from functools import wraps
 import logging
 from openpypeline.core.util import prefs
+from openpypeline.core.models import ItemContext, Tab, Level
 
 logger = logging.getLogger("openPypeline.info")
 
-# --- UI Index Constants ---
-TAB_ASSET = 2
-TAB_SHOT = 3
-LEVEL_1 = 1  # Asset Type / Sequence
-LEVEL_2 = 2  # Asset / Shot
-LEVEL_3 = 3  # Component
+
+
+def _ensure_context(func):
+    """Decorator to support both ItemContext objects and legacy (tab, level1, level2, level3) arguments."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if args and isinstance(args[0], ItemContext):
+            return func(*args, **kwargs)
+        elif len(args) >= 4 and isinstance(args[0], int):
+            context = ItemContext(tab=args[0], level1=args[1], level2=args[2], level3=args[3])
+            return func(context, *args[4:], **kwargs)
+        return func(*args, **kwargs)
+    return wrapper
+
 
 def get_project_list():
     """Returns the names of all existing projects."""
     try:
         from . import ops_project as opsProject
-        from . import ops_utils as opsUtils
         proj_data = opsProject.get_projects_data() or []
-        return [opsUtils.get_xml_data(proj, "name") for proj in proj_data]
+        return [proj.get("name") for proj in proj_data if isinstance(proj, dict)]
     except Exception:
         return []
 
 
-def get_custom_notes(tab, level1, level2, level3):
+@_ensure_context
+def get_custom_notes(context):
     """Get an item's custom notes."""
-    notes_file = get_file_name(tab, level1, level2, level3, "notesFile")
+    notes_file = get_file_name(context, "notesFile")
     if not os.path.isfile(notes_file):
         try:
             from . import ops_actions as opsActions
-            opsActions.set_custom_notes(tab, level1, level2, level3, " ")
+            opsActions.set_custom_notes(context.tab, context.level1, context.level2, context.level3, " ")
         except Exception:
             pass
         return ""
     else:
         try:
-            with open(notes_file, 'r') as f:
-                content = f.read()
-            match = re.search(r'<description>(.*?)</description>', content, re.DOTALL)
-            if match:
-                text = match.group(1).strip()
-                return text.replace("<br>", "\n")
+            with open(notes_file, 'r', encoding="utf-8") as f:
+                data = json.load(f)
+            return data.get("description", "")
         except Exception:
             pass
     return ""
@@ -72,26 +80,30 @@ def get_time():
     return datetime.datetime.now().strftime(time_fmt)
 
 
-def has_wip(tab, level1, level2, level3):
+@_ensure_context
+def has_wip(context):
     """Returns whether an item has at least one WIP."""
-    return bool(get_file_name(tab, level1, level2, level3, "workshop"))
+    return bool(get_file_name(context, "workshop"))
 
 
-def has_master(tab, level1, level2, level3):
+@_ensure_context
+def has_master(context):
     """Returns whether an item has at least one master."""
-    master = get_file_name(tab, level1, level2, level3, "master")
+    master = get_file_name(context, "master")
     return bool(master and os.path.isfile(master))
 
 
-def has_playblast(tab, level1, level2, level3):
+@_ensure_context
+def has_playblast(context):
     """Returns whether an item has a playblast."""
-    pb_file = get_file_name(tab, level1, level2, level3, "playblastFile")
+    pb_file = get_file_name(context, "playblastFile")
     return bool(pb_file and os.path.isfile(pb_file))
 
 
-def get_wips(tab, level1, level2, level3, archive=0):
+@_ensure_context
+def get_wips(context, archive=0):
     """Returns the WIP files for a given item, from newest to oldest."""
-    folder = get_file_name(tab, level1, level2, level3, "workshopFolder", 0, archive)
+    folder = get_file_name(context, "workshopFolder", 0, archive)
     w_name = prefs.get_pref("ops_wip", "workshop")
     w_ext = prefs.get_pref("ops_wipFormat", "ma")
     
@@ -101,9 +113,10 @@ def get_wips(tab, level1, level2, level3, archive=0):
     return []
 
 
-def get_versions(tab, level1, level2, level3, archive=0):
+@_ensure_context
+def get_versions(context, archive=0):
     """Returns all of the version files for a given item, from newest to oldest."""
-    folder = get_file_name(tab, level1, level2, level3, "versionFolder", 0, archive)
+    folder = get_file_name(context, "versionFolder", 0, archive)
     m_ext = prefs.get_pref("ops_masterFormat", "ma")
     
     if os.path.isdir(folder):
@@ -112,14 +125,16 @@ def get_versions(tab, level1, level2, level3, archive=0):
     return []
 
 
-def get_num_wips(tab, level1, level2, level3, archive=0):
+@_ensure_context
+def get_num_wips(context, archive=0):
     """Returns the number of WIPs an item has."""
-    return len(get_wips(tab, level1, level2, level3, archive))
+    return len(get_wips(context, archive))
 
 
-def get_num_versions(tab, level1, level2, level3, archive=0):
+@_ensure_context
+def get_num_versions(context, archive=0):
     """Returns the number of versions an item has."""
-    return len(get_versions(tab, level1, level2, level3, archive))
+    return len(get_versions(context, archive))
 
 
 def get_version_from_file(filepath):
@@ -130,20 +145,21 @@ def get_version_from_file(filepath):
     return 0
 
 
-def get_latest_wip_version(tab, level1, level2, level3):
+@_ensure_context
+def get_latest_wip_version(context):
     """Returns the version of the latest WIP for a given item."""
-    latest_wip = get_file_name(tab, level1, level2, level3, "workshop")
+    latest_wip = get_file_name(context, "workshop")
     if latest_wip:
         return get_version_from_file(latest_wip)
     return 0
 
 
-def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
+@_ensure_context
+def get_file_name(context, mode, offset=0, archive=0):
     """
     Returns the full path of a folder or filename pertinent to the given item, 
     dictating openPypeline's file naming conventions.
     """
-    depth = sum(1 for lvl in [level1, level2, level3] if lvl)
     file_name = ""
     w_name = prefs.get_pref("ops_wip", "workshop")
     w_ext = prefs.get_pref("ops_wipFormat", "ma")
@@ -151,17 +167,17 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
     m_ext = prefs.get_pref("ops_masterFormat", "ma")
 
     if mode == "parentFolder":
-        if depth == LEVEL_3: return get_file_name(tab, level1, level2, "", "folder", 0, 0)
-        elif depth == LEVEL_2: return get_file_name(tab, level1, "", "", "folder", 0, 0)
-        elif depth == LEVEL_1:
-            if tab == TAB_ASSET: return prefs.get_pref("ops_libPath", "")
-            elif tab == TAB_SHOT: return prefs.get_pref("ops_shotPath", "")
+        if context.depth == Level.COMPONENT: return get_file_name(ItemContext(context.tab, context.level1, context.level2), "folder", 0, 0)
+        elif context.depth == Level.ASSET_OR_SHOT: return get_file_name(ItemContext(context.tab, context.level1), "folder", 0, 0)
+        elif context.depth == Level.TYPE_OR_SEQUENCE:
+            if context.tab == Tab.ASSET: return prefs.get_pref("ops_libPath", "")
+            elif context.tab == Tab.SHOT: return prefs.get_pref("ops_shotPath", "")
             else: return prefs.get_pref("ops_currProjectPath", "")
         else: return ""
 
-    if tab == TAB_ASSET:
+    if context.tab == Tab.ASSET:
         file_name = prefs.get_pref("ops_libPath", "")
-    elif tab == TAB_SHOT:
+    elif context.tab == Tab.SHOT:
         file_name = prefs.get_pref("ops_shotPath", "")
     else:
         return ""
@@ -172,12 +188,12 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
         if proj_path and arch_path:
             file_name = file_name.replace(proj_path, arch_path)
 
-    if level1:
-        file_name = os.path.join(file_name, level1, "").replace("\\", "/")
-        if level2:
-            file_name = os.path.join(file_name, level2, "").replace("\\", "/")
-            if level3:
-                file_name = os.path.join(file_name, "components", level3, "").replace("\\", "/")
+    if context.level1:
+        file_name = os.path.join(file_name, context.level1, "").replace("\\", "/")
+        if context.level2:
+            file_name = os.path.join(file_name, context.level2, "").replace("\\", "/")
+            if context.level3:
+                file_name = os.path.join(file_name, "components", context.level3, "").replace("\\", "/")
 
             if mode == "workshopFolder":
                 file_name = os.path.join(file_name, w_name, "").replace("\\", "/")
@@ -193,7 +209,7 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
             elif mode == "previewFile":
                 file_name = os.path.join(file_name, "preview.jpg").replace("\\", "/")
             elif mode == "notesFile":
-                file_name = os.path.join(file_name, "notes", "info.xml").replace("\\", "/")
+                file_name = os.path.join(file_name, "notes", "info.json").replace("\\", "/")
             elif mode == "workshop":
                 wip_dir = os.path.join(file_name, w_name)
                 if os.path.isdir(wip_dir):
@@ -204,13 +220,11 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
                         file_name = ""
                 else: file_name = ""
             elif mode == "nextWorkshop":
-                item_name = level3 if level3 else level2
-                parent_name = level2 if level3 else level1
                 wip_dir = os.path.join(file_name, w_name).replace("\\", "/")
                 files = sorted(glob.glob(os.path.join(wip_dir, f"*{w_name}_*.{w_ext}").replace("\\", "/"))) if os.path.isdir(wip_dir) else []
                 latest_version = get_version_from_file(files[-1]) if files else 0
                 suffix = str(latest_version + 1).zfill(4)
-                prefix = f"{parent_name}_{item_name}" if level3 else item_name
+                prefix = f"{context.parent_name}_{context.item_name}" if context.level3 else context.item_name
                 file_name = os.path.join(wip_dir, f"{prefix}_{w_name}_{suffix}.{w_ext}").replace("\\", "/")
             elif mode == "version":
                 v_dir = os.path.join(file_name, "version")
@@ -222,34 +236,28 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
                         file_name = ""
                 else: file_name = ""
             elif mode == "nextVersion":
-                item_name = level3 if level3 else level2
-                parent_name = level2 if level3 else level1
                 v_dir = os.path.join(file_name, "version").replace("\\", "/")
                 files = sorted(glob.glob(os.path.join(v_dir, f"*version_*.{m_ext}").replace("\\", "/"))) if os.path.isdir(v_dir) else []
                 latest_version = get_version_from_file(files[-1]) if files else 0
                 suffix = str(latest_version + 1).zfill(4)
-                prefix = f"{parent_name}_{item_name}" if level3 else item_name
+                prefix = f"{context.parent_name}_{context.item_name}" if context.level3 else context.item_name
                 file_name = os.path.join(v_dir, f"{prefix}_version_{suffix}.{m_ext}").replace("\\", "/")
             elif mode == "master":
-                item_name = level3 if level3 else level2
-                parent_name = level2 if level3 else level1
-                if level3:
-                    file_name = os.path.join(file_name, f"{parent_name}_{item_name}.{m_ext}").replace("\\", "/")
-                elif tab == TAB_ASSET:
-                    file_name = os.path.join(file_name, f"{item_name}_asset.{m_ext}").replace("\\", "/")
-                elif tab == TAB_SHOT:
-                    file_name = os.path.join(file_name, f"{item_name}_shot.{m_ext}").replace("\\", "/")
+                if context.level3:
+                    file_name = os.path.join(file_name, f"{context.parent_name}_{context.item_name}.{m_ext}").replace("\\", "/")
+                elif context.tab == Tab.ASSET:
+                    file_name = os.path.join(file_name, f"{context.item_name}_asset.{m_ext}").replace("\\", "/")
+                elif context.tab == Tab.SHOT:
+                    file_name = os.path.join(file_name, f"{context.item_name}_shot.{m_ext}").replace("\\", "/")
             elif mode == "historyFile":
-                item_name = level3 if level3 else level2
-                parent_name = level2 if level3 else level1
-                if level3:
-                    file_name = os.path.join(file_name, "notes", f"{parent_name}_{item_name}_ComponentNote.xml").replace("\\", "/")
-                elif tab == TAB_ASSET:
-                    file_name = os.path.join(file_name, "notes", f"{item_name}_AssetNote.xml").replace("\\", "/")
-                elif tab == TAB_SHOT:
-                    file_name = os.path.join(file_name, "notes", f"{item_name}_SceneNote.xml").replace("\\", "/")
+                if context.level3:
+                    file_name = os.path.join(file_name, "notes", f"{context.parent_name}_{context.item_name}_ComponentNote.json").replace("\\", "/")
+                elif context.tab == Tab.ASSET:
+                    file_name = os.path.join(file_name, "notes", f"{context.item_name}_AssetNote.json").replace("\\", "/")
+                elif context.tab == Tab.SHOT:
+                    file_name = os.path.join(file_name, "notes", f"{context.item_name}_SceneNote.json").replace("\\", "/")
             elif mode == "childFolder":
-                if depth == LEVEL_2:
+                if context.depth == Level.ASSET_OR_SHOT:
                     file_name = os.path.join(file_name, "components", "").replace("\\", "/")
                 else:
                     file_name = ""
@@ -260,25 +268,27 @@ def get_file_name(tab, level1, level2, level3, mode, offset=0, archive=0):
     return file_name
 
 
-def get_children(tab, level1, level2, level3):
+@_ensure_context
+def get_children(context):
     """Returns the children of the given item."""
-    child_path = get_file_name(tab, level1, level2, level3, "childFolder")
+    child_path = get_file_name(context, "childFolder")
     if not child_path or not os.path.isdir(child_path):
         return []
     
     return [child for child in os.listdir(child_path) if not child.startswith('.') and os.path.isdir(os.path.join(child_path, child))]
 
 
-def get_category(tab, level1, level2, level3):
+@_ensure_context
+def get_category(context):
     """Returns the category of a given item (shot, asset, component, etc.)"""
-    if tab == TAB_ASSET:
-        if level3: return "component"
-        elif level2: return "asset"
-        elif level1: return "assetType"
-    elif tab == TAB_SHOT:
-        if level3: return "shotComponent"
-        elif level2: return "shot"
-        elif level1: return "sequence"
+    if context.tab == Tab.ASSET:
+        if context.level3: return "component"
+        elif context.level2: return "asset"
+        elif context.level1: return "assetType"
+    elif context.tab == Tab.SHOT:
+        if context.level3: return "shotComponent"
+        elif context.level2: return "shot"
+        elif context.level1: return "sequence"
     return ""
 
 
@@ -290,22 +300,24 @@ def get_currently_open_path():
     tab = prefs.get_pref("ops_currOpenTab", 0)
     
     if tab:
-        return get_file_name(tab, level1, level2, level3, "folder")
+        return get_file_name(ItemContext(tab, level1, level2, level3), "folder")
     return ""
 
 
-def get_thumbnail(tab, level1, level2, level3):
+@_ensure_context
+def get_thumbnail(context):
     """Get the filename of an item's thumbnail image."""
-    return get_file_name(tab, level1, level2, level3, "previewFile")
+    return get_file_name(context, "previewFile")
 
 
-def get_event_notes(tab, level1, level2, level3):
+@_ensure_context
+def get_event_notes(context):
     """Get an item's event history."""
-    history_file = get_file_name(tab, level1, level2, level3, "historyFile")
+    history_file = get_file_name(context, "historyFile")
     if os.path.isfile(history_file):
         try:
             from . import ops_notes as opsNotes
-            notes_array = opsNotes.read_xml(history_file)
+            notes_array = opsNotes.read_notes_formatted(history_file)
             return "".join(notes_array)
         except Exception:
             pass
@@ -328,42 +340,47 @@ def get_currently_selected_item(tab, depth):
     except RuntimeError:
         return [level1, level2, level3]
 
-    if tab == TAB_ASSET:
-        if depth >= LEVEL_1 and hasattr(ui, "ops_assetType_txtScrollList"):
+    if tab == Tab.ASSET:
+        if depth >= Level.TYPE_OR_SEQUENCE and hasattr(ui, "ops_assetType_txtScrollList"):
             types = prefs.get_pref("ops_assetTypes", [])
             if isinstance(types, str): types = [types]
             idx = ui.ops_assetType_txtScrollList.currentRow()
             if 0 <= idx < len(types): level1 = types[idx]
             
-        if depth >= LEVEL_2 and hasattr(ui, "ops_asset_scrollList"):
+        if depth >= Level.ASSET_OR_SHOT and hasattr(ui, "ops_asset_scrollList"):
             assets = prefs.get_pref("ops_assets", [])
             if isinstance(assets, str): assets = [assets]
             idx = ui.ops_asset_scrollList.currentRow()
             if 0 <= idx < len(assets): level2 = assets[idx]
             
-        if depth >= LEVEL_3 and hasattr(ui, "ops_componentScrollList"):
+        if depth >= Level.COMPONENT and hasattr(ui, "ops_componentScrollList"):
             components = prefs.get_pref("ops_components", [])
             if isinstance(components, str): components = [components]
             idx = ui.ops_componentScrollList.currentRow()
             if 0 <= idx < len(components): level3 = components[idx]
             
-    elif tab == TAB_SHOT:
-        if depth >= LEVEL_1 and hasattr(ui, "ops_sequenceScrollList"):
+    elif tab == Tab.SHOT:
+        if depth >= Level.TYPE_OR_SEQUENCE and hasattr(ui, "ops_sequenceScrollList"):
             sequences = prefs.get_pref("ops_sequences", [])
             if isinstance(sequences, str): sequences = [sequences]
             idx = ui.ops_sequenceScrollList.currentRow()
             if 0 <= idx < len(sequences): level1 = sequences[idx]
             
-        if depth >= LEVEL_2 and hasattr(ui, "ops_shotScrollList"):
+        if depth >= Level.ASSET_OR_SHOT and hasattr(ui, "ops_shotScrollList"):
             shots = prefs.get_pref("ops_shots", [])
             if isinstance(shots, str): shots = [shots]
             idx = ui.ops_shotScrollList.currentRow()
             if 0 <= idx < len(shots): level2 = shots[idx]
             
-        if depth >= LEVEL_3 and hasattr(ui, "ops_shotComponentScrollList"):
+        if depth >= Level.COMPONENT and hasattr(ui, "ops_shotComponentScrollList"):
             components = prefs.get_pref("ops_shotComponents", [])
             if isinstance(components, str): components = [components]
             idx = ui.ops_shotComponentScrollList.currentRow()
             if 0 <= idx < len(components): level3 = components[idx]
             
     return [level1, level2, level3]
+
+def get_current_context(tab, depth):
+    """Returns an ItemContext data class representing the currently selected item in the UI."""
+    levels = get_currently_selected_item(tab, depth)
+    return ItemContext(tab=tab, level1=levels[0], level2=levels[1], level3=levels[2])

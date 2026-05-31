@@ -1,7 +1,8 @@
 """
-File: opsUtils.py
-Description: General utility functions for openPypeline Studio.
-             Replaces the legacy openPipelineUtility.mel script.
+File: ops_utils.py
+Description:
+    General utility functions for openPypeline Studio.
+    Replaces the legacy openPipelineUtility.mel script.
              
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
@@ -9,17 +10,6 @@ License: Common Public License 1.0 (CPL-1.0)
 import os
 import re
 
-def get_xml_data(xml_string, tag):
-    """
-    Extracts the data encapsulated by the opening and closing tags of an XML element.
-    """
-    match = re.search(f"<{tag}>(.*?)</{tag}>", xml_string, re.IGNORECASE | re.DOTALL)
-    if match:
-        val = match.group(1).strip()
-        if tag == "path":
-            val = os.path.expandvars(val).replace("\\", "/")
-        return val
-    return ""
 
 def is_valid_folder(path):
     """Returns whether a folder exists and doesn't start with a period (e.g. .svn)."""

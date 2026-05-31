@@ -13,10 +13,8 @@ from openpypeline.core.localization import localization
 from ..core import ops_ui_wrappers as opsUIWrappers
 from ..core import ops_actions as opsActions
 from ..core import ops_project as opsProject
-from .ops_main_ui import (
-    opsMainUI,
-    TAB_ASSET, TAB_SHOT, LEVEL_1, LEVEL_2, LEVEL_3
-)
+from .ops_main_ui import opsMainUI
+from openpypeline.core.models import Tab, Level
 
 class OpsMainController:
     def __init__(self):
@@ -47,16 +45,16 @@ class OpsMainController:
         # Asset Browser List Selections & Actions
         self.view.ops_assetType_txtScrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.update_asset_list(preserve_selection=0))
         self.view.ops_asset_scrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.asset_selected(preserve_selection=0))
-        self.view.ops_asset_scrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
+        self.view.ops_asset_scrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'workshop', version_offset=0))
         self.view.ops_componentScrollList.itemSelectionChanged.connect(opsUIWrappers.component_selected)
-        self.view.ops_componentScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
+        self.view.ops_componentScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(Tab.ASSET, Level.COMPONENT, 'workshop', version_offset=0))
 
         # Shot Browser List Selections & Actions
         self.view.ops_sequenceScrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.update_shot_list(preserve_selection=0))
         self.view.ops_shotScrollList.itemSelectionChanged.connect(lambda *args: opsUIWrappers.shot_selected(preserve_selection=0))
-        self.view.ops_shotScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
+        self.view.ops_shotScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'workshop', version_offset=0))
         self.view.ops_shotComponentScrollList.itemSelectionChanged.connect(opsUIWrappers.shot_component_selected)
-        self.view.ops_shotComponentScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
+        self.view.ops_shotComponentScrollList.itemDoubleClicked.connect(lambda *args: opsUIWrappers.open_currently_selected(Tab.SHOT, Level.COMPONENT, 'workshop', version_offset=0))
         
         # Currently Open Tab Actions
         self.view.ops_currOpenSaveWorkshop_btn.clicked.connect(opsUIWrappers.prompt_save_wip)
@@ -72,24 +70,24 @@ class OpsMainController:
 
         # Asset Browser Buttons
         self.view.ops_assetTypeNew_btn.clicked.connect(opsUIWrappers.prompt_new_asset_type)
-        self.view.ops_assetTypeRemove_btn.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_1))
+        self.view.ops_assetTypeRemove_btn.clicked.connect(lambda *args: opsUIWrappers.remove_process(Tab.ASSET, Level.TYPE_OR_SEQUENCE))
         self.view.ops_assetNew_btn.clicked.connect(opsUIWrappers.prompt_new_asset)
-        self.view.ops_assetRemove_btn.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_2))
+        self.view.ops_assetRemove_btn.clicked.connect(lambda *args: opsUIWrappers.remove_process(Tab.ASSET, Level.ASSET_OR_SHOT))
         self.view.ops_assetRename_btn.clicked.connect(opsUIWrappers.prompt_rename_asset)
         self.view.ops_componentNewButton.clicked.connect(opsUIWrappers.prompt_new_asset_component)
-        self.view.ops_componentRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_ASSET, LEVEL_3))
-        self.view.ops_assetViewPlayblastAssetButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(TAB_ASSET))
-        self.view.ops_exploreAssetsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(TAB_ASSET))
+        self.view.ops_componentRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(Tab.ASSET, Level.COMPONENT))
+        self.view.ops_assetViewPlayblastAssetButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(Tab.ASSET))
+        self.view.ops_exploreAssetsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(Tab.ASSET))
 
         # Shot Browser Buttons
         self.view.ops_sequenceNewButton.clicked.connect(opsUIWrappers.prompt_new_sequence)
-        self.view.ops_sequenceRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_1))
+        self.view.ops_sequenceRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(Tab.SHOT, Level.TYPE_OR_SEQUENCE))
         self.view.ops_shotNewButton.clicked.connect(opsUIWrappers.prompt_new_shot)
-        self.view.ops_shotRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_2))
+        self.view.ops_shotRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(Tab.SHOT, Level.ASSET_OR_SHOT))
         self.view.ops_shotComponentNewButton.clicked.connect(opsUIWrappers.prompt_new_shot_component)
-        self.view.ops_shotComponentRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(TAB_SHOT, LEVEL_3))
-        self.view.ops_shotViewPlayblastButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(TAB_SHOT))
-        self.view.ops_exploreShotsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(TAB_SHOT))
+        self.view.ops_shotComponentRemoveButton.clicked.connect(lambda *args: opsUIWrappers.remove_process(Tab.SHOT, Level.COMPONENT))
+        self.view.ops_shotViewPlayblastButton.clicked.connect(lambda *args: opsUIWrappers.view_playblast_selected(Tab.SHOT))
+        self.view.ops_exploreShotsButton.clicked.connect(lambda *args: opsUIWrappers.explore_selected(Tab.SHOT))
 
         # --- Top Menu: File Actions ---
         self.view.action_save_wip.triggered.connect(opsUIWrappers.prompt_save_wip)
@@ -139,7 +137,7 @@ class OpsMainController:
                         action = self.view.menu_tools.addAction(addon_name)
                         action.triggered.connect(mod.run)
                 except Exception as e:
-                    print(f"Failed to load addon {filename}: {e}")
+                    print(localization.get_string("msg_failedAddonLoad").format(filename, e))
 
     def on_project_manager_clicked(self):
         """Launches the Project Manager UI and ensures it is loaded into memory."""
@@ -170,7 +168,7 @@ class OpsMainController:
             # Refresh all UI elements (dropdowns, lists, labels) to show the new project's data
             opsUIWrappers.refresh_ui()
         except Exception as e:
-            print(f"Could not refresh UI after project change: {e}")
+            print(localization.get_string("msg_failedUiRefresh").format(e))
 
     def on_open_master_clicked(self):
         """Opens the Save Master Dialog."""
@@ -186,7 +184,7 @@ class OpsMainController:
             from ..core import ops_scene_inv as opsSceneInv
             opsSceneInv.show_window()
         except ImportError:
-            print("Scene Inventory module not available.")
+            print(localization.get_string("msg_sceneInvNotAvailable"))
 
     def on_reset_window_size(self, *args):
         """Resets the Main UI window to its default starting dimensions."""
@@ -227,21 +225,21 @@ class OpsMainController:
         menu = QtWidgets.QMenu()
         
         # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
-        menu.addAction(localization.get_string("ctx_editAsset"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'workshop', version_offset=0))
-        menu.addAction(localization.get_string("ctx_openMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_2, 'master', version_offset=0))
+        menu.addAction(localization.get_string("ctx_editAsset"), lambda: opsUIWrappers.open_currently_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_openMaster"), lambda: opsUIWrappers.open_currently_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'master', version_offset=0))
         
         # Build the 'Import' sub-menu
         imp = menu.addMenu(localization.get_string("ctx_import"))
-        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'workshop'))
-        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_2, 'master'))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'master'))
         
         # Build the 'Reference' sub-menu
         ref = menu.addMenu(localization.get_string("ctx_reference"))
-        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'workshop'))
-        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_2, 'master'))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(Tab.ASSET, Level.ASSET_OR_SHOT, 'master'))
         
         # Add the Archive action to the root menu
-        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_2))
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(Tab.ASSET, Level.ASSET_OR_SHOT))
         
         # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_asset_scrollList.mapToGlobal(position))
@@ -252,21 +250,21 @@ class OpsMainController:
         menu = QtWidgets.QMenu()
         
         # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
-        menu.addAction(localization.get_string("ctx_editComponent"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'workshop', version_offset=0))
-        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_ASSET, LEVEL_3, 'master', version_offset=0))
+        menu.addAction(localization.get_string("ctx_editComponent"), lambda: opsUIWrappers.open_currently_selected(Tab.ASSET, Level.COMPONENT, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(Tab.ASSET, Level.COMPONENT, 'master', version_offset=0))
         
         # Build the 'Import' sub-menu
         imp = menu.addMenu(localization.get_string("ctx_import"))
-        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'workshop'))
-        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_ASSET, LEVEL_3, 'master'))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(Tab.ASSET, Level.COMPONENT, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(Tab.ASSET, Level.COMPONENT, 'master'))
         
         # Build the 'Reference' sub-menu
         ref = menu.addMenu(localization.get_string("ctx_reference"))
-        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'workshop'))
-        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_ASSET, LEVEL_3, 'master'))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(Tab.ASSET, Level.COMPONENT, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(Tab.ASSET, Level.COMPONENT, 'master'))
         
         # Add the Archive action to the root menu
-        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_ASSET, LEVEL_3))
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(Tab.ASSET, Level.COMPONENT))
         
         # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_componentScrollList.mapToGlobal(position))
@@ -277,21 +275,21 @@ class OpsMainController:
         menu = QtWidgets.QMenu()
         
         # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
-        menu.addAction(localization.get_string("ctx_editShot"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'workshop', version_offset=0))
-        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_2, 'master', version_offset=0))
+        menu.addAction(localization.get_string("ctx_editShot"), lambda: opsUIWrappers.open_currently_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'master', version_offset=0))
         
         # Build the 'Import' sub-menu
         imp = menu.addMenu(localization.get_string("ctx_import"))
-        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'workshop'))
-        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_2, 'master'))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'master'))
         
         # Build the 'Reference' sub-menu
         ref = menu.addMenu(localization.get_string("ctx_reference"))
-        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'workshop'))
-        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_2, 'master'))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(Tab.SHOT, Level.ASSET_OR_SHOT, 'master'))
         
         # Add the Archive action to the root menu
-        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_2))
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(Tab.SHOT, Level.ASSET_OR_SHOT))
         
         # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_shotScrollList.mapToGlobal(position))
@@ -302,21 +300,21 @@ class OpsMainController:
         menu = QtWidgets.QMenu()
         
         # Add root-level edit actions using lambdas to pass specific arguments to the wrappers
-        menu.addAction(localization.get_string("ctx_editShotComponent"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'workshop', version_offset=0))
-        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(TAB_SHOT, LEVEL_3, 'master', version_offset=0))
+        menu.addAction(localization.get_string("ctx_editShotComponent"), lambda: opsUIWrappers.open_currently_selected(Tab.SHOT, Level.COMPONENT, 'workshop', version_offset=0))
+        menu.addAction(localization.get_string("ctx_viewMaster"), lambda: opsUIWrappers.open_currently_selected(Tab.SHOT, Level.COMPONENT, 'master', version_offset=0))
         
         # Build the 'Import' sub-menu
         imp = menu.addMenu(localization.get_string("ctx_import"))
-        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'workshop'))
-        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(TAB_SHOT, LEVEL_3, 'master'))
+        imp.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.import_selected(Tab.SHOT, Level.COMPONENT, 'workshop'))
+        imp.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.import_selected(Tab.SHOT, Level.COMPONENT, 'master'))
         
         # Build the 'Reference' sub-menu
         ref = menu.addMenu(localization.get_string("ctx_reference"))
-        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'workshop'))
-        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(TAB_SHOT, LEVEL_3, 'master'))
+        ref.addAction(localization.get_string("ctx_wip"), lambda: opsUIWrappers.reference_selected(Tab.SHOT, Level.COMPONENT, 'workshop'))
+        ref.addAction(localization.get_string("ctx_master"), lambda: opsUIWrappers.reference_selected(Tab.SHOT, Level.COMPONENT, 'master'))
         
         # Add the Archive action to the root menu
-        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(TAB_SHOT, LEVEL_3))
+        menu.addAction(localization.get_string("ctx_archive"), lambda: opsUIWrappers.prompt_archive(Tab.SHOT, Level.COMPONENT))
         
         # Display the menu at the cursor's global screen position
         menu.exec(self.view.ops_shotComponentScrollList.mapToGlobal(position))

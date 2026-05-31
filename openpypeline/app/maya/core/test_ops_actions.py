@@ -12,6 +12,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import openpypeline.app.maya.core.ops_actions as opsActions
+from openpypeline.core.models import ProjectConfig, ItemContext, Tab
 
 @pytest.mark.parametrize("file_ext, expected_file_type", [
     ("usd", "USD Export"),
@@ -57,11 +58,12 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
 
     with patch('openpypeline.app.maya.core.ops_actions.add_event_note'), patch('openpypeline.app.maya.core.ops_actions.set_custom_notes'):
         # Mode 2 is export selection
-        opsActions.create_new_item(2, "char", "hero", "", 2)
+        context = ItemContext(Tab.ASSET, "char", "hero", "")
+        opsActions.create_new_item(context, 2)
         mock_file_handler.export_file.assert_called_with(f"/dummy/path/item/item_v001.{file_ext}", expected_file_type, selected=True)
         
         # Mode 3 is export all
-        opsActions.create_new_item(2, "char", "hero", "", 3)
+        opsActions.create_new_item(context, 3)
         mock_file_handler.export_file.assert_called_with(f"/dummy/path/item/item_v001.{file_ext}", expected_file_type, selected=False)
 
 
@@ -179,12 +181,30 @@ def test_create_new_project(mock_get_pref, mock_rewrite, mock_get_data, tmp_path
     mock_get_pref.return_value = ""
 
     # 2. Execute the function
-    result = opsActions.create_or_edit_project(
-        mode, old_name, new_name, new_path, new_description, new_status, new_date, new_deadline,
-        new_master_name, new_master_format, new_wip_name, new_wip_format, new_lib_loc,
-        new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc,
-        new_archive_loc, new_deleted_loc, new_users, user_mode
+    config = ProjectConfig(
+        name=new_name,
+        path=new_path,
+        description=new_description,
+        status=new_status,
+        date=new_date,
+        deadline=new_deadline,
+        mastername=new_master_name,
+        masterformat=new_master_format,
+        wipname=new_wip_name,
+        wipformat=new_wip_format,
+        libraryfolder=new_lib_loc,
+        scenesfolder=new_shot_loc,
+        rendersfolder=new_renders_loc,
+        scriptsfolder=new_scripts_loc,
+        texturesfolder=new_textures_loc,
+        particlesfolder=new_particles_loc,
+        archivefolder=new_archive_loc,
+        deletedfolder=new_deleted_loc,
+        users=new_users,
+        userMode=user_mode
     )
+    
+    result = opsActions.create_or_edit_project(mode, old_name, config)
 
     # 3. Assertions (Did it behave correctly?)
     assert result == 1, "Project creation should return 1 for success."
@@ -196,6 +216,6 @@ def test_create_new_project(mock_get_pref, mock_rewrite, mock_get_data, tmp_path
     
     # Verify that it attempted to write the new project to the XML database
     assert mock_rewrite.called
-    written_xml_data = mock_rewrite.call_args[0][0]
-    assert len(written_xml_data) == 1
-    assert f"<name>{new_name}</name>" in written_xml_data[0]
+    written_data = mock_rewrite.call_args[0][0]
+    assert len(written_data) == 1
+    assert written_data[0].get("name") == new_name

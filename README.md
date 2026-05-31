@@ -30,7 +30,7 @@ Planned upcoming features include:
 * Python 3.11+ (Native to modern Maya)
 
 ## 🚀 Installation & Setup
-1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory. Example `/Users/Shared/Autodesk/maya/scripts`
+1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory. Example: `/Users/Shared/Autodesk/maya/scripts`
 2. Open **Autodesk Maya**.
 3. Open the **Script Editor** (Python tab).
 4. Run the following code to initialize the setup UI, replacing the path with your actual installation directory:
@@ -56,6 +56,14 @@ from openpypeline.app.maya.core import ops_loader
 ops_loader.openPypeline()
 ```
 *(Tip: Highlight the snippet above and drag it to a Maya shelf to create a quick-launch button!)*
+
+## ♻️ Upgrading from Legacy openPipeline
+If you are upgrading from the original **openPipeline 1.0** or an earlier alpha version of openPypeline Studio that used XML databases, you can automatically migrate your projects to the new JSON-based backend without any data loss!
+
+1. Launch openPypeline Studio.
+2. Navigate to the top menu: **Tools** > **Add-ons**.
+3. Click **Migrate Legacy XML Data** to convert your `openPipeline_projects.xml` and user databases.
+4. Click **Migrate Legacy Notes** to safely translate all of your item history and custom notes into the modern format.
 
 ## ⚖️ License & Attribution
 **Original Framework:** openPipeline by Kickstand  

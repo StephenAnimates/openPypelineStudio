@@ -21,12 +21,17 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [x] Evaluate and refactor the `ui_objects.py` (formerly `UIObjects.py`) Singleton pattern (Consider an overarching `App` or `Window Manager` class).
 - [x] Consolidate Main UI menus (Added `File`, `Project`, and `Create` menus, reorganized `Tools`).
 - [x] Implement an automatic dynamic Add-on discovery system for drop-in Python tools.
+- [x] Create legacy XML to JSON migration Add-ons (`ops_migrate_legacy_data`, `ops_migrate_legacy_notes`).
 
 ## Phase 3: Core Agnosticism & Backend Decoupling
 - [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
+- [x] Upgrade legacy XML-based project tracking to JSON.
+- [x] Upgrade legacy XML-based history notes to JSON.
 - [ ] Implement a DCC Interface/Adapter pattern (e.g., `core` asks the active `app` adapter to "save file" or "export Alembic").
-- [ ] Upgrade legacy XML-based project tracking to JSON or SQLite for better performance and cross-compatibility.
 - [ ] Implement FBX export/import support alongside USD and Alembic.
+- [x] Implement Data Classes (`ItemContext`, `ProjectConfig`) to replace excessive backend parameters.
+- [x] Replace Magic Numbers (`tab == 2`) and Strings with `Enum` classes for safer type checking.
+- [ ] Transition cross-platform path handling to `pathlib`.
 
 ## Phase 4: Localization & Polish
 - [x] Create a core localization manager (`localization.py`).

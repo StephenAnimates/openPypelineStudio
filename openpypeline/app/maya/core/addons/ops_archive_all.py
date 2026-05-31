@@ -8,6 +8,7 @@ import maya.cmds as cmds
 
 try:
     from .. import ops_info as opsInfo
+    from openpypeline.core.models import ItemContext, Tab
 except ImportError:
     pass
 
@@ -51,26 +52,27 @@ def _process_all_archives(action):
     Helper to iterate through all items and apply an archive action.
     action parameter should be one of: 'archive', 'retrieve', 'delete'
     """
-    tabs = [2, 3]  # Asset library and shot library tabs
+    tabs = [Tab.ASSET, Tab.SHOT]  # Asset library and shot library tabs
     
     for tab in tabs:
-        items1 = opsInfo.get_children(tab, "", "", "")
+        items1 = opsInfo.get_children(ItemContext(tab))
         for level1 in items1:
-            items2 = opsInfo.get_children(tab, level1, "", "")
+            items2 = opsInfo.get_children(ItemContext(tab, level1))
             for level2 in items2:
                 
                 levels_to_process = [(level1, level2, "")]
                 
-                items3 = opsInfo.get_children(tab, level1, level2, "")
+                items3 = opsInfo.get_children(ItemContext(tab, level1, level2))
                 for level3 in items3:
                     levels_to_process.append((level1, level2, level3))
                     
                 for l1, l2, l3 in levels_to_process:
                     try:
                         from .. import ops_actions as opsActions
-                        if action == 'archive': opsActions.archive_item(tab, l1, l2, l3, 1, 1)
-                        elif action == 'retrieve': opsActions.retrieve_archive(tab, l1, l2, l3, 1, 1)
-                        elif action == 'delete': opsActions.remove_archive(tab, l1, l2, l3)
+                        context = ItemContext(tab, l1, l2, l3)
+                        if action == 'archive': opsActions.archive_item(context, 1, 1)
+                        elif action == 'retrieve': opsActions.retrieve_archive(context, 1, 1)
+                        elif action == 'delete': opsActions.remove_archive(context)
                     except Exception as e:
                         cmds.warning(f"Archive Add-on error: {e}")
     

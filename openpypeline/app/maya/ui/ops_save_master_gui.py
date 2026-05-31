@@ -2,7 +2,7 @@
 Module: ops_save_master_gui.py
 
 Description:
-    Launches the UI for Mastering
+    Launches the UI for Mastering.
     
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
@@ -10,6 +10,7 @@ License: Common Public License 1.0 (CPL-1.0)
 
 from PySide6 import QtWidgets, QtCore
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
+from openpypeline.core.localization import localization
 
 # --- UI Stylesheet ---
 OPS_SAVE_MASTER_STYLESHEET = """
@@ -27,7 +28,7 @@ class opsSaveMasterGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         
         self.mName = "Master"
         
-        self.setWindowTitle("Master File Switchboard")
+        self.setWindowTitle(localization.get_string("win_masterSwitchboard"))
         self.setObjectName("opsSaveMasterGUI")
         self.setMinimumSize(350, 260)
         self.setWindowFlags(QtCore.Qt.Window)
@@ -42,25 +43,25 @@ class opsSaveMasterGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         main_layout.setSpacing(10)
         
         # --- Options Section ---
-        options_group = QtWidgets.QGroupBox("Options")
+        options_group = QtWidgets.QGroupBox(localization.get_string("grp_options"))
         options_layout = QtWidgets.QVBoxLayout(options_group)
         
-        self.masterImportReferencesBox_checkBox = QtWidgets.QCheckBox("Import References")
+        self.masterImportReferencesBox_checkBox = QtWidgets.QCheckBox(localization.get_string("chk_importReferences"))
         self.masterImportReferencesBox_checkBox.setChecked(True)
-        self.masterDeleteLayersBox_checkBox = QtWidgets.QCheckBox("Delete Display Layers")
+        self.masterDeleteLayersBox_checkBox = QtWidgets.QCheckBox(localization.get_string("chk_deleteDisplayLayers"))
         self.masterDeleteLayersBox_checkBox.setChecked(True)
         
         options_layout.addWidget(self.masterImportReferencesBox_checkBox)
         options_layout.addWidget(self.masterDeleteLayersBox_checkBox)
         
         after_layout = QtWidgets.QHBoxLayout()
-        after_layout.addWidget(QtWidgets.QLabel("After Master Open:"))
+        after_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_afterMasterOpen")))
         
         self.after_radio_group = QtWidgets.QButtonGroup(self)
-        self.radio_workshop = QtWidgets.QRadioButton("WIP")
+        self.radio_workshop = QtWidgets.QRadioButton(localization.get_string("rad_wip"))
         self.radio_workshop.setChecked(True)  # Default selection (1)
-        self.radio_master = QtWidgets.QRadioButton("Master")
-        self.radio_new = QtWidgets.QRadioButton("New")
+        self.radio_master = QtWidgets.QRadioButton(localization.get_string("rad_master"))
+        self.radio_new = QtWidgets.QRadioButton(localization.get_string("rad_new"))
         
         self.after_radio_group.addButton(self.radio_workshop, 1)
         self.after_radio_group.addButton(self.radio_master, 2)
@@ -75,20 +76,20 @@ class opsSaveMasterGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         main_layout.addWidget(options_group)
 
         # --- Tracker Section ---
-        self.tracker_group = QtWidgets.QGroupBox("Production Tracking")
+        self.tracker_group = QtWidgets.QGroupBox(localization.get_string("grp_productionTracking"))
         tracker_layout = QtWidgets.QFormLayout(self.tracker_group)
         self.task_combo = QtWidgets.QComboBox()
-        tracker_layout.addRow("Select Task:", self.task_combo)
+        tracker_layout.addRow(localization.get_string("lbl_selectTask"), self.task_combo)
         main_layout.addWidget(self.tracker_group)
 
         # --- Command & Comment Section ---
         cmd_layout = QtWidgets.QFormLayout()
         self.ops_masterCommandField_txtField = QtWidgets.QLineEdit()
-        cmd_layout.addRow(f"Custom {self.mName} Command:", self.ops_masterCommandField_txtField)
+        cmd_layout.addRow(localization.get_string("lbl_customCommand").format(self.mName), self.ops_masterCommandField_txtField)
         
         self.ops_masterCommentField_scrollField = QtWidgets.QTextEdit()
         self.ops_masterCommentField_scrollField.setMaximumHeight(60)
-        cmd_layout.addRow("Comment:", self.ops_masterCommentField_scrollField)
+        cmd_layout.addRow(localization.get_string("lbl_comment"), self.ops_masterCommentField_scrollField)
         
         main_layout.addLayout(cmd_layout)
 
@@ -98,7 +99,7 @@ class opsSaveMasterGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         self.ops_masterCallback_btn.setProperty("styleClass", "masterBtn")
         self.ops_masterCallback_btn.setMinimumHeight(35)
         
-        self.cancel_btn = QtWidgets.QPushButton("Cancel")
+        self.cancel_btn = QtWidgets.QPushButton(localization.get_string("btn_cancel"))
         self.cancel_btn.setMinimumHeight(35)
         
         btn_layout.addWidget(self.ops_masterCallback_btn)

@@ -14,6 +14,7 @@ from . import ui_objects as UIObjects
 from ..core import ops_ui_wrappers as opsUIWrappers
 from ..core import ops_actions as opsActions
 from openpypeline.core.util import prefs
+from openpypeline.core.localization import localization
 from .ops_save_master_gui import opsSaveMasterGUI
 
 # --- Async Worker ---
@@ -65,7 +66,7 @@ class OpsSaveMasterController(QtCore.QObject):
 
     def _populate_tasks(self):
         """Fetches and populates the user's tasks from the active tracker asynchronously."""
-        self.view.task_combo.addItem("Loading tasks...", 0)
+        self.view.task_combo.addItem(localization.get_string("msg_loadingTasks"), 0)
         self.view.task_combo.setEnabled(False)
         
         tracker_type = prefs.get_pref("ops_tracker_type", "none")
@@ -75,7 +76,7 @@ class OpsSaveMasterController(QtCore.QObject):
             
         username = prefs.get_pref("ops_tracker_user", "")
         if not username:
-            self.view.task_combo.setItemText(0, "No User Configured")
+            self.view.task_combo.setItemText(0, localization.get_string("msg_noUserConfigured"))
             return
             
         url = prefs.get_pref("ops_tracker_url", "")
@@ -101,26 +102,28 @@ class OpsSaveMasterController(QtCore.QObject):
 
     def _on_tasks_loaded(self, tasks):
         self.view.task_combo.clear()
-        self.view.task_combo.addItem("None", 0)
+        self.view.task_combo.addItem(localization.get_string("lbl_none"), 0)
         self.view.task_combo.setEnabled(True)
         if not tasks:
-            self.view.task_combo.setItemText(0, "No Tasks Found")
+            self.view.task_combo.setItemText(0, localization.get_string("msg_noTasksFound"))
             return
             
         for task in tasks:
-            entity_name = task.get("entity", {}).get("name", "Unknown") if task.get("entity") else "Unknown"
-            task_name = task.get("content", "Unknown Task")
+            unknown_val = localization.get_string("msg_unknown")
+            unknown_task = localization.get_string("msg_unknownTask")
+            entity_name = task.get("entity", {}).get("name", unknown_val) if task.get("entity") else unknown_val
+            task_name = task.get("content", unknown_task)
             task_id = task.get("id", 0)
             display_str = f"{entity_name} - {task_name}"
             self.view.task_combo.addItem(display_str, task_id)
 
     def _on_tasks_error(self, err_msg):
         self.view.task_combo.clear()
-        self.view.task_combo.addItem("None", 0)
+        self.view.task_combo.addItem(localization.get_string("lbl_none"), 0)
         if err_msg == "No tracker":
             self.view.tracker_group.setEnabled(False)
         else:
-            self.view.task_combo.setItemText(0, "Error loading tasks")
+            self.view.task_combo.setItemText(0, localization.get_string("msg_errorLoadingTasks"))
 
     def on_save(self, *args):
         """Handles the master save execution."""

@@ -19,6 +19,7 @@ from ..core import ops_info as opsInfo
 from ..core import ops_utils as opsUtils
 from ..core import ops_actions as opsActions
 from ..core import ops_ui_wrappers as opsUIWrappers
+from openpypeline.core.models import ProjectConfig
 from .ops_proj_dialog_gui import opsProjDialogGUI
 from openpypeline.core.localization import localization
 
@@ -90,7 +91,7 @@ class OpsProjDialogController(QtCore.QObject):
     def _validate_folder_field(self, text, line_edit):
         if '\\' in text:
             text = text.replace('\\', '/')
-            self._show_warning("Backslashes converted to forward slashes.")
+            self._show_warning(localization.get_string("msg_warnBackslashes"))
         self._apply_validation(text, line_edit, r'[^a-zA-Z0-9_/]')
         
     def _apply_validation(self, text, line_edit, regex_pattern):
@@ -99,12 +100,12 @@ class OpsProjDialogController(QtCore.QObject):
         
         if ' ' in text:
             text = text.replace(' ', '_')
-            warning_msg = "Spaces are not allowed. Replaced with underscores."
+            warning_msg = localization.get_string("msg_warnSpaces")
             
         filtered_text = re.sub(regex_pattern, '', text)
         if filtered_text != text:
             text = filtered_text
-            warning_msg = "Special characters are not allowed and were removed."
+            warning_msg = localization.get_string("msg_warnSpecialChars")
             
         if text != original_text:
             cursor_pos = line_edit.cursorPosition()
@@ -116,7 +117,7 @@ class OpsProjDialogController(QtCore.QObject):
             self._show_warning(warning_msg)
 
     def _browse_directory(self, line_edit, append_proj_name=False):
-        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self.view, "Select Location")
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self.view, localization.get_string("win_selectLocation"))
         if dir_path:
             if append_proj_name:
                 proj_name = self.view.proj_name_field.text().strip()
@@ -162,11 +163,11 @@ class OpsProjDialogController(QtCore.QObject):
     def _select_custom_users(self):
         users = opsProject.get_users()
         dialog = QtWidgets.QDialog(self.view)
-        dialog.setWindowTitle("Set Project Users")
+        dialog.setWindowTitle(localization.get_string("win_setProjectUsers"))
         dialog.setMinimumSize(300, 240)
         layout = QtWidgets.QVBoxLayout(dialog)
 
-        layout.addWidget(QtWidgets.QLabel("Select users to add to project:"))
+        layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_selectUsersToAdd")))
         list_widget = QtWidgets.QListWidget()
         list_widget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         list_widget.addItems(users)
@@ -179,9 +180,9 @@ class OpsProjDialogController(QtCore.QObject):
                 item.setSelected(True)
 
         btn_layout = QtWidgets.QHBoxLayout()
-        set_btn = QtWidgets.QPushButton("Set Users")
-        edit_btn = QtWidgets.QPushButton("Edit Global Users")
-        cancel_btn = QtWidgets.QPushButton("Cancel")
+        set_btn = QtWidgets.QPushButton(localization.get_string("btn_setUsers"))
+        edit_btn = QtWidgets.QPushButton(localization.get_string("btn_editGlobalUsers"))
+        cancel_btn = QtWidgets.QPushButton(localization.get_string("btn_cancel"))
 
         def on_set():
             selected = [item.text() for item in list_widget.selectedItems()]
@@ -205,35 +206,35 @@ class OpsProjDialogController(QtCore.QObject):
         self.view.deadline_field.setText(date_str)
         
         if self.mode == 1 and self.old_name:
-            proj_xml = opsProject.get_single_project_xml(self.old_name)
-            if proj_xml:
-                self.view.proj_name_field.setText(opsUtils.get_xml_data(proj_xml, "name"))
-                self.view.proj_path_field.setText(opsUtils.get_xml_data(proj_xml, "path"))
-                self.view.desc_field.setText(opsUtils.get_xml_data(proj_xml, "description"))
-                self.view.creation_date_field.setText(opsUtils.get_xml_data(proj_xml, "date"))
-                self.view.deadline_field.setText(opsUtils.get_xml_data(proj_xml, "deadline"))
+            proj = opsProject.get_project(self.old_name)
+            if proj:
+                self.view.proj_name_field.setText(proj.get("name", ""))
+                self.view.proj_path_field.setText(proj.get("path", ""))
+                self.view.desc_field.setText(proj.get("description", ""))
+                self.view.creation_date_field.setText(proj.get("date", ""))
+                self.view.deadline_field.setText(proj.get("deadline", ""))
                 
-                self.view.asset_lib_field.setText(opsUtils.get_xml_data(proj_xml, "libraryfolder"))
-                self.view.shot_lib_field.setText(opsUtils.get_xml_data(proj_xml, "scenesfolder"))
-                self.view.archive_field.setText(opsUtils.get_xml_data(proj_xml, "archivefolder"))
-                self.view.deleted_field.setText(opsUtils.get_xml_data(proj_xml, "deletedfolder"))
-                self.view.renders_field.setText(opsUtils.get_xml_data(proj_xml, "rendersfolder"))
-                self.view.particles_field.setText(opsUtils.get_xml_data(proj_xml, "particlesfolder"))
-                self.view.textures_field.setText(opsUtils.get_xml_data(proj_xml, "texturesfolder"))
-                self.view.scripts_field.setText(opsUtils.get_xml_data(proj_xml, "scriptsfolder"))
+                self.view.asset_lib_field.setText(proj.get("libraryfolder", ""))
+                self.view.shot_lib_field.setText(proj.get("scenesfolder", ""))
+                self.view.archive_field.setText(proj.get("archivefolder", ""))
+                self.view.deleted_field.setText(proj.get("deletedfolder", ""))
+                self.view.renders_field.setText(proj.get("rendersfolder", ""))
+                self.view.particles_field.setText(proj.get("particlesfolder", ""))
+                self.view.textures_field.setText(proj.get("texturesfolder", ""))
+                self.view.scripts_field.setText(proj.get("scriptsfolder", ""))
                 
-                self.view.master_name_field.setText(opsUtils.get_xml_data(proj_xml, "mastername"))
-                self.view.master_format_combo.setCurrentText(opsUtils.get_xml_data(proj_xml, "masterformat"))
-                self.view.wip_name_field.setText(opsUtils.get_xml_data(proj_xml, "wipname"))
-                self.view.wip_format_combo.setCurrentText(opsUtils.get_xml_data(proj_xml, "wipformat"))
+                self.view.master_name_field.setText(proj.get("mastername", ""))
+                self.view.master_format_combo.setCurrentText(proj.get("masterformat", ""))
+                self.view.wip_name_field.setText(proj.get("wipname", ""))
+                self.view.wip_format_combo.setCurrentText(proj.get("wipformat", ""))
                 
-                status = int(opsUtils.get_xml_data(proj_xml, "status") or 1)
+                status = int(proj.get("status") or 1)
                 self.view.status_combo.setCurrentIndex(1 - status)
                 
-                user_mode = int(opsUtils.get_xml_data(proj_xml, "userMode") or 0)
+                user_mode = int(proj.get("userMode") or 0)
                 self.view.custom_users_chk.setChecked(bool(user_mode))
                 
-                curr_users = opsUtils.get_xml_data(proj_xml, "users")
+                curr_users = proj.get("users", "")
                 if curr_users:
                     global_users = opsProject.get_users()
                     valid_users = [u for u in curr_users.split(",") if u in global_users]
@@ -283,12 +284,30 @@ class OpsProjDialogController(QtCore.QObject):
         new_users = self.view.custom_users_field.text().strip()
         user_mode = "1" if self.view.custom_users_chk.isChecked() else "0"
         
-        result = opsActions.create_or_edit_project(
-            self.mode, self.old_name, new_name, new_path, new_description, new_status, new_date, new_deadline,
-            new_master_name, new_master_format, new_wip_name, new_wip_format, new_lib_loc,
-            new_shot_loc, new_renders_loc, new_scripts_loc, new_textures_loc, new_particles_loc,
-            new_archive_loc, new_deleted_loc, new_users, user_mode
+        config = ProjectConfig(
+            name=new_name,
+            path=new_path,
+            description=new_description,
+            status=new_status,
+            date=new_date,
+            deadline=new_deadline,
+            mastername=new_master_name,
+            masterformat=new_master_format,
+            wipname=new_wip_name,
+            wipformat=new_wip_format,
+            libraryfolder=new_lib_loc,
+            scenesfolder=new_shot_loc,
+            rendersfolder=new_renders_loc,
+            scriptsfolder=new_scripts_loc,
+            texturesfolder=new_textures_loc,
+            particlesfolder=new_particles_loc,
+            archivefolder=new_archive_loc,
+            deletedfolder=new_deleted_loc,
+            users=new_users,
+            userMode=user_mode
         )
+        
+        result = opsActions.create_or_edit_project(self.mode, self.old_name, config)
         
         if result:
             self.view.close()

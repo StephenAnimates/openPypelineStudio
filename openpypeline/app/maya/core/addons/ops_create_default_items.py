@@ -6,6 +6,11 @@ Description: openPypeline "Create Default Items" add-on refactored to Python.
 
 import maya.cmds as cmds
 
+try:
+    from openpypeline.core.models import ItemContext, Tab
+except ImportError:
+    pass
+
 ADDON_NAME = "Create Default Items"
 
 def run():
@@ -28,45 +33,46 @@ def run():
     # Format: (tab, level1, level2, level3, force)
     default_items = [
         # Assets
-        (2, "characters", "man", "model", 1),
-        (2, "characters", "man", "rig", 1),
-        (2, "characters", "woman", "model", 1),
-        (2, "characters", "woman", "rig", 1),
-        (2, "characters", "dog", "model", 1),
-        (2, "characters", "dog", "rig", 1),
-        (2, "props", "chair", "model", 1),
-        (2, "props", "chair", "rig", 1),
-        (2, "props", "fork", "model", 1),
-        (2, "props", "knife", "model", 1),
-        (2, "props", "spoon", "model", 1),
-        (2, "props", "cup", "model", 1),
-        (2, "scenery", "kitchen", "model", 1),
-        (2, "scenery", "livingRoom", "model", 1),
-        (2, "scenery", "street", "model", 1),
-        (2, "miscellaneous", "waterTests", "test1", 1),
-        (2, "miscellaneous", "waterTests", "test2", 1),
+        (Tab.ASSET, "characters", "man", "model", 1),
+        (Tab.ASSET, "characters", "man", "rig", 1),
+        (Tab.ASSET, "characters", "woman", "model", 1),
+        (Tab.ASSET, "characters", "woman", "rig", 1),
+        (Tab.ASSET, "characters", "dog", "model", 1),
+        (Tab.ASSET, "characters", "dog", "rig", 1),
+        (Tab.ASSET, "props", "chair", "model", 1),
+        (Tab.ASSET, "props", "chair", "rig", 1),
+        (Tab.ASSET, "props", "fork", "model", 1),
+        (Tab.ASSET, "props", "knife", "model", 1),
+        (Tab.ASSET, "props", "spoon", "model", 1),
+        (Tab.ASSET, "props", "cup", "model", 1),
+        (Tab.ASSET, "scenery", "kitchen", "model", 1),
+        (Tab.ASSET, "scenery", "livingRoom", "model", 1),
+        (Tab.ASSET, "scenery", "street", "model", 1),
+        (Tab.ASSET, "miscellaneous", "waterTests", "test1", 1),
+        (Tab.ASSET, "miscellaneous", "waterTests", "test2", 1),
         # Shots
-        (3, "01", "01", "animation", 1),
-        (3, "01", "01", "lighting", 1),
-        (3, "01", "01", "effects", 1),
-        (3, "01", "02", "animation", 1),
-        (3, "01", "02", "lighting", 1),
-        (3, "02", "01", "animation", 1),
-        (3, "02", "01", "lighting", 1),
-        (3, "02", "02", "animation", 1),
-        (3, "02", "02", "lighting", 1),
-        (3, "02", "02", "effects", 1),
-        (3, "02", "03", "animation", 1),
-        (3, "02", "03", "lighting", 1),
-        (3, "02", "04", "animation", 1),
-        (3, "02", "04", "lighting", 1),
+        (Tab.SHOT, "01", "01", "animation", 1),
+        (Tab.SHOT, "01", "01", "lighting", 1),
+        (Tab.SHOT, "01", "01", "effects", 1),
+        (Tab.SHOT, "01", "02", "animation", 1),
+        (Tab.SHOT, "01", "02", "lighting", 1),
+        (Tab.SHOT, "02", "01", "animation", 1),
+        (Tab.SHOT, "02", "01", "lighting", 1),
+        (Tab.SHOT, "02", "02", "animation", 1),
+        (Tab.SHOT, "02", "02", "lighting", 1),
+        (Tab.SHOT, "02", "02", "effects", 1),
+        (Tab.SHOT, "02", "03", "animation", 1),
+        (Tab.SHOT, "02", "03", "lighting", 1),
+        (Tab.SHOT, "02", "04", "animation", 1),
+        (Tab.SHOT, "02", "04", "lighting", 1),
     ]
 
     for item in default_items:
         tab, level1, level2, level3, force = item
         try:
             from .. import ops_actions as opsActions
-            opsActions.create_new_item(tab, level1, level2, level3, force)
+            context = ItemContext(tab, level1, level2, level3)
+            opsActions.create_new_item(context, force)
         except Exception as e:
             cmds.warning(f"Create Default Items Add-on error: {e}")
 

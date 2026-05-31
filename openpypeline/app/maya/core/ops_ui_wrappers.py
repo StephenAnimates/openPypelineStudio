@@ -13,6 +13,7 @@ Status: Fully migrated to PySide6. UI components are now native Qt widgets and D
 import os
 import webbrowser
 from PySide6 import QtWidgets, QtCore, QtGui
+from openpypeline.core.models import ItemContext, Tab, Level
 from . import ops_info as opsInfo
 from . import ops_actions as opsActions
 from ..ui import ui_objects as UIObjects
@@ -153,9 +154,9 @@ def update_working_tab(index=0, *args):
 def update_asset_type_list(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(2, 1)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.TYPE_OR_SEQUENCE)
     ui.ops_assetType_txtScrollList.clear()
-    types = sorted(opsInfo.get_children(2, "", "", ""))
+    types = sorted(opsInfo.get_children(ItemContext(Tab.ASSET)))
     prefs.set_pref("ops_assetTypes", types)
     for t in types:
         ui.ops_assetType_txtScrollList.addItem(t)
@@ -169,7 +170,7 @@ def update_asset_list(preserve_selection=1, *args):
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
-    selected = opsInfo.get_currently_selected_item(2, 2)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.ASSET_OR_SHOT)
     
     ui.ops_asset_scrollList.clear()
     active = False
@@ -178,15 +179,16 @@ def update_asset_list(preserve_selection=1, *args):
     wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if selected[0]:
-        assets = sorted(opsInfo.get_children(2, selected[0], "", ""))
+        assets = sorted(opsInfo.get_children(ItemContext(Tab.ASSET, selected[0])))
         for asset in assets:
             active = True
             assets_list.append(asset)
             
             item = QtWidgets.QListWidgetItem(asset)
-            is_open = (opsInfo.get_file_name(2, selected[0], asset, "", "folder") == opsInfo.get_currently_open_path())
-            has_master = opsInfo.has_master(2, selected[0], asset, "")
-            has_wip = opsInfo.has_wip(2, selected[0], asset, "")
+            context = ItemContext(Tab.ASSET, selected[0], asset)
+            is_open = (opsInfo.get_file_name(context, "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(context)
+            has_wip = opsInfo.has_wip(context)
             
             if is_open:
                 font = item.font()
@@ -221,7 +223,7 @@ def asset_selected(preserve_selection=1, *args):
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
-    selected = opsInfo.get_currently_selected_item(2, 3)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
     
     ui.ops_componentScrollList.clear()
     is_selected = bool(selected[1])
@@ -235,15 +237,16 @@ def asset_selected(preserve_selection=1, *args):
     wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if is_selected:
-        components = sorted(opsInfo.get_children(2, selected[0], selected[1], ""))
+        components = sorted(opsInfo.get_children(ItemContext(Tab.ASSET, selected[0], selected[1])))
         for comp in components:
             active = True
             comp_list.append(comp)
             
             item = QtWidgets.QListWidgetItem(comp)
-            is_open = (opsInfo.get_file_name(2, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path())
-            has_master = opsInfo.has_master(2, selected[0], selected[1], comp)
-            has_wip = opsInfo.has_wip(2, selected[0], selected[1], comp)
+            context = ItemContext(Tab.ASSET, selected[0], selected[1], comp)
+            is_open = (opsInfo.get_file_name(context, "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(context)
+            has_wip = opsInfo.has_wip(context)
             
             if is_open:
                 font = item.font()
@@ -275,7 +278,7 @@ def asset_selected(preserve_selection=1, *args):
 def component_selected(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(2, 3)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
     is_selected = bool(selected[2])
     ui.ops_componentRemoveButton.setEnabled(is_selected)
     asset_information()
@@ -287,9 +290,9 @@ def component_selected(*args):
 def update_sequence_list(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(3, 1)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.TYPE_OR_SEQUENCE)
     ui.ops_sequenceScrollList.clear()
-    seqs = sorted(opsInfo.get_children(3, "", "", ""))
+    seqs = sorted(opsInfo.get_children(ItemContext(Tab.SHOT)))
     prefs.set_pref("ops_sequences", seqs)
     for seq in seqs:
         ui.ops_sequenceScrollList.addItem(seq)
@@ -303,7 +306,7 @@ def update_shot_list(preserve_selection=1, *args):
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
-    selected = opsInfo.get_currently_selected_item(3, 2)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.ASSET_OR_SHOT)
     ui.ops_shotScrollList.clear()
     active = False
     shots_list = []
@@ -311,15 +314,16 @@ def update_shot_list(preserve_selection=1, *args):
     wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if selected[0]:
-        shots = sorted(opsInfo.get_children(3, selected[0], "", ""))
+        shots = sorted(opsInfo.get_children(ItemContext(Tab.SHOT, selected[0])))
         for shot in shots:
             active = True
             shots_list.append(shot)
             
             item = QtWidgets.QListWidgetItem(shot)
-            is_open = (opsInfo.get_file_name(3, selected[0], shot, "", "folder") == opsInfo.get_currently_open_path())
-            has_master = opsInfo.has_master(3, selected[0], shot, "")
-            has_wip = opsInfo.has_wip(3, selected[0], shot, "")
+            context = ItemContext(Tab.SHOT, selected[0], shot)
+            is_open = (opsInfo.get_file_name(context, "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(context)
+            has_wip = opsInfo.has_wip(context)
             
             if is_open:
                 font = item.font()
@@ -354,7 +358,7 @@ def shot_selected(preserve_selection=1, *args):
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
-    selected = opsInfo.get_currently_selected_item(3, 3)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
     ui.ops_shotComponentScrollList.clear()
     is_selected = bool(selected[1])
     
@@ -367,15 +371,16 @@ def shot_selected(preserve_selection=1, *args):
     wip_icon = QtGui.QIcon(_get_resource("icons", "ops_icon_wip.png"))
     
     if is_selected:
-        components = sorted(opsInfo.get_children(3, selected[0], selected[1], ""))
+        components = sorted(opsInfo.get_children(ItemContext(Tab.SHOT, selected[0], selected[1])))
         for comp in components:
             active = True
             s_comp_list.append(comp)
             
             item = QtWidgets.QListWidgetItem(comp)
-            is_open = (opsInfo.get_file_name(3, selected[0], selected[1], comp, "folder") == opsInfo.get_currently_open_path())
-            has_master = opsInfo.has_master(3, selected[0], selected[1], comp)
-            has_wip = opsInfo.has_wip(3, selected[0], selected[1], comp)
+            context = ItemContext(Tab.SHOT, selected[0], selected[1], comp)
+            is_open = (opsInfo.get_file_name(context, "folder") == opsInfo.get_currently_open_path())
+            has_master = opsInfo.has_master(context)
+            has_wip = opsInfo.has_wip(context)
             
             if is_open:
                 font = item.font()
@@ -407,7 +412,7 @@ def shot_selected(preserve_selection=1, *args):
 def shot_component_selected(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(3, 3)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
     is_selected = bool(selected[2])
     ui.ops_shotComponentRemoveButton.setEnabled(is_selected)
     shot_information()
@@ -419,20 +424,21 @@ def shot_component_selected(*args):
 def asset_information(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(2, 3)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
+    context = ItemContext(Tab.ASSET, selected[0], selected[1], selected[2])
     preview_file = _get_resource("images", "ops_default_preview.png")
     output_text = ""
     
     if selected[1]:
-        thumb = opsInfo.get_thumbnail(2, selected[0], selected[1], selected[2])
+        thumb = opsInfo.get_thumbnail(context)
         if os.path.isfile(thumb): preview_file = thumb
         else: preview_file = _get_resource("images", "ops_no_preview.png")
-        output_text = opsInfo.get_custom_notes(2, selected[0], selected[1], selected[2])
-        ui.ops_assetViewPlayblastAssetButton.setEnabled(opsInfo.has_playblast(2, selected[0], selected[1], selected[2]))
+        output_text = opsInfo.get_custom_notes(context)
+        ui.ops_assetViewPlayblastAssetButton.setEnabled(opsInfo.has_playblast(context))
     else:
         ui.ops_assetViewPlayblastAssetButton.setEnabled(False)
         
-    folder = opsInfo.get_file_name(2, selected[0], selected[1], selected[2], "folder")
+    folder = opsInfo.get_file_name(context, "folder")
     ui.ops_assetLocationField.setText(folder)
     ui.ops_assetNoteField.setPlainText(output_text)
     ui.ops_assetPreviewImage.setPixmap(QtGui.QPixmap(preview_file))
@@ -441,20 +447,21 @@ def asset_information(*args):
 def shot_information(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(3, 3)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
+    context = ItemContext(Tab.SHOT, selected[0], selected[1], selected[2])
     preview_file = _get_resource("images", "ops_default_preview.png")
     output_text = ""
     
     if selected[1]:
-        thumb = opsInfo.get_thumbnail(3, selected[0], selected[1], selected[2])
+        thumb = opsInfo.get_thumbnail(context)
         if os.path.isfile(thumb): preview_file = thumb
         else: preview_file = _get_resource("images", "ops_no_preview.png")
-        output_text = opsInfo.get_custom_notes(3, selected[0], selected[1], selected[2])
-        ui.ops_shotViewPlayblastButton.setEnabled(opsInfo.has_playblast(3, selected[0], selected[1], selected[2]))
+        output_text = opsInfo.get_custom_notes(context)
+        ui.ops_shotViewPlayblastButton.setEnabled(opsInfo.has_playblast(context))
     else:
         ui.ops_shotViewPlayblastButton.setEnabled(False)
         
-    folder = opsInfo.get_file_name(3, selected[0], selected[1], selected[2], "folder")
+    folder = opsInfo.get_file_name(context, "folder")
     ui.ops_shotLocationField.setText(folder)
     ui.ops_shotInfoField.setPlainText(output_text)
     ui.ops_shotPreviewImage.setPixmap(QtGui.QPixmap(preview_file))
@@ -463,16 +470,18 @@ def shot_information(*args):
 def load_asset_history(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(2, 3)
-    history_text = opsInfo.get_event_notes(2, selected[0], selected[1], selected[2])
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
+    context = ItemContext(Tab.ASSET, selected[0], selected[1], selected[2])
+    history_text = opsInfo.get_event_notes(context)
     ui.ops_commentField.setPlainText(history_text)
     
 
 def load_shot_history(*args):
     ui = _get_ui()
     if not ui: return
-    selected = opsInfo.get_currently_selected_item(3, 3)
-    history_text = opsInfo.get_event_notes(3, selected[0], selected[1], selected[2])
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
+    context = ItemContext(Tab.SHOT, selected[0], selected[1], selected[2])
+    history_text = opsInfo.get_event_notes(context)
     ui.ops_shotCommentField.setPlainText(history_text)
     
 
@@ -494,32 +503,32 @@ def clear_current_history(*args):
 
 
 def open_currently_selected(tab, level, item_type, version_offset=0, *args):
-    levels = opsInfo.get_currently_selected_item(tab, level)
-    if opsActions.open_item(item_type, tab, levels[0], levels[1], levels[2], version_offset):
+    context = opsInfo.get_current_context(tab, level)
+    if opsActions.open_item(context, item_type, version_offset):
         ui = _get_ui()
         if ui: ui.ops_mainTabs_tabLayout.setCurrentIndex(2)
         refresh_ui()
 
 
 def import_selected(tab, level, item_type, *args):
-    levels = opsInfo.get_currently_selected_item(tab, level)
-    opsActions.import_item(item_type, tab, levels[0], levels[1], levels[2], "")
+    context = opsInfo.get_current_context(tab, level)
+    opsActions.import_item(context, item_type, "")
 
 
 def reference_selected(tab, level, item_type, *args):
-    levels = opsInfo.get_currently_selected_item(tab, level)
-    opsActions.reference_item(item_type, tab, levels[0], levels[1], levels[2], "")
+    context = opsInfo.get_current_context(tab, level)
+    opsActions.reference_item(context, item_type, "")
 
 
 def remove_process(tab, depth, *args):
-    levels = opsInfo.get_currently_selected_item(tab, depth)
-    if opsActions.remove_item(tab, levels[0], levels[1], levels[2]):
+    context = opsInfo.get_current_context(tab, depth)
+    if opsActions.remove_item(context):
         refresh_ui()
 
 
 def explore_selected(tab, *args):
-    levels = opsInfo.get_currently_selected_item(tab, 3)
-    opsActions.open_location(tab, levels[0], levels[1], levels[2])
+    context = opsInfo.get_current_context(tab, 3)
+    opsActions.open_location(context)
 
 
 def explore_current(*args):
@@ -527,12 +536,13 @@ def explore_current(*args):
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
-    opsActions.open_location(tab, level1, level2, level3)
+    context = ItemContext(tab, level1, level2, level3)
+    opsActions.open_location(context)
 
 
 def view_playblast_selected(tab, *args):
-    levels = opsInfo.get_currently_selected_item(tab, 3)
-    opsActions.view_playblast(tab, levels[0], levels[1], levels[2])
+    context = opsInfo.get_current_context(tab, 3)
+    opsActions.view_playblast(context)
 
 
 def view_playblast_current(*args):
@@ -540,7 +550,8 @@ def view_playblast_current(*args):
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
-    opsActions.view_playblast(tab, level1, level2, level3)
+    context = ItemContext(tab, level1, level2, level3)
+    opsActions.view_playblast(context)
 
 
 def record_current_playblast(*args):
@@ -548,7 +559,8 @@ def record_current_playblast(*args):
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
-    opsActions.record_playblast(tab, level1, level2, level3)
+    context = ItemContext(tab, level1, level2, level3)
+    opsActions.record_playblast(context)
     refresh_ui()
 
 
@@ -557,7 +569,8 @@ def take_snapshot(*args):
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
-    img = opsActions.create_thumbnail(tab, level1, level2, level3)
+    context = ItemContext(tab, level1, level2, level3)
+    img = opsActions.create_thumbnail(context)
     if os.path.isfile(img):
         ui = _get_ui()
         if ui: ui.ops_currOpenPreview_img.setPixmap(QtGui.QPixmap(img))
@@ -570,8 +583,9 @@ def save_note(*args):
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
     level3 = prefs.get_pref("ops_currOpenLevel3", "")
+    context = ItemContext(tab, level1, level2, level3)
     text = ui.ops_currOpen_scrollField.toPlainText()
-    opsActions.set_custom_notes(tab, level1, level2, level3, text)
+    opsActions.set_custom_notes(context, text)
     ui.ops_currOpenSaveNote_btn.setEnabled(False)
 
 
@@ -644,7 +658,8 @@ def prompt_new_asset_type(*args):
         return
     name, ok = QtWidgets.QInputDialog.getText(ui, "New Asset Type", "Asset Type Name\n(no spaces or special characters):")
     if ok and name.strip():
-        if opsActions.create_new_item(2, name.strip(), "", "", 0): refresh_ui()
+        context = ItemContext(Tab.ASSET, name.strip())
+        if opsActions.create_new_item(context, 0): refresh_ui()
 
 
 def prompt_new_sequence(*args):
@@ -654,17 +669,19 @@ def prompt_new_sequence(*args):
         return
     name, ok = QtWidgets.QInputDialog.getText(ui, "New Sequence", "Sequence Name\n(no spaces or special characters):")
     if ok and name.strip():
-        if opsActions.create_new_item(3, name.strip(), "", "", 0): refresh_ui()
+        context = ItemContext(Tab.SHOT, name.strip())
+        if opsActions.create_new_item(context, 0): refresh_ui()
 
 
 def prompt_new_asset(*args):
     ui = _get_ui()
-    selected = opsInfo.get_currently_selected_item(2, 1)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.TYPE_OR_SEQUENCE)
     if not selected[0]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Asset Type selected.")
         return
     def _create(mode, name):
-        if opsActions.create_new_item(2, selected[0], name, "", mode):
+        context = ItemContext(Tab.ASSET, selected[0], name)
+        if opsActions.create_new_item(context, mode):
             refresh_ui()
     dlg = ItemCreationDialog(ui, "Create New Asset", "Asset Name (no spaces or special chars):", _create)
     ui.active_dialog = dlg
@@ -673,12 +690,13 @@ def prompt_new_asset(*args):
 
 def prompt_new_asset_component(*args):
     ui = _get_ui()
-    selected = opsInfo.get_currently_selected_item(2, 2)
+    selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.ASSET_OR_SHOT)
     if not selected[1]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Asset selected.")
         return
     def _create(mode, name):
-        if opsActions.create_new_item(2, selected[0], selected[1], name, mode):
+        context = ItemContext(Tab.ASSET, selected[0], selected[1], name)
+        if opsActions.create_new_item(context, mode):
             refresh_ui()
     dlg = ItemCreationDialog(ui, "Create New Component", "Component Name (no spaces or special chars):", _create)
     ui.active_dialog = dlg
@@ -687,12 +705,13 @@ def prompt_new_asset_component(*args):
 
 def prompt_new_shot(*args):
     ui = _get_ui()
-    selected = opsInfo.get_currently_selected_item(3, 1)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.TYPE_OR_SEQUENCE)
     if not selected[0]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Sequence selected.")
         return
     def _create(mode, name):
-        if opsActions.create_new_item(3, selected[0], name, "", mode):
+        context = ItemContext(Tab.SHOT, selected[0], name)
+        if opsActions.create_new_item(context, mode):
             refresh_ui()
     dlg = ItemCreationDialog(ui, "Create New Shot", "Shot Name (no spaces or special chars):", _create)
     ui.active_dialog = dlg
@@ -701,12 +720,13 @@ def prompt_new_shot(*args):
 
 def prompt_new_shot_component(*args):
     ui = _get_ui()
-    selected = opsInfo.get_currently_selected_item(3, 2)
+    selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.ASSET_OR_SHOT)
     if not selected[1]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Shot selected.")
         return
     def _create(mode, name):
-        if opsActions.create_new_item(3, selected[0], selected[1], name, mode):
+        context = ItemContext(Tab.SHOT, selected[0], selected[1], name)
+        if opsActions.create_new_item(context, mode):
             refresh_ui()
     dlg = ItemCreationDialog(ui, "Create New Shot Component", "Component Name (no spaces or special chars):", _create)
     ui.active_dialog = dlg
@@ -735,13 +755,10 @@ def prompt_save_wip(*args):
 
 
 class ReviveDialog(QtWidgets.QDialog):
-    def __init__(self, parent, w_name, workshops, tab, level1, level2, level3):
+    def __init__(self, parent, w_name, workshops, context):
         super().__init__(parent)
         self.setWindowTitle(f"Revive {w_name}")
-        self.tab = tab
-        self.level1 = level1
-        self.level2 = level2
-        self.level3 = level3
+        self.context = context
         
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(QtWidgets.QLabel(f"Select a previous {w_name} version to revive:"))
@@ -771,7 +788,7 @@ class ReviveDialog(QtWidgets.QDialog):
         sel = self.list_widget.selectedItems()
         if not sel: return
         offset = sel[0].data(QtCore.Qt.UserRole)
-        if opsActions.open_item("workshop", self.tab, self.level1, self.level2, self.level3, offset):
+        if opsActions.open_item(self.context, "workshop", offset):
             opsActions.save_wip("Revived from an older version.")
         self.accept()
         refresh_ui()
@@ -789,28 +806,28 @@ def prompt_revive(*args):
         
     w_name = prefs.get_pref("ops_wip", "WIP").upper()
     
-    wips = opsInfo.get_wips(tab, level1, level2, level3)
+    context = ItemContext(tab, level1, level2, level3)
+    wips = opsInfo.get_wips(context)
     if not wips or len(wips) < 2:
         QtWidgets.QMessageBox.warning(ui, "Warning", f"Not enough {w_name} files to revive.")
         return
         
-    dlg = ReviveDialog(ui, w_name, wips, tab, level1, level2, level3)
+    dlg = ReviveDialog(ui, w_name, wips, context)
     ui.active_dialog = dlg
     dlg.exec()
 
 
 class ArchiveDialog(QtWidgets.QDialog):
-    def __init__(self, parent, tab, levels):
+    def __init__(self, parent, context):
         super().__init__(parent)
-        self.tab = tab
-        self.levels = levels
+        self.context = context
         
         w_name = prefs.get_pref("ops_wip", "WIP").upper()
         m_name = prefs.get_pref("ops_masterName", "master").capitalize()
         
-        item_name_str = f"{levels[0]}"
-        if levels[1]: item_name_str += f": {levels[1]}"
-        if levels[2]: item_name_str += f": {levels[2]}"
+        item_name_str = f"{context.level1}"
+        if context.level2: item_name_str += f": {context.level2}"
+        if context.level3: item_name_str += f": {context.level3}"
         
         self.setWindowTitle(f"Archive - {item_name_str}")
         layout = QtWidgets.QVBoxLayout(self)
@@ -880,25 +897,25 @@ class ArchiveDialog(QtWidgets.QDialog):
     def on_archive(self):
         w_val = self.spin_w.value() if self.chk_w.isChecked() else 0
         m_val = self.spin_m.value() if self.chk_m.isChecked() else 0
-        opsActions.archive_item(self.tab, self.levels[0], self.levels[1], self.levels[2], w_val, m_val)
+        opsActions.archive_item(self.context, w_val, m_val)
         refresh_ui()
         self.accept()
         
     def on_retrieve(self):
-        opsActions.retrieve_archive(self.tab, self.levels[0], self.levels[1], self.levels[2], self.r_chk_w.isChecked(), self.r_chk_m.isChecked())
+        opsActions.retrieve_archive(self.context, self.r_chk_w.isChecked(), self.r_chk_m.isChecked())
         refresh_ui()
         self.accept()
         
     def on_delete(self):
-        opsActions.remove_archive(self.tab, self.levels[0], self.levels[1], self.levels[2])
+        opsActions.remove_archive(self.context)
         self.accept()
 
 
 def prompt_archive(tab, level, *args):
     ui = _get_ui()
-    levels = opsInfo.get_currently_selected_item(tab, level)
-    if not levels[0]: return
-    dlg = ArchiveDialog(ui, tab, levels)
+    context = opsInfo.get_current_context(tab, level)
+    if not context.level1: return
+    dlg = ArchiveDialog(ui, context)
     ui.active_dialog = dlg
     dlg.exec()
 
