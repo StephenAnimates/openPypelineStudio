@@ -20,10 +20,12 @@ release = '2.0.0-alpha'
 # -- General configuration ---------------------------------------------------
 # Enable autodoc (pulls docstrings), napoleon (supports Google/NumPy docstring formats), 
 # and viewcode (adds links to the source code in the generated HTML)
+# myst_parser allows Sphinx to parse Markdown files like README.md and ROADMAP.md
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'myst_parser',
 ]
 
 # Mock imports for DCC-specific libraries so Sphinx doesn't crash on GitHub Actions
@@ -33,7 +35,8 @@ autodoc_mock_imports = ['maya', 'nuke', 'hou', 'bpy', 'unreal']
 autodoc_member_order = 'bysource'
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'venv', 'env']
+source_suffix = {'.rst': 'restructuredtext', '.md': 'markdown'}
 
 # -- Options for HTML output -------------------------------------------------
 # We will use the standard 'Read the Docs' theme, which is popular and clean

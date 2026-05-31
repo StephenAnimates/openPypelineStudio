@@ -10,6 +10,7 @@ Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio*
 * **Revision Control:** Built-in system for managing `Work-in-Progress` (formerly Workshop) and `Master` (approved) files.
 * **Asset & Shot Browsers:** Dedicated UI tabs for managing Assets, Sequences, Shots, and their respective components.
 * **Playblast & Notes Management:** Integrated tools for taking snapshots, recording playblasts, and leaving notes for artists.
+* **Dynamic Add-on System:** Drop custom Python scripts into the `addons` folder to automatically expose them in the UI without modifying core code.
 * **Modern Python API:** Extensible and fully accessible via Python 3.
 
 ## 🗺️ Roadmap & Planned Integrations

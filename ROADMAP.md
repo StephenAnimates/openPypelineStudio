@@ -20,6 +20,7 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [x] Implement MVC for `ops_project_manager_gui` (formerly `opsProjectManagerGUI`).
 - [x] Evaluate and refactor the `ui_objects.py` (formerly `UIObjects.py`) Singleton pattern (Consider an overarching `App` or `Window Manager` class).
 - [x] Consolidate Main UI menus (Added `File`, `Project`, and `Create` menus, reorganized `Tools`).
+- [x] Implement an automatic dynamic Add-on discovery system for drop-in Python tools.
 
 ## Phase 3: Core Agnosticism & Backend Decoupling
 - [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
@@ -39,6 +40,7 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [ ] Evaluate supporting regional dialects for localization (e.g., `en_us.json` vs `en_uk.json`).
 
 ## Phase 5: Quality Assurance & Pipeline Testing
+- [x] Set up Sphinx documentation generation for the core Python API (`docs/conf.py`).
 - [ ] Write Unit Tests for Controller classes (Mocking the Views).
 - [ ] Write Unit Tests for core preferences and file operations.
 - [ ] Implement automated end-to-end testing for OpenUSD (`.usd`, `.usda`) and Alembic (`.abc`) project creation and exports.
