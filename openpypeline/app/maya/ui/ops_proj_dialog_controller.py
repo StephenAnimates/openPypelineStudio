@@ -14,10 +14,10 @@ import re
 from PySide6 import QtWidgets, QtCore
 
 from . import ui_objects as UIObjects
-from ..core import ops_project as opsProject
-from ..core import ops_info as opsInfo
+from ....core import ops_project as opsProject
+from ....core import ops_info as opsInfo
 from ..core import ops_utils as opsUtils
-from ..core import ops_actions as opsActions
+from ....core import ops_actions as opsActions
 from ..core import ops_ui_wrappers as opsUIWrappers
 from openpypeline.core.models import ProjectConfig
 from .ops_proj_dialog_gui import opsProjDialogGUI
@@ -52,9 +52,6 @@ class OpsProjDialogController(QtCore.QObject):
     def _connect_signals(self):
         self.view.path_browse_btn.clicked.connect(lambda: self._browse_directory(self.view.proj_path_field, append_proj_name=True))
         
-        if hasattr(self.view, 'maya_proj_btn'):
-            self.view.maya_proj_btn.clicked.connect(self._populate_from_maya)
-
         self.view.custom_users_chk.stateChanged.connect(self._toggle_custom_users)
         self.view.custom_users_btn.clicked.connect(self._select_custom_users)
 
@@ -130,8 +127,14 @@ class OpsProjDialogController(QtCore.QObject):
             import maya.cmds as cmds
             proj_dir = cmds.workspace(query=True, rootDirectory=True)
             if proj_dir:
-                self.view.proj_path_field.setText(proj_dir.replace("\\", "/").rstrip("/"))
+                clean_dir = proj_dir.replace("\\", "/").rstrip("/")
+                self.view.proj_path_field.setText(clean_dir)
                 
+                # Extract the folder name to use as the Project Name
+                proj_name = os.path.basename(clean_dir)
+                if proj_name:
+                    self.view.proj_name_field.setText(proj_name)
+
             scene_dir = cmds.workspace(fileRuleEntry="scene")
             if scene_dir:
                 self.view.shot_lib_field.setText(scene_dir)
@@ -254,6 +257,9 @@ class OpsProjDialogController(QtCore.QObject):
             self.view.proj_path_field.clear()
             self.view.desc_field.clear()
             self.view.custom_users_field.clear()
+            
+            # Auto-populate from current Maya project
+            self._populate_from_maya()
             
             self.view.asset_lib_field.setReadOnly(False)
             self.view.shot_lib_field.setReadOnly(False)

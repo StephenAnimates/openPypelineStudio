@@ -7,6 +7,7 @@ Description: Info Retrieval functions for openPypeline Studio.
                 
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
+
 """
 
 import os
@@ -327,7 +328,7 @@ def get_event_notes(context):
 def get_currently_selected_item(tab, depth):
     """Get the currently selected item under the given tab in the UI."""
     level1 = level2 = level3 = ""
-    from ..ui import ui_objects as UIObjects
+    from ..app.maya.ui import ui_objects as UIObjects
     ui_obj = UIObjects.UIObjects()
     ui = ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
     

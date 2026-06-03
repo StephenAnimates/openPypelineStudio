@@ -10,8 +10,8 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 from . import ui_objects as UIObjects
 from ..core import ops_loader as opsLoader
-from ..core import ops_project as opsProject
-from ..core import ops_actions as opsActions
+from ....core import ops_project as opsProject
+from ....core import ops_actions as opsActions
 from ..core import ops_utils as opsUtils
 from openpypeline.core.util import prefs
 from openpypeline.core.localization import localization

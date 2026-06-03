@@ -11,8 +11,8 @@ License: Common Public License 1.0 (CPL-1.0)
 from PySide6 import QtWidgets
 from openpypeline.core.localization import localization
 from ..core import ops_ui_wrappers as opsUIWrappers
-from ..core import ops_actions as opsActions
-from ..core import ops_project as opsProject
+from ....core import ops_actions as opsActions
+from ....core import ops_project as opsProject
 from .ops_main_ui import opsMainUI
 from openpypeline.core.models import Tab, Level
 
@@ -118,26 +118,35 @@ class OpsMainController:
         self._load_addons()
 
     def _load_addons(self):
-        """Dynamically discovers and loads add-ons into the Tools menu."""
+        """Dynamically discovers and loads core and app-specific add-ons."""
         import os
         import importlib
         
-        addons_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core", "addons")).replace("\\", "/")
-        if not os.path.exists(addons_dir):
-            return
-            
-        for filename in os.listdir(addons_dir):
-            if filename.endswith(".py") and not filename.startswith("__"):
-                mod_name = f"openpypeline.app.maya.core.addons.{filename[:-3]}"
-                try:
-                    mod = importlib.import_module(mod_name)
-                    importlib.reload(mod) # Hot-reload for developers
-                    if hasattr(mod, 'run'):
-                        addon_name = getattr(mod, 'ADDON_NAME', filename[:-3].replace('_', ' ').title())
-                        action = self.view.menu_tools.addAction(addon_name)
-                        action.triggered.connect(mod.run)
-                except Exception as e:
-                    print(localization.get_string("msg_failedAddonLoad").format(filename, e))
+        addon_paths = [
+            (os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "core", "addons")).replace("\\", "/"), localization.get_string("menu_coreAddons"), "openpypeline.core.addons"),
+            (os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core", "addons")).replace("\\", "/"), localization.get_string("menu_dccAddons"), "openpypeline.app.maya.core.addons")
+        ]
+        
+        for addon_dir, menu_title, package_path in addon_paths:
+            if not os.path.exists(addon_dir):
+                continue
+                
+            self.view.menu_tools.addSection(menu_title)
+            for filename in os.listdir(addon_dir):
+                if filename.endswith(".py") and not filename.startswith("__"):
+                    mod_name = f"{package_path}.{filename[:-3]}"
+                    try:
+                        mod = importlib.import_module(mod_name)
+                        importlib.reload(mod) # Hot-reload for developers
+                        if hasattr(mod, 'run'):
+                            addon_name = getattr(mod, 'ADDON_NAME', filename[:-3].replace('_', ' ').title())
+                            action = self.view.menu_tools.addAction(addon_name)
+                            action.triggered.connect(mod.run)
+                    except Exception as e:
+                        print(localization.get_string("msg_failedAddonLoad").format(filename, e))
+                        
+        self.view.menu_tools.addSeparator()
+        self.view.menu_tools.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self.view, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
 
     def on_project_manager_clicked(self):
         """Launches the Project Manager UI and ensures it is loaded into memory."""

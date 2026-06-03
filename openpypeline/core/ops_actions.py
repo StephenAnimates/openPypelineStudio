@@ -6,6 +6,7 @@ Description: Core actions and functional operations for openPypeline Studio.
              
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
+
 """
 
 import os
@@ -22,8 +23,8 @@ from PySide6 import QtWidgets
 logger = logging.getLogger("openPypeline.actions")
 
 from . import ops_info as opsInfo
-from . import ops_loader as opsLoader
-from . import ops_utils as opsUtils
+from ..app.maya.core import ops_loader as opsLoader
+from ..app.maya.core import ops_utils as opsUtils
 from . import ops_project as opsProject
 
 
@@ -502,7 +503,7 @@ def save_master(comment, flatten, delete_disp_layers, after, custom_command="", 
         
     add_event_note(context, master_name, 0, comment)
     
-    from . import tracker_factory
+    from ..app.maya.core import tracker_factory
     tracker = tracker_factory.get_tracker()
     if tracker and task_id:
         tracker.publish_version(task_id, master_file, 0, comment)

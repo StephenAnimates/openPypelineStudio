@@ -8,6 +8,7 @@ Description:
              
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
+
 """
 
 import os
@@ -18,7 +19,7 @@ from openpypeline.core.util import prefs
 from PySide6 import QtWidgets, QtCore
 
 from . import ops_info as opsInfo
-from . import ops_utils as opsUtils
+from ..app.maya.core import ops_utils as opsUtils
 from . import ops_actions as opsActions
 
 logger = logging.getLogger("openPypeline.project")

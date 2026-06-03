@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 # Add the core directory to the sys.path so we can import the modules
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-import openpypeline.app.maya.core.ops_actions as opsActions
+import openpypeline.core.ops_actions as opsActions
 from openpypeline.core.models import ProjectConfig, ItemContext, Tab
 
 @pytest.mark.parametrize("file_ext, expected_file_type", [

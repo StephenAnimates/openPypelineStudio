@@ -55,6 +55,8 @@
     "menu_mayaReferenceEditor": "Reference Editor",
     "menu_mayaProjectWindow": "Project Editor",
     "menu_addons": "Add-ons",
+    "menu_coreAddons": "Core Add-ons",
+    "menu_dccAddons": "Maya Add-ons",
     "menu_addonsHelp": "Add an Add-on...",
     "msg_addonsHelp": "Add Python plugins directly to the addons folder.",
     "menu_settings": "Settings",
@@ -295,5 +297,13 @@
     "win_opsStudio": "openPypeline Studio",
     "win_editAsset": "Edit Asset",
     "win_warning": "Warning",
-    "win_removeFiles": "Remove Files"
+    "win_removeFiles": "Remove Files",
+    "anno_projName": "The display name for your project. Must be unique and contain no special characters.",
+    "anno_projPath": "The root directory where your project files will be stored.",
+    "anno_projDesc": "A brief description of the project.",
+    "anno_projStatus": "Active projects are displayed normally; Inactive projects are hidden or grayed out.",
+    "anno_customUsers": "Enable to restrict access to specific users.",
+    "anno_masterName": "The default folder and base name for published master files.",
+    "anno_wipName": "The default folder and base name for work-in-progress files.",
+    "anno_subfolders": "Sub-directory names for organizing different asset types."
 }

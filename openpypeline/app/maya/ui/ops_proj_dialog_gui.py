@@ -52,27 +52,23 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         self.proj_name_field = QtWidgets.QLineEdit()
         self.proj_name_field.setMaxLength(22)
+        self.proj_name_field.setToolTip(localization.get_string("anno_projName"))
 
         path_layout = QtWidgets.QHBoxLayout()
         self.proj_path_field = QtWidgets.QLineEdit()
+        self.proj_path_field.setToolTip(localization.get_string("anno_projPath"))
         self.path_browse_btn = QtWidgets.QPushButton(localization.get_string("btn_browse"))
-        
-        self.maya_proj_btn = QtWidgets.QPushButton(localization.get_string("btn_useMayaProject"))
         
         path_layout.addWidget(self.proj_path_field)
         path_layout.addWidget(self.path_browse_btn)
-        
-        try:
-            import maya.cmds
-            path_layout.addWidget(self.maya_proj_btn)
-        except ImportError:
-            pass
 
         self.desc_field = QtWidgets.QLineEdit()
         self.desc_field.setMaxLength(250)
+        self.desc_field.setToolTip(localization.get_string("anno_projDesc"))
 
         self.status_combo = QtWidgets.QComboBox()
         self.status_combo.addItems(["active", "inactive"])
+        self.status_combo.setToolTip(localization.get_string("anno_projStatus"))
 
         settings_layout.addRow(localization.get_string("lbl_projectName"), self.proj_name_field)
         settings_layout.addRow(localization.get_string("lbl_projectPath"), path_layout)
@@ -86,6 +82,7 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         users_dates_layout = QtWidgets.QFormLayout(users_dates_group)
 
         self.custom_users_chk = QtWidgets.QCheckBox(localization.get_string("chk_enableCustomUsers"))
+        self.custom_users_chk.setToolTip(localization.get_string("anno_customUsers"))
 
         users_layout = QtWidgets.QHBoxLayout()
         self.custom_users_field = QtWidgets.QLineEdit()
@@ -109,9 +106,11 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         # --- Files Group ---
         files_group = QtWidgets.QGroupBox(localization.get_string("grp_filesMasterWip"))
         files_layout = QtWidgets.QGridLayout(files_group)
+        files_group.setToolTip(localization.get_string("anno_masterName"))
 
         files_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_masterName")), 0, 0)
         self.master_name_field = QtWidgets.QLineEdit("master")
+        self.master_name_field.setToolTip(localization.get_string("anno_masterName"))
         files_layout.addWidget(self.master_name_field, 0, 1)
 
         files_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_format")), 0, 2)
@@ -121,6 +120,7 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         files_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_wipName")), 1, 0)
         self.wip_name_field = QtWidgets.QLineEdit("wip")
+        self.wip_name_field.setToolTip(localization.get_string("anno_wipName"))
         files_layout.addWidget(self.wip_name_field, 1, 1)
 
         files_layout.addWidget(QtWidgets.QLabel(localization.get_string("lbl_format")), 1, 2)
@@ -133,6 +133,7 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         # --- Sub-Folders Group ---
         subfolders_group = QtWidgets.QGroupBox(localization.get_string("grp_subfolders"))
         subfolders_layout = QtWidgets.QGridLayout(subfolders_group)
+        subfolders_group.setToolTip(localization.get_string("anno_subfolders"))
 
         self.asset_lib_field = QtWidgets.QLineEdit("scenes/assets")
         self.scripts_field = QtWidgets.QLineEdit("scripts")

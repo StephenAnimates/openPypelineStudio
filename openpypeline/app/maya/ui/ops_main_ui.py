@@ -167,10 +167,6 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         except ImportError:
             pass
         
-        # Add-ons as a section of Tools
-        self.menu_tools.addSection(localization.get_string("menu_addons"))
-        self.menu_tools.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
-        
         settings = menubar.addMenu(localization.get_string("menu_settings"))
         self.action_preferences = settings.addAction(localization.get_string("menu_preferences"))
         

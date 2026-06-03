@@ -25,8 +25,10 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 
 ## Phase 3: Core Agnosticism & Backend Decoupling
 - [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
+- [x] Relocate Agnostic Core Files (`ops_actions.py`, `ops_info.py`, `ops_project.py`, `ops_notes.py`) to the `/openpypeline/core/` directory.
 - [x] Upgrade legacy XML-based project tracking to JSON.
 - [x] Upgrade legacy XML-based history notes to JSON.
+- [x] Standardize Add-on System (Split Core-agnostic Add-ons vs DCC-specific Add-ons).
 - [ ] Implement a DCC Interface/Adapter pattern (e.g., `core` asks the active `app` adapter to "save file" or "export Alembic").
 - [ ] Implement FBX export/import support alongside USD and Alembic.
 - [x] Implement Data Classes (`ItemContext`, `ProjectConfig`) to replace excessive backend parameters.
@@ -46,6 +48,7 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 
 ## Phase 5: Quality Assurance & Pipeline Testing
 - [x] Set up Sphinx documentation generation for the core Python API (`docs/conf.py`).
+- [ ] Create a development environment and setup for interactive testing in Maya and other DCCs.
 - [ ] Write Unit Tests for Controller classes (Mocking the Views).
 - [ ] Write Unit Tests for core preferences and file operations.
 - [ ] Implement automated end-to-end testing for OpenUSD (`.usd`, `.usda`) and Alembic (`.abc`) project creation and exports.

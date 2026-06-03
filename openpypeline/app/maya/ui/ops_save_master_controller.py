@@ -12,7 +12,7 @@ License: Common Public License 1.0 (CPL-1.0)
 from PySide6 import QtCore
 from . import ui_objects as UIObjects
 from ..core import ops_ui_wrappers as opsUIWrappers
-from ..core import ops_actions as opsActions
+from ....core import ops_actions as opsActions
 from openpypeline.core.util import prefs
 from openpypeline.core.localization import localization
 from .ops_save_master_gui import opsSaveMasterGUI

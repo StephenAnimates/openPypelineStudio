@@ -70,7 +70,7 @@ def run():
     for item in default_items:
         tab, level1, level2, level3, force = item
         try:
-            from .. import ops_actions as opsActions
+            from .....core import ops_actions as opsActions
             context = ItemContext(tab, level1, level2, level3)
             opsActions.create_new_item(context, force)
         except Exception as e:

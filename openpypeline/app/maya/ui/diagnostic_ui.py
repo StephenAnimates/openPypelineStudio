@@ -32,16 +32,16 @@ importlib.reload(opsMainUI)
 from . import ops_main_controller as opsMainController
 importlib.reload(opsMainController)
 
-from ..core import ops_project as opsProject
+from ....core import ops_project as opsProject
 importlib.reload(opsProject)
 
-from ..core import ops_actions as opsActions
+from ....core import ops_actions as opsActions
 importlib.reload(opsActions)
 
 from ..core import ops_ui_wrappers as opsUIWrappers
 importlib.reload(opsUIWrappers)
 
-from ..core import ops_info as opsInfo
+from ....core import ops_info as opsInfo
 importlib.reload(opsInfo)
 
 from ..core import ops_loader as opsLoader
@@ -61,11 +61,14 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         
+        from openpypeline.core.localization import localization
+        localization.load_language()
+        
+        self.UIObjects.opsMainController = opsMainController.OpsMainController()
+        self.UIObjects.opsMainUI = self.UIObjects.opsMainController.view
         self.UIObjects.opsSaveMasterController = opsSaveMasterController.OpsSaveMasterController()
         self.UIObjects.opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
         self.UIObjects.opsProjDialogController = opsProjDialogController.OpsProjDialogController()
-        self.UIObjects.opsMainController = opsMainController.OpsMainController()
-        self.UIObjects.opsMainUI = self.UIObjects.opsMainController.view
         
         self._build_ui()
 
@@ -147,11 +150,15 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
                     ui_obj.deleteLater()
 
         self.UIObjects = UIObjects.UIObjects()
+        
+        from openpypeline.core.localization import localization
+        localization.load_language()
+        
+        self.UIObjects.opsMainController = opsMainController.OpsMainController()
+        self.UIObjects.opsMainUI = self.UIObjects.opsMainController.view
         self.UIObjects.opsSaveMasterController = opsSaveMasterController.OpsSaveMasterController()
         self.UIObjects.opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
         self.UIObjects.opsProjDialogController = opsProjDialogController.OpsProjDialogController()
-        self.UIObjects.opsMainController = opsMainController.OpsMainController()
-        self.UIObjects.opsMainUI = self.UIObjects.opsMainController.view
         
         self.showWindow()
         self.updateTextField()

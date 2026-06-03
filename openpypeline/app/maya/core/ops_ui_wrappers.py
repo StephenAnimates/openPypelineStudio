@@ -14,8 +14,8 @@ import os
 import webbrowser
 from PySide6 import QtWidgets, QtCore, QtGui
 from openpypeline.core.models import ItemContext, Tab, Level
-from . import ops_info as opsInfo
-from . import ops_actions as opsActions
+from ....core import ops_info as opsInfo
+from ....core import ops_actions as opsActions
 from ..ui import ui_objects as UIObjects
 from openpypeline.core.util import prefs
 

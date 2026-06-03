@@ -7,7 +7,7 @@ Description: openPypeline "Archive All" add-on refactored to Python.
 import maya.cmds as cmds
 
 try:
-    from .. import ops_info as opsInfo
+    from .....core import ops_info as opsInfo
     from openpypeline.core.models import ItemContext, Tab
 except ImportError:
     pass
@@ -68,7 +68,7 @@ def _process_all_archives(action):
                     
                 for l1, l2, l3 in levels_to_process:
                     try:
-                        from .. import ops_actions as opsActions
+                        from .....core import ops_actions as opsActions
                         context = ItemContext(tab, l1, l2, l3)
                         if action == 'archive': opsActions.archive_item(context, 1, 1)
                         elif action == 'retrieve': opsActions.retrieve_archive(context, 1, 1)
