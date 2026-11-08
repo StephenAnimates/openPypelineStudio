@@ -1,8 +1,8 @@
-# openPypeline Studio for Maya
+# openPypeline Studio
 
-openPypeline Studio is an open-source framework for managing animation production data and workflows. 
+openPypeline Studio is an open-source framework for managing animation production data and workflows. The framework supports a variety of software.
 
-Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio** has been completely modernized and refactored into **Python 3** to natively support modern Autodesk Maya environments (Maya 2026+). It handles specific, critical aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows seamless.
+Originally developed as a MEL-based plug-in by Kickstand called OpenPipeline, this has been redesigned and rebadged as **openPypeline Studio** and has been completely modernized and refactored into **Python 3** to natively support modern Autodesk Maya environments (Maya 2026+). It handles specific, critical aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows seamless.
 
 ## ✨ Features
 * **Automated Directory Structures:** Ensures all project files are strictly organized and standardized across your team.
