@@ -267,6 +267,12 @@ def openPypeline():
             sys.path.insert(0, _root_path)
 
         try:
+            from openpypeline.app.maya.core import file_use
+            file_use.install_callbacks()
+        except Exception as e:
+            logger.error(f"Failed to install synchronized file-use notices: {e}")
+
+        try:
             from openpypeline.app.maya.ui import ui_objects as UIObjects
             from openpypeline.app.maya.ui import ops_main_controller as opsMainController
             controller = opsMainController.OpsMainController()

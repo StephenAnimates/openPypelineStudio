@@ -7,14 +7,11 @@ Description: Central action handler for openPypeline Studio.
 import logging
 import os
 
-# Assuming these modules exist based on project structure
-from . import ops_project
-from . import ops_item
-from .opsEngine import opsEngine
+from ..ops_engine import OpsEngine
+from . import ops_info
 from .models import ItemContext
-
-# Import the version control classes
-from .version import Version, git, svn, perforce
+from .util import prefs
+from .version.Version import git, perforce, svn
 
 logger = logging.getLogger("openPypeline.actions")
 
@@ -28,33 +25,42 @@ def save_master_file(context: ItemContext, options: dict):
         options (dict): A dictionary of options from the Master Switchboard UI,
                         e.g., {"comment": "...", "import_references": True}.
     """
-    logger.info(f"Beginning master process for {context.get_item_name()}...")
+    logger.info(f"Beginning master process for {context.item_name}...")
 
-    # This is a hypothetical reconstruction of the mastering process.
-    # Your actual implementation may vary.
+    new_master_filepath = ops_info.get_file_name(context, "master")
+    if not new_master_filepath:
+        logger.error("Could not determine the master file path. Aborting.")
+        return False
 
-    # 1. Get file paths and names from the item context
-    item_data = ops_item.get_item_data(context)
-    master_path = item_data.get("master_path")  # e.g., /path/to/project/assets/chars/man/model/master/
-    master_name = item_data.get("master_name")  # e.g., man_model_master.mb
-    new_master_filepath = os.path.join(master_path, master_name)
-
-    # 2. Perform pre-save operations (like flattening references)
-    dcc = opsEngine.get_dcc_handler()
+    master_name = os.path.basename(new_master_filepath)
+    dcc = OpsEngine().file_handler
+    if dcc is None:
+        logger.error("No DCC file handler is available. Aborting.")
+        return False
     if options.get("import_references", False):
-        wip_name = item_data.get("wip_name", "WIP")
-        dcc.flatten_references(master_name, wip_name)
+        wip_path = ops_info.get_file_name(context, "workshop")
+        wip_name = os.path.basename(wip_path) if wip_path else "WIP"
+        flatten_references = getattr(dcc, "flatten_references", None)
+        if not callable(flatten_references):
+            logger.error(
+                "The active DCC does not support flattening references. Aborting."
+            )
+            return False
+        flatten_references(master_name, wip_name)
 
-    # 3. Save the actual master file
     if not dcc.save_as(new_master_filepath):
         logger.error("Failed to save master file. Aborting.")
         return False
 
-    # 4. --- HOOK: Add to Version Control ---
-    # This is the new integration point for the publish() method.
-    project_data = ops_project.get_project_data(context.project)
-    vcs_type = project_data.get("vcs_type", "none").lower()
-    vcs_comment = options.get("comment", f"Published master for {context.get_item_name()}")
+    from . import ops_project
+
+    project_name = prefs.get_pref("ops_currProjectName", "")
+    project_data = ops_project.get_project(project_name)
+    vcs_type = str(project_data.get("vcs_type") or "none").lower()
+    vcs_comment = options.get(
+        "comment",
+        f"Published master for {context.item_name}",
+    )
 
     if vcs_type != "none":
         vcs_handler = None
@@ -74,10 +80,5 @@ def save_master_file(context: ItemContext, options: dict):
         else:
             logger.warning(f"Unknown VCS type configured in project settings: '{vcs_type}'")
 
-    # 5. Perform post-save operations (e.g., update history, create thumbnail)
-    # ... existing logic would go here ...
-
     logger.info("Master process completed successfully.")
     return True
-
-# ... other action functions like create_new_item, remove_project, etc. ...

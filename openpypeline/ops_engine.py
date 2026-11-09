@@ -27,6 +27,15 @@ import logging
 
 logger = logging.getLogger("openPypeline.engine")
 
+
+def _get_workspace_root(host_app):
+    """Return a workspace root for the active host or standalone process."""
+    if host_app == "maya":
+        cmds = importlib.import_module("maya.cmds")
+        return cmds.workspace(query=True, rootDirectory=True)
+    return os.getcwd()
+
+
 class OpsEngine:
     """
     The main engine class that drives openPypeline Studio.
@@ -41,7 +50,9 @@ class OpsEngine:
         self.file_handler = None
         if self.host_app != 'standalone':
             try:
-                module_path = f"app.{self.host_app}.file.file"
+                module_path = (
+                    f"openpypeline.app.{self.host_app}.file.file"
+                )
                 self.file_handler = importlib.import_module(module_path)
                 importlib.reload(self.file_handler)
             except ImportError:
@@ -62,38 +73,60 @@ class OpsEngine:
             return 'unreal'
         return 'standalone'
 
+    def open_latest_workshop(self, item_path, item_name):
+        """Open an item's latest WIP version in the active host application."""
+        from openpypeline.core.version import Version
+        from openpypeline.core.file import wip
+
+        latest_version = Version.Version().latest(item_path)
+        if latest_version is None:
+            logger.warning("No WIP versions found for %s", item_path)
+            return False
+
+        latest_workshop = wip.WIP().open(
+            item_path,
+            item_name,
+            latest_version,
+        )
+        if not latest_workshop:
+            logger.warning("Could not resolve latest WIP file for %s", item_path)
+            return False
+        if not self.file_handler or not hasattr(self.file_handler, "open"):
+            logger.warning(
+                "Would open %s (no DCC file handler available)",
+                latest_workshop,
+            )
+            return False
+        return self.file_handler.open(latest_workshop)
+
     def ui(self):
         """
-        Executes a diagnostic routine that simulates a core pipeline interaction.
-        It loads modules, retrieves preferences, queries the inventory, and evaluates 
-        the status (versions, master, notes) of items in the current working directory.
+        Log inventory, version, master, and note status for the current selection.
+        This diagnostic does not open or modify scene files.
         """
         # --- 1. Load Core Modules ---
         # Reload modules to ensure the latest code is executing (useful for development)
-        from core.file import inventory
+        from openpypeline.core.file import inventory
         importlib.reload(inventory)
 
-        from core.version import Version
+        from openpypeline.core.version import Version
         importlib.reload(Version)
-        
-        from core.file import master
-        importlib.reload(master)
 
-        from openpypeline.core.file import wip
-        importlib.reload(wip)
+        from openpypeline.core.file import master
+        importlib.reload(master)
         
-        from core.notes import notes
+        from openpypeline.core.notes import notes
         importlib.reload(notes)
         
         # --- 2. Retrieve Preferences ---
-        from core.util import prefs
+        from openpypeline.core.util import prefs
         importlib.reload(prefs)
         
         # Determine the project root, falling back to the host workspace if none is set
         project = prefs.get_pref("ops_currProjectPath", "")
         if not project:
             logger.warning("'ops_currProjectPath' preference is not set. Using host workspace root as fallback.")
-            project = prefs.get_workspace_root()
+            project = _get_workspace_root(self.host_app)
             
         # Fetch the active UI selection states (Tab, Level 1/2/3) from preferences
         # Fallbacks are provided to allow testing outside of the actual UI
@@ -139,13 +172,5 @@ class OpsEngine:
             else:
                 logger.debug(f"{item}: no notes")
                 
-            # --- 4. Attempt File Operation ---
-            # Finally, find the latest workshop version and attempt to open it in the host DCC
-            getLatestWorkshopNumber = Version.Version().latest(fullpath)
-            if getLatestWorkshopNumber is not None:
-                latestWorkshop = wip.WIP().open(fullpath, item, getLatestWorkshopNumber)
-                if self.file_handler and hasattr(self.file_handler, 'open'):
-                    self.file_handler.open(latestWorkshop)
-                else:
-                    logger.warning(f"Would open {latestWorkshop} (no DCC file handler available)")
-                
+            latest_version = max(versions) if versions else None
+            logger.debug("%s: latest WIP version is %s", item, latest_version)

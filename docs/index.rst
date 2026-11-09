@@ -1,136 +1,162 @@
-Welcome to openPypeline Studio's documentation!
-===============================================
+Welcome to openPypeline Studio
+==============================
 
-openPypeline Studio is an open-source framework for managing animation production data and workflows. 
+**openPypeline Studio** is a locally installed framework for managing creative production projects and workflows. Maya is its first supported host. The project is developing toward a shared, host-neutral core with application-specific integrations for additional creative software.
 
-Originally developed as a MEL-based plug-in by Kickstand, **openPypeline Studio** has been completely modernized and refactored into **Python 3** to natively support modern Autodesk Maya environments (Maya 2026+) and acts as a foundation for a DCC-agnostic pipeline. It handles specific, critical aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows seamless.
+Teams can keep project folders in cloud storage and sync services they already use, such as Google Drive, iCloud Drive, OneDrive, or Dropbox, and work with those folders through their local openPypeline installation.
 
-Key Features
-------------
+Project direction and planned work are tracked in the `project roadmap
+<https://github.com/StephenAnimates/OpenPipeline/blob/master/ROADMAP.md>`_.
 
-* **Automated Directory Structures:** Ensures all project files are strictly organized and standardized across your team.
-* **Strict Naming Conventions:** Eliminates messy file names; the framework handles naming and versioning automatically.
-* **Revision Control:** Built-in system for managing Work-in-Progress (formerly Workshop) and Master (approved) files.
-* **Asset & Shot Browsers:** Dedicated UI tabs for managing Assets, Sequences, Shots, and their respective components.
-* **Playblast & Notes Management:** Integrated tools for taking snapshots, recording playblasts, and leaving notes for artists.
-* **Modern Python API:** Extensible and fully accessible via Python 3.
+Current scope
+-------------
 
-Installation & Setup
---------------------
+The current Maya integration includes project and asset/shot browsing, project directory and naming workflows, WIP and Master file concepts, notes, and application-aware scene operations. Not every feature or integration is complete; the presence of a module does not necessarily mean its host is supported.
 
-1. Clone or download this repository.
-2. Copy or move the folder to your Maya user scripts directory (e.g., ``/Users/Shared/Autodesk/maya/scripts``) or a common network scripts directory.
-3. Open **Autodesk Maya**.
-4. Open the **Script Editor** (Python tab).
-a. You can locate the Maya user scripts directory by opening Maya and running the following code in the Script Editor:
-``python
-import maya.cmds as cmds
-print(cmds.internalVar(userScriptDir=True))
-```
-b. In the **Script Editor Output**, you will see the path to your user scripts directory. Place the openPypeline Studio folder in that directory. For example: `~/Library/Preferences/Autodesk/maya/2026/scripts/`
-5. Run the following code to initialize the setup UI, replacing the path with your actual installation directory:
+For a feature overview, see the `README
+<https://github.com/StephenAnimates/openPypelineStudio/blob/master/README.md#-features>`_.
 
-.. code-block:: python
+The shared core is intended for reusable pipeline concepts and data. Host APIs, scene operations, and host-specific UI belong in application integrations. Maya is the current supported integration; support for other applications should be considered planned until their capabilities and tested versions are documented.
 
-   import sys
+Synced project folders
+----------------------
 
-   # Path to the directory containing the 'openpypeline' folder
-   repo_path = "/Users/Shared/Autodesk/maya/scripts/openPypeline"
+The Maya integration can publish advisory file-use notices in a project folder and warn when a scene appears to be in use or has changed on disk. These notices are **not distributed locks**: sync clients may update files asynchronously, and conflicting edits or overwrites can still occur. Teams should coordinate edits and verify sync status before relying on another artist's changes.
 
-   if repo_path not in sys.path:
-       sys.path.insert(0, repo_path)
-       
-   import opsLoader
-   opsLoader.openPypelineSetup()
+Installation and setup in Maya
+------------------------------
 
-5. Follow the on-screen prompts to define your **Project Path** and **Project Path**.
+The current user interface runs inside Maya. To set it up:
 
-Getting Started: Creating Your First Project
---------------------------------------------
+#. Clone or download the repository.
+#. Open Maya and its Script Editor, and run the following, replacing the path
+   with the repository directory that contains the ``openpypeline`` package:
 
-Once openPypeline Studio is installed, you need to create a Project to begin working. 
+   .. code-block:: python
 
-1. Launch the UI and click the **Project Manager...** button.
-2. Click **New...** to open the Create New Project dialog.
-3. Configure your project parameters:
+      import sys
 
-   * **Project Name & Path:** The name (limited to 22 characters, no spaces) and the root directory where all assets and shots will be stored.
-   * **Status:** Selecting "active" makes the project available in the main openPypeline dropdown. "Inactive" hides it from the main UI but keeps it in the Project Manager.
-   * **Files (Master / WIP):** Define your preferred nomenclature (e.g., `master`, `publish`, `wip`, `workshop`) and default export formats (`.ma`, `.mb`, `.usd`, `.abc`). *Note: To ensure path stability, these cannot be edited after the project is created.*
-   * **Sub-Folder Names:** Customize the internal directory structure (Asset Library, Shot Library, Textures, etc.). Like the file formats, these lock upon creation.
-   * **Archived & Deleted Locations:** Designate where old versions and deleted items are moved to keep your active directories clean.
+      ops_install_path = "/path/to/openPypeline"
+      if ops_install_path not in sys.path:
+          sys.path.insert(0, ops_install_path)
 
-4. Click **Accept** to generate the project directories and the XML database file.
+      from openpypeline.app.maya.core import ops_loader
+      ops_loader.openPypelineSetup()
 
-.. tip::
-   **Custom Project Icons**
-   
-   You can customize the image displayed in the main openPypeline Studio UI for your specific project! 
-   Simply place an image file named ``openPypelineIcon.png`` in the root folder of your project.
+#. Follow the setup prompts to configure the project-file location.
+#. After setup, launch the main UI from Maya with:
 
-Core Concepts & Terminology
----------------------------
+   .. code-block:: python
 
-openPypeline Studio adheres to the original structural design of openPipeline, organizing production data into a strict hierarchy:
+      from openpypeline.app.maya.core import ops_loader
+      ops_loader.openPypeline()
 
-* **Asset:** A unit of production such as a character, prop, or environment, which can be made up of components.
-* **Component:** The individual pieces required to build an asset. For example, a character asset may have *model*, *rig*, and *shading* components.
+The shared engine can detect a standalone Python process, but that does not provide a separate standalone user interface. Host-specific workflows require an integration for that application.
+
+Getting started: creating a project
+-----------------------------------
+
+After setup, open **Project Manager...** in the main UI and choose **New...**.
+The project dialog lets you configure:
+
+* **Project name and path:** Project names are limited to 22 characters. The
+  dialog converts spaces to underscores and filters unsupported characters.
+* **Description and status:** Mark the project active to make it available in
+  the main project selector, or inactive to keep it out of that selector.
+* **WIP and Master naming and formats:** Set the folder/file naming terms and
+  choose from the formats currently offered by the Maya dialog.
+* **Project folders:** Set the asset and shot locations, scripts, textures,
+  renders, particles, archive, and deleted-item folders.
+* **Optional project details:** Set dates and configure custom users if needed.
+
+Review the project name and folder paths before accepting. Keep project files
+inside the folder your team uses for cloud sync if you want those files shared.
+Use **Project Manager...** to review or edit the project configuration later.
+
+.. note::
+
+   Project creation and editing are being completed alongside the shared
+   project-action API. The dialog currently describes the intended setup flow;
+   verify creation and activation in your Maya installation before relying on
+   it for production.
+
+Core concepts and terminology
+-----------------------------
+
+openPypeline organizes production data into a hierarchy:
+
+* **Asset:** A production unit such as a character, prop, or environment.
+* **Component:** A piece of an asset, such as modeling, rigging, or shading.
 * **Sequence:** A logical collection of shots.
-* **Shot:** A composed collection of assets that are animated, lit, and rendered.
-* **WIP File (formerly Workshop):** The insulated environment where daily, iterative artist work occurs.
-* **Master File:** The finalized, published asset. Stripped of dependencies, clean, and ready to be referenced by other downstream files.
+* **Shot:** A unit of a sequence in which assets are animated, lit, or rendered.
+* **WIP (Work in Progress):** The working scene an artist iterates on.
+* **Master:** A prepared scene intended for review or downstream use.
 
-Pipeline Rules & Philosophy
----------------------------
+Pipeline rules and philosophy
+-----------------------------
 
-Since its original specification in 2007, the framework has been guided by three core technical rules to ensure cross-platform compatibility and stability:
+* Use filesystem-safe names. The project dialog converts spaces to underscores
+  and filters unsupported characters in project and folder names.
+* Project configuration and preference data use JSON, while production files
+  remain in the formats selected for the project and host application.
+* Keep iterative work in numbered WIP files and treat Masters as prepared
+  downstream deliverables. These file conventions organize work; they do not
+  replace backups or a version-control service.
 
-1. **No spaces in any names.** Strict naming conventions prevent path resolution issues across different operating systems and render farms.
-2. **Descriptive information is stored in generic XML files.** Ensuring production metadata is easily readable and parsable outside of any specific DCC application.
-3. **Incremental saves are the default form of revision control.** Separating insulated artist work (WIP files) from published, flattened, and cleaned upstream files (Master files).
-
-Workflow Philosophy: WIPs vs. Masters
+Workflow philosophy: WIPs and Masters
 -------------------------------------
 
-The pipeline distinguishes strictly between working files and published files to protect production data:
+Keep day-to-day changes in WIP scenes. When the WIP is stable and ready for
+production, clean it and save a Master from it. The Master is the production-
+ready version; continue later development in the WIP and save an updated Master
+when that work is ready. Do not make changes directly to a published Master.
 
-* **Never hand-edit a Master file.**
-* Artists do all iterative work in **WIP (Work-in-Progress)** files.
-* When an asset is ready, the artist saves a **Master**. The framework procedurally cleans the file (flattening references, removing display layers) and publishes it for use downstream.
-* Saving a Master automatically generates a new, incremented WIP file so the artist can safely continue working without touching the newly published Master.
+Preparing a Master File
+-----------------------
 
-Custom Master Scripts
----------------------
+Before saving a WIP as a Master, perform the standard Maya scene cleanup:
+freeze transforms, delete construction history, remove unwanted display
+layers, and organize the scene hierarchy. The resulting Master is the latest
+stable, functioning production version of the model, rig, or other asset.
 
-At the moment of mastering, you often need to execute cleanup routines—like freezing transforms, deleting construction history, or reorganizing hierarchies. openPypeline Studio provides a **Custom Command** field when saving a Master. 
+.. note::
 
-This executes a custom Python or MEL command specifically on the Master file being published. Because this happens in an isolated step, it is entirely non-destructive: your modeling history and transforms remain fully intact in your WIP file, but the downstream Master file is kept perfectly clean.
+   Your team may have additional cleanup requirements; follow the conventions
+   established for your project.
 
-Architecture & API Mapping
---------------------------
+openPypeline does not currently automate these cleanup steps or run a
+user-defined cleanup script during Master publishing. If **Import References**
+is selected, the current save action imports loaded references into the scene
+before saving the Master. Unloaded references prompt the artist to keep or
+remove each one. This reference handling is separate from the standard cleanup
+steps above; review the scene and its references before saving the Master.
 
-The original 2007 openPipeline relied on a vast library of global MEL procedures (e.g., ``openPipelineFile.mel``, ``openPipelineUI.mel``). **openPypeline Studio** has fully deprecated MEL in favor of a modular, object-oriented Python 3 API and PySide6 interfaces.
+For animated scenes (shot files), referenced asset models and rig files are generally kept in the scene as references so that the shot can receive updates from the latest asset model or rig Master. Importing a referenced asset model or rig into the shot file removes the live link: later changes to the rig Master will not update the imported rig. Only import a rig when the shot workflow requires it, such as when preparing the scene for rendering.
 
-If you are migrating legacy scripts, here is how the old MEL architecture maps to the new Python backend:
+Contributing and legacy architecture
+------------------------------------
 
-* **openPipelineFile.mel & openPipeline.mel** ➡️ :doc:`opsActions` (Core file operations, importing, referencing, and project creation).
-* **openPipelineUtility.mel** ➡️ :doc:`opsInfo` and :doc:`opsUtils` (Information retrieval, path resolution, padding, and data parsing).
-* **openPipelineUI.mel** ➡️ :doc:`opsUIWrappers`, :doc:`opsMainUI`, and the ``ui/`` package (PySide6 interfaces and Qt signal wrappers).
-* **openPipelineProject.mel** ➡️ :doc:`opsProject` (Project data parsing and global user management).
-* **openPipelineSceneInv.mel** ➡️ :doc:`opsSceneInv` (Now utilizing high-performance Qt ``QTreeWidget`` components).
-* **openPipelineNotes.mel** ➡️ :doc:`opsActions` and the ``core/notes/`` module.
-* **openPipelineInit.mel** ➡️ :doc:`openpypeline.core.util.prefs` (Replaces Maya ``optionVars`` with a DCC-agnostic JSON preferences system).
+The original openPipeline framework used global MEL procedures. For contributors
+migrating legacy scripts or tracing behavior into the current Python package,
+see :doc:`architecture_migration` for a historical source-to-module map and
+guidance on the current package boundaries.
 
-Detailed API documentation for the new modules is automatically generated from the Python source code below.
+API reference
+-------------
+
+The API reference is generated from the Python package during the documentation
+build.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Documentation
 
+   about
+   architecture_migration
    modules
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

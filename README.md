@@ -1,8 +1,8 @@
 # openPypeline Studio
 
-openPypeline Studio is an open-source framework for managing animation production data and workflows. The framework supports a variety of software.
+openPypeline Studio is a locally installed, open-source framework for managing animation and other creative-production data and workflows, with a focus on helping independent studios collaborate remotely. Teams can keep project files in folders synchronized by services they already use, while openPypeline provides shared pipeline tools and application integrations.
 
-Originally developed as a MEL-based plug-in by Kickstand called OpenPipeline, this has been redesigned and rebadged as **openPypeline Studio** and has been completely modernized and refactored into **Python 3** to natively support modern Autodesk Maya environments (Maya 2026+). It handles specific, critical aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows seamless.
+Originally developed as a MEL-based Autodesk Maya plug-in by Kickstand called OpenPipeline, the project has been redesigned and rebadged as **openPypeline Studio**, then modernized in **Python 3**. Maya remains the first supported host, while the project is moving toward a host-neutral core and modular adapters for additional software. The shared core focuses on production needs such as directory structures, file naming, versioning, and workflow data; host-specific modules provide application-aware behavior and UI.
 
 ## ✨ Features
 * **Automated Directory Structures:** Ensures all project files are strictly organized and standardized across your team.
@@ -13,9 +13,11 @@ Originally developed as a MEL-based plug-in by Kickstand called OpenPipeline, th
 * **Dynamic Add-on System:** Drop custom Python scripts into the `addons` folder to automatically expose them in the UI without modifying core code.
 * **Modern Python API:** Extensible and fully accessible via Python 3.
 
-## 🗺️ Roadmap & Planned Integrations
-Expanding openPypeline Studio to be a fully DCC-agnostic, modern pipeline framework. 
-For a detailed, step-by-step checklist of our progress, please see the [Project Roadmap](ROADMAP.md). 
+## 🗺️ Project Direction & Roadmap
+The project is evolving from a Maya-first tool into a modular pipeline framework for multiple creative applications and remote teams. The intended architecture keeps shared pipeline concepts in the core and puts host-specific operations behind separate integrations. openPypeline runs locally and works with project folders that teams keep synchronized through services such as Google Drive, iCloud Drive, OneDrive, or Dropbox.
+
+Maya is the initial integration; support for other applications is planned and should not be assumed complete until documented and tested. The initial Maya file-use feature writes advisory notices under `.openpypeline/file_use` in the active project folder, warns when a scene has another session's notice, and asks for confirmation before saving when a notice exists or the on-disk file size or modification time changed. The sync client remains responsible for synchronization. Since its updates may be delayed or preserve file timestamps, these notices and checks cannot guarantee that simultaneous edits or overwrites are prevented. For a detailed, step-by-step checklist of progress, see the [Project Roadmap](ROADMAP.md).
+
 Planned upcoming features include:
 * **VFX Reference Platform Standards:** Full support for **OpenUSD** (Universal Scene Description), **OpenColorIO (OCIO)**, **OpenImageIO (OIIO)**, and **Alembic (.abc)**.
 * **Production Tracking:** Abstracted API support for major trackers including **Autodesk Flow Production Tracking (ShotGrid)**, **Ftrack**, and **Kitsu**.
@@ -25,11 +27,13 @@ Planned upcoming features include:
   * **Real-time & Game Engines:** Unity and Unreal Engine.
   * **Compositing & FX:** Nuke and Houdini.
 
-## ⚙️ Current Requirements
-* **Autodesk Maya 2026** (or newer recommended)
-* Python 3.11+ (Native to modern Maya)
+## ⚙️ Requirements
+* Python 3.11+ for the shared project code.
+* Autodesk Maya 2026 or newer for the current Maya integration. Other host integrations may have their own requirements as they are developed.
 
-## 🚀 Installation & Setup
+## 🚀 Maya Installation & Setup
+The instructions below set up the current Maya integration.
+
 1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory. Example: `/Users/Shared/Autodesk/maya/scripts`
 2. Open **Autodesk Maya**.
 3. Open the **Script Editor** (Python tab).
@@ -49,7 +53,7 @@ ops_loader.openPypelineSetup()
 ```
 5. Follow the on-screen prompts to define your Script Path and Project Path.
 
-## 📖 Usage
+## 📖 Maya Usage
 Once installed and configured, you can launch the main UI at any time using:
 ```python
 from openpypeline.app.maya.core import ops_loader
