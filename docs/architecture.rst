@@ -51,7 +51,7 @@ Project data and scene files
 
 User preferences are stored separately from project records. The project-file location is selected in preferences; under that location, the project registry is stored in ``openpypeline_projects.json`` and the optional shared user list in ``openpypeline_users.json``. Project configuration describes paths, naming terms, formats, and other project settings. Production scenes and related files are stored in the project's configured folders rather than inside the Python package.
 
-For an item operation, the UI selection is represented by an ``ItemContext``: a browser tab and up to three hierarchy levels. Shared path and file helpers combine that context with the selected project's configuration and naming preferences to find the relevant item, WIP, or Master on disk. WIP versions are numbered files; a Master is the named production version. The Maya integration performs host-specific operations such as opening or saving scenes.
+For an item operation, the UI selection is represented by an ``ItemContext``: a UI browser tab and up to three hierarchy levels. Shared path and file helpers combine that context with the selected project's configuration and naming preferences to find the relevant item, WIP, or Master. WIP versions are numbered files; a Master is the named production version. The Maya integration performs host-specific operations such as opening or saving scenes.
 
 Current boundaries and limitations
 ----------------------------------
