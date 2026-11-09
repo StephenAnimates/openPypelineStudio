@@ -37,12 +37,16 @@ Organizations
 
 Studios Using the Original openPipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Guru Studio, Toronto, Canada
-* Edit1, New York, USA
-* ReelFX, Dallas, USA
+* `Guru Studio <https://gurustudio.com>`_, Toronto, Canada
+* `Edit1 <https://www.e1studios.com>`_, New York, USA
+* `ReelFX <https://www.reelfx.com>`_, Dallas, USA
 * Illusion Studios, Argentina
 * EttaminA, India
 * Trine Studios, India
 * Hush, New York, USA
-* Hornet, New York, USA
+* `Hornet <https://www.hellohornet.com>`_, New York, USA
 * JWTwo, New York, USA
+
+The original site does not date these studio listings. Their current operating
+status and whether they still use OpenPipeline have not been established here;
+the list is retained as a historical record.
