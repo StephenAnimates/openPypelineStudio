@@ -101,6 +101,15 @@ def save_as(filepath, file_type=None):
         cmds.warning(f"openPypeline Studio: Failed to save as {filepath}. Error: {e}")
         return False
 
+def execute_command(command):
+    """Execute a user-authored Python command in Maya's scene context."""
+    try:
+        exec(command, {"cmds": cmds})
+        return True
+    except Exception as e:
+        logger.error(f"Failed to execute Master command: {e}")
+        return False
+
 def export_file(filepath, file_type=None, selected=False):
     """Exports the current scene or selection to a file."""
     _ensure_plugins_loaded(filepath=filepath, file_type=file_type)

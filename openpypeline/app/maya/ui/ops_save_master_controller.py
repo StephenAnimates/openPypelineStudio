@@ -9,7 +9,7 @@ Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 from . import ui_objects as UIObjects
 from ..core import ops_ui_wrappers as opsUIWrappers
 from ....core import ops_actions as opsActions
@@ -134,7 +134,20 @@ class OpsSaveMasterController(QtCore.QObject):
         comment = self.view.ops_masterCommentField_scrollField.toPlainText()
         task_id = self.view.task_combo.currentData() or 0
         
-        opsActions.save_master(comment, flatten, del_layers, after, command, task_id)
+        if not opsActions.save_master(
+            comment,
+            flatten,
+            del_layers,
+            after,
+            command,
+            task_id,
+        ):
+            QtWidgets.QMessageBox.warning(
+                self.view,
+                localization.get_string("win_masterSwitchboard"),
+                "The Master could not be saved. Check the log for details.",
+            )
+            return
         
         self.view.close()
         opsUIWrappers.refresh_ui()
