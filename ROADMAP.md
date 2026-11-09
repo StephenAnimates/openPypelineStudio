@@ -65,7 +65,11 @@ This document tracks the modernization and feature expansion of openPypeline Stu
 - [ ] Create Blender integration (`/openpypeline/app/blender/`).
 - [ ] Develop a Standalone / Headless execution mode.
 
-## Phase 7: Production Tracking & API Integrations
+## Phase 7: Production Tracking, Version Control System (VCS) & API Integrations
+- [x] Implement core VCS base and subprocess handlers (Git, SVN, Perforce) in `Version.py`.
+- [x] Hook VCS `publish()` method into `ops_actions.py` for mastering workflows.
+- [ ] Add VCS selection dropdown to the Project Editor dialog.
+- [ ] Add Perforce file locking and checkout support to the `perforce` handler.
 - [ ] Fully implement Autodesk Flow Production Tracking (ShotGrid) API integration (`/openpypeline/core/trackers/shotgrid.py`).
 - [ ] Create ftrack integration (Optional).
 - [ ] Create Kitsu integration (Optional).

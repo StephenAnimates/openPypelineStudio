@@ -108,10 +108,48 @@ class Version():
     
     
 class svn(Version):
-    pass
+    def publish(self, filepath, comment="Publishing new version"):
+        """Publishes a file to SVN."""
+        import subprocess
+        import os
+        repo_dir = os.path.dirname(filepath)
+        try:
+            subprocess.run(["svn", "add", filepath], cwd=repo_dir, check=False, capture_output=True)
+            subprocess.run(["svn", "commit", "-m", comment, filepath], cwd=repo_dir, check=True, capture_output=True)
+            logger.info(f"Successfully published {filepath} to SVN.")
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"SVN publish failed: {e.stderr.decode('utf-8').strip() if e.stderr else e}")
+            return False
 
 class git(Version):
-    pass
+    def publish(self, filepath, comment="Publishing new version"):
+        """Publishes a file to Git."""
+        import subprocess
+        import os
+        repo_dir = os.path.dirname(filepath)
+        try:
+            subprocess.run(["git", "add", filepath], cwd=repo_dir, check=True, capture_output=True)
+            subprocess.run(["git", "commit", "-m", comment], cwd=repo_dir, check=True, capture_output=True)
+            subprocess.run(["git", "push"], cwd=repo_dir, check=True, capture_output=True)
+            logger.info(f"Successfully published {filepath} to Git.")
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Git publish failed: {e.stderr.decode('utf-8').strip() if e.stderr else e}")
+            return False
 
 class cvs(Version):
     pass
+
+class perforce(Version):
+    def publish(self, filepath, comment="Publishing new version"):
+        """Publishes a file to Perforce."""
+        import subprocess
+        try:
+            subprocess.run(["p4", "reconcile", filepath], check=False, capture_output=True)
+            subprocess.run(["p4", "submit", "-d", comment, filepath], check=True, capture_output=True)
+            logger.info(f"Successfully published {filepath} to Perforce.")
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Perforce publish failed: {e.stderr.decode('utf-8').strip() if e.stderr else e}")
+            return False
