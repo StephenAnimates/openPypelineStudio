@@ -1,0 +1,5 @@
+.sig .pre,
+.sig a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}

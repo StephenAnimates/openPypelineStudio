@@ -124,7 +124,11 @@ The API reference is generated from the Python package during the documentation 
    :caption: Documentation
 
    about
+   architecture
    architecture_migration
+   configuration
+   host_support
+   perforce_setup
    modules
 
 Indices and tables

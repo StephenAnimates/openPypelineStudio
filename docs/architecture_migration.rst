@@ -51,4 +51,4 @@ Contributor guidance
 * Add or update tests when migrating behavior, using host doubles for shared
   logic and host-specific smoke tests where the application is available.
 
-The generated :doc:`modules` reference documents the current Python package.
+The generated :doc:`openPypeline Studio <modules>` reference documents the current Python package.
