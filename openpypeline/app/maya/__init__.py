@@ -1,0 +1,1 @@
+"""Autodesk Maya integration for openPypeline Studio."""

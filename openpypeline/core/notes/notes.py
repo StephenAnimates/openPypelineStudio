@@ -1,3 +1,5 @@
+"""Create and query XML notes associated with pipeline items."""
+
 import os
 
 class Notes:

@@ -1,0 +1,1 @@
+"""Optional add-ons for the Maya integration."""

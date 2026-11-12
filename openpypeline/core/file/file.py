@@ -1,3 +1,5 @@
+"""Base filesystem interface used by pipeline file handlers."""
+
 import os
 
 class File:

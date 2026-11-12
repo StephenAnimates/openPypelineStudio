@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Provide a base class that caches one instance per subclass."""
 
 class singleton(object):
      """ A Pythonic Singleton """

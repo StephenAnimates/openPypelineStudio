@@ -1,3 +1,5 @@
+"""Tests for host-adapter loading in the pipeline engine."""
+
 import sys
 from types import ModuleType
 from unittest.mock import MagicMock

@@ -1,3 +1,5 @@
+"""Resolve and manage published master files."""
+
 import os
 import importlib
 

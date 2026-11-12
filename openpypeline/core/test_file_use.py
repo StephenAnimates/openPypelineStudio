@@ -1,3 +1,5 @@
+"""Tests for file-use state detection and advisory registry behavior."""
+
 import json
 import os
 from datetime import datetime, timedelta, timezone

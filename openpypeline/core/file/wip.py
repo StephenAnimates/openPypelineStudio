@@ -1,3 +1,5 @@
+"""Resolve and manage work-in-progress file versions."""
+
 import os
 import importlib
 import logging

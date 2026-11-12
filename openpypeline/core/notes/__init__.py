@@ -1,0 +1,1 @@
+"""Notes and annotations associated with pipeline items."""

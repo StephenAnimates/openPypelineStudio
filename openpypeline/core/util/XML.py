@@ -1,3 +1,5 @@
+"""Serialize and deserialize supported Python objects as XML."""
+
 import xml.dom.minidom
 import __main__
 import logging

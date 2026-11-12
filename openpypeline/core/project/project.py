@@ -1,3 +1,5 @@
+"""Manage project configuration and project-list persistence."""
+
 import os
 import importlib
 

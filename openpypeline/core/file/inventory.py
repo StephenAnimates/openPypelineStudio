@@ -1,3 +1,5 @@
+"""Build and query filesystem paths for pipeline inventory structures."""
+
 import os
 
 class Inventory:
