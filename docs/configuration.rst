@@ -56,4 +56,4 @@ Maya user preferences
 
 The Maya **Settings** dialog exposes date and time display formats, default WIP and Master names, a default scene format, and production-tracker settings. The tracker credentials are local user preferences, not project-shared configuration. The current tracker selector offers ``none`` and ShotGrid; connection and publishing features depend on the tracker integration being configured and available.
 
-For general installation and project setup steps, see :doc:`index`. For the relationship between shared code and host integrations, see :doc:`architecture`.
+For general installation and project setup steps, see :doc:`getting_started`. For the relationship between shared code and host integrations, see :doc:`architecture`.

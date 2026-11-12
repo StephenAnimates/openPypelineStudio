@@ -34,24 +34,31 @@ Planned upcoming features include:
 ## 🚀 Maya Installation & Setup
 The instructions below set up the current Maya integration.
 
-1. Clone or download this repository to your Maya user scripts directory (e.g., `~/maya/scripts/`) or a common network scripts directory. Example: `/Users/Shared/Autodesk/maya/scripts`
+1. Download `openPypelineStudio.zip` from the nightly GitHub release and extract it into your Maya scripts directory. It creates an `openPypelineStudio` folder. If you clone the repository instead, name the checkout folder `openPypelineStudio`. Use the location that matches your operating system:
+   - macOS: `~/maya/scripts/` or `/Users/Shared/Autodesk/maya/scripts`
+   - Windows: `%USERPROFILE%\maya\scripts\` or `C:\Users\YourName\maya\scripts`
 2. Open **Autodesk Maya**.
 3. Open the **Script Editor** (Python tab).
-4. Run the following code to initialize the setup UI, replacing the path with your actual installation directory:
+4. Run the following code to initialize the setup UI, replacing the path with your actual installation directory. Use the example that matches your OS:
 
 ```python
 import sys
 
-# Path to the directory containing the 'openpypeline' folder (install root)
-ops_install_path = "/Users/Shared/Autodesk/maya/scripts/openPypeline"
+# macOS example
+ops_install_path = "/Users/Shared/Autodesk/maya/scripts/openPypelineStudio"
+
+# Windows example
+# ops_install_path = r"C:\Users\YourName\maya\scripts\openPypelineStudio"
 
 if ops_install_path not in sys.path:
     sys.path.insert(0, ops_install_path)
-    
+
 from openpypeline.app.maya.core import ops_loader
 ops_loader.openPypelineSetup()
 ```
 5. Follow the on-screen prompts to define your Script Path and Project Path.
+
+For maintainer instructions on publishing nightly releases, see [Contributing](CONTRIBUTING.md).
 
 ## 📖 Maya Usage
 Once installed and configured, you can launch the main UI at any time using:
