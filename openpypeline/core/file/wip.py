@@ -11,7 +11,10 @@ from ..util import prefs
 importlib.reload(prefs)
 
 class WIP(base_file.File):
+    """Resolve and manage an item's work-in-progress versions."""
+
     def __init__(self):
+        """Initialize the WIP handler through the shared file base."""
         super().__init__()
     
     def open(self, path, item, version):
@@ -33,4 +36,5 @@ class WIP(base_file.File):
 
     
     def save(self):
+        """Provide the extension point for saving a WIP version."""
         pass

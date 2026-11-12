@@ -121,6 +121,7 @@ def is_valid_project_file_path(folder):
 class OpsSetupDialog(QtWidgets.QDialog):
     """PySide6 dialog for initializing openPypeline Studio paths."""
     def __init__(self, project_path, parent=None):
+        """Initialize the setup dialog and prefill any configured project path."""
         super().__init__(parent)
         self.setWindowTitle("openPypeline Studio Setup")
         self.setMinimumSize(405, 200)
@@ -133,6 +134,7 @@ class OpsSetupDialog(QtWidgets.QDialog):
             self.toggle_project_path_field(force_custom=True, path=self.project_path_initial)
 
     def _build_ui(self):
+        """Build the project-path editor, browse control, and accept/cancel buttons."""
         layout = QtWidgets.QVBoxLayout(self)
         
         # Project File Setup
@@ -172,11 +174,13 @@ class OpsSetupDialog(QtWidgets.QDialog):
         layout.addLayout(btn_layout)
 
     def browse_proj_path(self):
+        """Choose a directory and populate the project-path field."""
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
         if dir_path:
             self.proj_field.setText(os.path.join(dir_path, "").replace("\\", "/"))
 
     def toggle_project_path_field(self, *args, force_custom=False, path=""):
+        """Switch between the default project path and an editable custom path."""
         if not self.proj_field.isReadOnly() and not force_custom:
             self.proj_field.setReadOnly(True)
             self.proj_field.setText("[Default]")
@@ -190,6 +194,7 @@ class OpsSetupDialog(QtWidgets.QDialog):
             self.proj_browse_btn.setEnabled(True)
 
     def setup_exec(self):
+        """Validate paths, save a valid project location, and launch the app."""
         if not self.proj_field.isReadOnly():
             proj_file_path = self.proj_field.text()
         else:

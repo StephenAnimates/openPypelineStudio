@@ -10,14 +10,16 @@ License: Common Public License 1.0 (CPL-1.0)
 
 from PySide6 import QtWidgets
 from openpypeline.core.localization import localization
-from ..core import ops_ui_wrappers as opsUIWrappers
-from ....core import ops_actions as opsActions
-from ....core import ops_project as opsProject
+from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
+from openpypeline.core import ops_actions as opsActions
+from openpypeline.core import ops_project as opsProject
 from .ops_main_ui import opsMainUI
 from openpypeline.core.models import Tab, Level
 
 class OpsMainController:
+    """Connect main-window controls to pipeline actions and refresh handlers."""
     def __init__(self):
+        """Create the main view and initialize its signals and project state."""
         # 1. Instantiate the View (UI)
         self.view = opsMainUI()
         
@@ -28,6 +30,7 @@ class OpsMainController:
         self._populate_initial_data()
 
     def _connect_signals(self):
+        """Connect main-window controls and list selections to their handlers."""
         # Connect buttons and widgets from the View to backend logic
         self.view.ops_projName_optionMenu.currentTextChanged.connect(self.on_project_changed)
         self.view.ops_refreshUIButton.clicked.connect(opsUIWrappers.refresh_ui)
@@ -114,6 +117,7 @@ class OpsMainController:
         self.view.action_new_shot_component.triggered.connect(opsUIWrappers.prompt_new_shot_component)
 
     def _populate_initial_data(self):
+        """Initialize the main window with project data and available add-ons."""
         # Initialize the UI with data from the Model
         self._load_addons()
 
@@ -190,7 +194,7 @@ class OpsMainController:
         """Launches the Scene Inventory tool."""
         try:
             # Defer import since this tool is an independent module
-            from ..core import ops_scene_inv as opsSceneInv
+            from openpypeline.app.maya.core import ops_scene_inv as opsSceneInv
             opsSceneInv.show_window()
         except ImportError:
             print(localization.get_string("msg_sceneInvNotAvailable"))

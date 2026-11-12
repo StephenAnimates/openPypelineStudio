@@ -11,12 +11,14 @@ License: Common Public License 1.0 (CPL-1.0)
 
 from PySide6 import QtCore
 from . import ui_objects
-from ..core import ops_ui_wrappers as opsUIWrappers
+from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
 from openpypeline.core.util import prefs
 from .ops_settings_gui import opsSettingsGUI
 
 class OpsSettingsController(QtCore.QObject):
+    """Coordinate preference fields in the global settings dialog."""
     def __init__(self):
+        """Create the settings view and load its current preference values."""
         super().__init__()
         self.UIObjects = ui_objects.UIObjects()
         self.view = opsSettingsGUI()
@@ -25,13 +27,16 @@ class OpsSettingsController(QtCore.QObject):
         self._populate_fields()
 
     def showWindow(self):
+        """Display the settings window."""
         self.view.show()
 
     def _connect_signals(self):
+        """Connect save and cancel controls to their actions."""
         self.view.save_btn.clicked.connect(self.on_save)
         self.view.cancel_btn.clicked.connect(self.view.close)
 
     def _populate_fields(self):
+        """Populate each settings control from the stored user preferences."""
         date_fmt = prefs.get_pref("ops_dateFormat", "%m/%d/%Y")
         if date_fmt == "%d/%m/%Y": self.view.date_format_combo.setCurrentIndex(1)
         elif date_fmt == "%Y-%m-%d": self.view.date_format_combo.setCurrentIndex(2)
@@ -63,6 +68,7 @@ class OpsSettingsController(QtCore.QObject):
         self.view.tracker_key_field.setText(prefs.get_pref("ops_tracker_key", ""))
 
     def on_save(self, *args):
+        """Persist the selected settings and refresh the main UI."""
         date_idx = self.view.date_format_combo.currentIndex()
         if date_idx == 1: prefs.set_pref("ops_dateFormat", "%d/%m/%Y")
         elif date_idx == 2: prefs.set_pref("ops_dateFormat", "%Y-%m-%d")

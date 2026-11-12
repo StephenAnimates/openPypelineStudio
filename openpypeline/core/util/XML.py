@@ -4,12 +4,18 @@ import logging
 
 logger = logging.getLogger("openPypeline.xml")
 
-class xmlserialize(object): pass
-class xmlunpicklingException(Exception): pass
-	
+class xmlserialize(object):
+	"""Marker base class for objects encoded by the XML serializer."""
+
+class xmlunpicklingException(Exception):
+	"""Raised when serialized XML has an invalid container structure."""
+
+	pass
+
 class xmlfile(object):
 	""" Class to handle saving / loading an xmlserialize object to file """
 	def __init__(self, filename=None):
+		"""Store the path used by subsequent XML load and save operations."""
 		self.filename = filename
 		
 	def load(self):
@@ -68,6 +74,7 @@ class xmlfile(object):
 	_easyToPickle = [ "int", "float", "str", "unicode", "long" ]
 	
 	def _isCallable(self, obj):
+		"""Return whether an object can be called like a function."""
 		return hasattr(obj, "__call__")
 	
 	# 
@@ -75,6 +82,7 @@ class xmlfile(object):
 	# 
 	
 	def _pickleDictItems(self, root, node, fabric):
+		"""Append each dictionary key and value as an XML item node."""
 		for key, value in root.items():
 			tempnode = fabric.createElement("item")
 			tempnode.appendChild(self.pickle(key, fabric, "key"))
@@ -82,6 +90,7 @@ class xmlfile(object):
 			node.appendChild(tempnode)
 	
 	def _pickleListItems(self, root, node, fabric):
+		"""Append sequence entries as indexed XML item nodes."""
 		for idx, obj in enumerate(root):
 			tempnode = self.pickle(obj, fabric, "item")
 			tempnode.attributes["index"] = str(idx)
@@ -90,6 +99,7 @@ class xmlfile(object):
 	_pickleTupleItems = _pickleListItems
 	
 	def pickle(self, root, fabric, elementName="root"):
+		"""Serialize a supported Python value into an XML element tree."""
 	
 		node = fabric.createElement(elementName)
 		typeStr = self.getType(root)
@@ -186,6 +196,7 @@ class xmlfile(object):
 			return obj
 	
 	def _unpickleList(self, node):
+		"""Rebuild a list from indexed child elements in serialized XML."""
 		li = []
 		# collect entries, you can not assume that the
 		# members of the list appear in the right order !
@@ -201,9 +212,11 @@ class xmlfile(object):
 		return [ item[1] for item in li ]
 	
 	def _unpickleTuple(self, node):
+		"""Rebuild a tuple using the serialized list representation."""
 		return tuple(self._unpickleList(node))
 	
 	def _unpickleDict(self, node):
+		"""Rebuild a dictionary from serialized key-value item elements."""
 		dd = dict()
 		for name, element in self._getElementChilds(node):
 			if name != "item":

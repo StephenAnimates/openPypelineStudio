@@ -19,6 +19,7 @@ class opsSettingsGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
     """
 
     def __init__(self, parent=None):
+        """Initialize the settings dialog and build its preference controls."""
         super().__init__(parent=parent)
         
         self.setWindowTitle(localization.get_string("win_globalSettings"))
@@ -29,6 +30,7 @@ class opsSettingsGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         self._build_ui()
         
     def _build_ui(self):
+        """Lay out controls for localization, pipeline defaults, and tracking."""
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)

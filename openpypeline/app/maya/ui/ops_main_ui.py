@@ -57,8 +57,10 @@ OPS_STYLESHEET = """
 """
 
 class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
+    """Build the dockable main window for browsing and managing pipeline items."""
 
     def __init__(self, parent=None):
+        """Initialize resources, localization, and the main window layout."""
         super().__init__(parent=parent)
         self.setWindowTitle("openPypeline Studio")
         self.setObjectName("openPypelineUI")
@@ -132,6 +134,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self._build_bottom_buttons(self.main_layout)
 
     def _build_top_menu(self):
+        """Create the localized menus for file, project, creation, and app actions."""
         menubar = self.menuBar()
         
         file_menu = menubar.addMenu(localization.get_string("menu_file"))
@@ -178,6 +181,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.action_help = help_menu.addAction(localization.get_string("menu_helpAction"))
 
     def _build_basic_info(self, parent_layout):
+        """Add project identity and summary controls to the supplied layout."""
         header_layout = QtWidgets.QHBoxLayout()
         info_layout = QtWidgets.QFormLayout()
         
@@ -197,6 +201,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addLayout(header_layout)
 
     def _build_currently_open_tab(self):
+        """Create the tab for actions, preview, notes, and history of the open item."""
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(tab)
         
@@ -289,6 +294,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.ops_mainTabs_tabLayout.addTab(tab, localization.get_string("tab_currentlyOpen"))
 
     def _build_asset_browser_tab(self):
+        """Create the asset-browser tab and its inventory and information sections."""
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(tab)
         
@@ -303,6 +309,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.ops_mainTabs_tabLayout.addTab(tab, localization.get_string("tab_assetBrowser"))
 
     def _build_asset_types_column(self, parent_layout):
+        """Add the asset-type list and its create and delete controls."""
         col1 = QtWidgets.QGroupBox(localization.get_string("grp_assetTypes"))
         col1_layout = QtWidgets.QVBoxLayout(col1)
         self.ops_assetType_txtScrollList = QtWidgets.QListWidget()
@@ -322,6 +329,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col1)
 
     def _build_assets_column(self, parent_layout):
+        """Add the asset list and its create, delete, and rename controls."""
         col2 = QtWidgets.QGroupBox(localization.get_string("grp_assets"))
         col2_layout = QtWidgets.QVBoxLayout(col2)
         self.ops_asset_scrollList = QtWidgets.QListWidget()
@@ -346,6 +354,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col2)
 
     def _build_asset_components_column(self, parent_layout):
+        """Add the component list and its create and delete controls."""
         col3 = QtWidgets.QGroupBox(localization.get_string("grp_components"))
         col3_layout = QtWidgets.QVBoxLayout(col3)
         self.ops_componentScrollList = QtWidgets.QListWidget()
@@ -366,6 +375,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col3)
 
     def _build_asset_info_section(self, parent_layout):
+        """Add the selected asset's metadata and location controls."""
         info_layout = QtWidgets.QHBoxLayout()
         prev_group = QtWidgets.QGroupBox(localization.get_string("grp_preview"))
         prev_layout = QtWidgets.QVBoxLayout(prev_group)
@@ -401,6 +411,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addLayout(loc_layout)
 
     def _build_shot_browser_tab(self):
+        """Create the shot-browser tab and its inventory and information sections."""
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(tab)
         
@@ -415,6 +426,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         self.ops_mainTabs_tabLayout.addTab(tab, localization.get_string("tab_shotBrowser"))
 
     def _build_sequences_column(self, parent_layout):
+        """Add the sequence list and its create and delete controls."""
         col1 = QtWidgets.QGroupBox(localization.get_string("grp_sequence"))
         col1_layout = QtWidgets.QVBoxLayout(col1)
         self.ops_sequenceScrollList = QtWidgets.QListWidget()
@@ -434,6 +446,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col1)
 
     def _build_shots_column(self, parent_layout):
+        """Add the shot list and its create, delete, and rename controls."""
         col2 = QtWidgets.QGroupBox(localization.get_string("grp_shot"))
         col2_layout = QtWidgets.QVBoxLayout(col2)
         self.ops_shotScrollList = QtWidgets.QListWidget()
@@ -454,6 +467,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col2)
 
     def _build_shot_components_column(self, parent_layout):
+        """Add the shot-component list and its create and delete controls."""
         col3 = QtWidgets.QGroupBox(localization.get_string("grp_components"))
         col3_layout = QtWidgets.QVBoxLayout(col3)
         self.ops_shotComponentScrollList = QtWidgets.QListWidget()
@@ -474,6 +488,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addWidget(col3)
 
     def _build_shot_info_section(self, parent_layout):
+        """Add the selected shot's metadata and location controls."""
         info_layout = QtWidgets.QHBoxLayout()
         prev_group = QtWidgets.QGroupBox(localization.get_string("grp_preview"))
         prev_layout = QtWidgets.QVBoxLayout(prev_group)
@@ -509,6 +524,7 @@ class opsMainUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         parent_layout.addLayout(loc_layout)
 
     def _build_bottom_buttons(self, parent_layout):
+        """Add the bottom-row controls for project management and application actions."""
         bottom_layout = QtWidgets.QHBoxLayout()
         self.ops_refreshUIButton = QtWidgets.QPushButton(localization.get_string("btn_refreshUi"))
         self.ops_refreshUIButton.setMinimumHeight(35)

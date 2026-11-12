@@ -1,11 +1,15 @@
 import os
 
 class Inventory:
+    """Build filesystem paths and list entries for a pipeline inventory."""
+
     def __init__(self, elements):
+        """Store the ordered path elements that identify this inventory."""
         self.elements = elements
         pass
     
     def getPath(self):
+        """Construct the directory path represented by the stored elements."""
         depth = len(self.elements)
         path = ""
         count = 0
@@ -20,6 +24,7 @@ class Inventory:
         return path    
     
     def list(self, path=""):
+        """List non-hidden entries under the supplied or constructed path."""
         if path == "":
             path = self.getPath()
 
@@ -28,6 +33,7 @@ class Inventory:
         return inventory
     
     def count(self):
+        """Count regular files directly inside the constructed path."""
         path = self.getPath()
         file_count = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
         return file_count

@@ -22,8 +22,10 @@ OPS_SAVE_MASTER_STYLESHEET = """
 """
 
 class opsSaveMasterGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
+    """Present controls for configuring and submitting a master save."""
 
     def __init__(self, parent=None):
+        """Initialize the master-save options, task selector, and action buttons."""
         super().__init__(parent=parent)
         
         self.mName = "Master"

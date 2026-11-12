@@ -21,10 +21,12 @@ class ShotGridTracker(ProductionTracker):
     """
     
     def __init__(self, url, auth_user, auth_key):
+        """Initialize tracker credentials and an empty ShotGrid API client."""
         super().__init__(url, auth_user, auth_key)
         self.sg = None
 
     def connect(self):
+        """Authenticate to ShotGrid and verify connectivity with a project query."""
         if not shotgun_api3:
             logger.error("Cannot connect to ShotGrid: shotgun_api3 is not installed.")
             return False
@@ -45,6 +47,7 @@ class ShotGridTracker(ProductionTracker):
             return False
 
     def get_projects(self):
+        """Return active ShotGrid projects when connected."""
         if not self.connected:
             return []
         try:
@@ -56,6 +59,7 @@ class ShotGridTracker(ProductionTracker):
             return []
 
     def get_user_tasks(self, username):
+        """Return tasks assigned to the ShotGrid user with the given login."""
         if not self.connected:
             return []
         try:
@@ -71,6 +75,7 @@ class ShotGridTracker(ProductionTracker):
             return []
 
     def update_task_status(self, task_id, status):
+        """Set a ShotGrid task's status and report whether the update succeeded."""
         if not self.connected:
             return False
         try:
@@ -82,6 +87,7 @@ class ShotGridTracker(ProductionTracker):
             return False
 
     def publish_version(self, task_id, filepath, version, comment):
+        """Create a ShotGrid Version linked to the task and its project entity."""
         if not self.connected:
             return False
         try:

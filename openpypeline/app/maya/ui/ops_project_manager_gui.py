@@ -9,10 +9,10 @@ from PySide6 import QtWidgets, QtCore
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 from . import ui_objects as UIObjects
-from ..core import ops_loader as opsLoader
-from ....core import ops_project as opsProject
-from ....core import ops_actions as opsActions
-from ..core import ops_utils as opsUtils
+from openpypeline.app.maya.core import ops_loader as opsLoader
+from openpypeline.core import ops_project as opsProject
+from openpypeline.core import ops_actions as opsActions
+from openpypeline.app.maya.core import ops_utils as opsUtils
 from openpypeline.core.util import prefs
 from openpypeline.core.localization import localization
 
@@ -39,6 +39,7 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     """
 
     def __init__(self, parent=None):
+        """Initialize the project manager window and its project controls."""
         super().__init__(parent=parent)
 
         self.UIObjects = UIObjects.UIObjects()

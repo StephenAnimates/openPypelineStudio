@@ -13,6 +13,7 @@ from openpypeline.core.file_use import FileUseRegistry
 
 @pytest.fixture
 def maya_file_use_module(monkeypatch):
+    """Load Maya file-use callbacks against mocked Maya and Qt modules."""
     maya = ModuleType("maya")
     maya.__path__ = []
     maya.cmds = MagicMock()
@@ -54,6 +55,7 @@ def maya_file_use_module(monkeypatch):
 
 
 def test_install_callbacks_registers_scene_already_open(maya_file_use_module):
+    """Register lifecycle callbacks and process a scene already open in Maya."""
     module, timer = maya_file_use_module
     module._after_open = MagicMock()
 
@@ -69,6 +71,7 @@ def test_save_as_outside_project_releases_old_notice(
     monkeypatch,
     tmp_path,
 ):
+    """Release the old project notice after saving to an external path."""
     module = maya_file_use_module[0]
     project = tmp_path / "project"
     project.mkdir()
@@ -97,6 +100,7 @@ def test_save_as_inside_project_moves_notice_to_saved_path(
     monkeypatch,
     tmp_path,
 ):
+    """Move the active notice from the old scene to an in-project Save As path."""
     module = maya_file_use_module[0]
     project = tmp_path / "project"
     project.mkdir()
@@ -128,6 +132,7 @@ def test_save_as_warns_after_saving_to_path_with_existing_notice(
     monkeypatch,
     tmp_path,
 ):
+    """Warn when Save As completes at a path already noticed by another session."""
     module = maya_file_use_module[0]
     project = tmp_path / "project"
     project.mkdir()

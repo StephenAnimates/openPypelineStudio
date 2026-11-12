@@ -11,6 +11,7 @@ def test_save_master_saves_next_wip_before_master_and_reopens_it(
     monkeypatch,
     tmp_path,
 ):
+    """Save the next WIP before publishing master, then reopen that WIP."""
     events = []
     master_path = tmp_path / "asset" / "asset_asset.ma"
     wip_path = tmp_path / "asset" / "wip" / "asset_wip_0002.ma"
@@ -19,10 +20,12 @@ def test_save_master_saves_next_wip_before_master_and_reopens_it(
     previous_wip_path.touch()
 
     def save_as(filepath, file_type):
+        """Record a DCC save request for order verification."""
         events.append(("save", filepath, file_type))
         return True
 
     def open_file(filepath):
+        """Record a DCC open request for order verification."""
         events.append(("open", filepath))
         return True
 
@@ -76,6 +79,7 @@ def test_save_master_does_not_publish_when_next_wip_save_fails(
     monkeypatch,
     tmp_path,
 ):
+    """Abort master publishing when the next WIP cannot be saved."""
     master_path = tmp_path / "asset" / "asset_asset.ma"
     wip_path = tmp_path / "asset" / "wip" / "asset_wip_0002.ma"
     save_as = MagicMock(return_value=False)
@@ -103,6 +107,7 @@ def test_save_master_does_not_publish_when_next_wip_save_fails(
 
 
 def test_save_master_publishes_to_the_selected_tracking_task(monkeypatch):
+    """Publish the saved master against the explicitly selected tracker task."""
     from openpypeline.app.maya.core import tracker_factory
 
     publish_version = MagicMock(return_value=True)

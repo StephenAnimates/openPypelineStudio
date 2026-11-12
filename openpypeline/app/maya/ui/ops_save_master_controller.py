@@ -11,8 +11,8 @@ License: Common Public License 1.0 (CPL-1.0)
 
 from PySide6 import QtCore, QtWidgets
 from . import ui_objects as UIObjects
-from ..core import ops_ui_wrappers as opsUIWrappers
-from ....core import ops_actions as opsActions
+from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
+from openpypeline.core import ops_actions as opsActions
 from openpypeline.core.util import prefs
 from openpypeline.core.localization import localization
 from .ops_save_master_gui import opsSaveMasterGUI
@@ -24,6 +24,7 @@ class TaskFetcher(QtCore.QObject):
     error = QtCore.Signal(str)
 
     def __init__(self, tracker_type, url, user, key, username):
+        """Store tracker connection settings and the username to query."""
         super().__init__()
         self.tracker_type = tracker_type
         self.url = url
@@ -32,7 +33,8 @@ class TaskFetcher(QtCore.QObject):
         self.username = username
 
     def run(self):
-        from ..core import tracker_factory
+        """Fetch the user's tracker tasks and emit results or an error."""
+        from openpypeline.app.maya.core import tracker_factory
         try:
             tracker = tracker_factory.get_tracker(self.tracker_type, self.url, self.user, self.key)
             if not tracker:
@@ -44,7 +46,10 @@ class TaskFetcher(QtCore.QObject):
             self.error.emit(str(e))
 
 class OpsSaveMasterController(QtCore.QObject):
+    """Coordinate the Save Master dialog and its task lookup."""
+
     def __init__(self):
+        """Create the view, connect its controls, and begin loading tasks."""
         super().__init__()
         self.UIObjects = UIObjects.UIObjects()
         self.view = opsSaveMasterGUI()
@@ -92,6 +97,8 @@ class OpsSaveMasterController(QtCore.QObject):
         self.worker.error.connect(self._on_tasks_error)
         
         # Cleanup
+        # Quit the worker thread on either outcome and defer QObject disposal
+        # until Qt has delivered the completion signal.
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.worker.error.connect(self.thread.quit)
@@ -101,6 +108,7 @@ class OpsSaveMasterController(QtCore.QObject):
         self.thread.start()
 
     def _on_tasks_loaded(self, tasks):
+        """Populate the task selector with fetched tracker tasks."""
         self.view.task_combo.clear()
         self.view.task_combo.addItem(localization.get_string("lbl_none"), 0)
         self.view.task_combo.setEnabled(True)
@@ -118,6 +126,7 @@ class OpsSaveMasterController(QtCore.QObject):
             self.view.task_combo.addItem(display_str, task_id)
 
     def _on_tasks_error(self, err_msg):
+        """Show the appropriate fallback state after a failed task lookup."""
         self.view.task_combo.clear()
         self.view.task_combo.addItem(localization.get_string("lbl_none"), 0)
         if err_msg == "No tracker":

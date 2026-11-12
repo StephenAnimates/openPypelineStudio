@@ -31,6 +31,7 @@ from PySide6 import QtWidgets
 #       and Alembic (.abc) project creation and export using this diagnostic launcher!
 
 class OpsDevLauncher:
+    """Launch the developer diagnostic window after locating the source tree."""
 
     def __init__(self):
         '''

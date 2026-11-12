@@ -36,12 +36,14 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
     mock_OpsEngine.return_value = mock_engine_instance
     
     def mock_get_pref_call(key, default=None):
+        """Return format-specific test preferences and defaults."""
         if key == "ops_wipFormat": return file_ext
         if key == "ops_wip": return "wip"
         return default or "mocked_value"
     mock_get_pref.side_effect = mock_get_pref_call
 
     def mock_get_file_name_call(tab, level1, level2, level3, file_type, *args, **kwargs):
+        """Supply predictable item paths for each requested path category."""
         if file_type == 'folder': return "/dummy/path/item"
         if file_type == 'parentFolder': return "/dummy/path"
         if file_type == 'nextWorkshop': return f"/dummy/path/item/item_v001.{file_ext}"
@@ -49,6 +51,7 @@ def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_
     mock_get_file_name.side_effect = mock_get_file_name_call
     
     def mock_isdir_call(path):
+        """Simulate an uncreated item folder and existing parent directory."""
         if path == "/dummy/path/item": return False
         if path == "/dummy/path": return True
         return True
@@ -86,12 +89,14 @@ def test_save_wip_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file_na
     mock_OpsEngine.return_value = mock_engine_instance
     
     def mock_get_pref_call(key, default=None):
+        """Return the format-specific WIP preferences for this test."""
         if key == "ops_wipFormat": return file_ext
         if key == "ops_wip": return "wip"
         return default or "mocked_value"
     mock_get_pref.side_effect = mock_get_pref_call
     
     def mock_get_file_name_call(tab, level1, level2, level3, file_type, *args, **kwargs):
+        """Return the next-version path requested by the WIP action."""
         if file_type == 'nextWorkshop': return f"/dummy/path/item/item_v001.{file_ext}"
         return "/dummy/path/other"
     mock_get_file_name.side_effect = mock_get_file_name_call
@@ -122,6 +127,7 @@ def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file
     mock_OpsEngine.return_value = mock_engine_instance
     
     def mock_get_pref_call(key, default=None):
+        """Return format and master-name preferences used by the save action."""
         if key == "ops_wipFormat": return file_ext
         if key == "ops_masterFormat": return file_ext
         if key == "ops_masterName": return "master"
@@ -129,6 +135,7 @@ def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file
     mock_get_pref.side_effect = mock_get_pref_call
     
     def mock_get_file_name_call(tab, level1, level2, level3, file_type, *args, **kwargs):
+        """Return the expected master and next-version paths for the test."""
         if file_type == 'master': return f"/dummy/path/item/master.{file_ext}"
         if file_type == 'nextVersion': return f"/dummy/path/item/item_v001.{file_ext}"
         return "/dummy/path/other"

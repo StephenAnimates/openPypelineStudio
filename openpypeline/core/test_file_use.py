@@ -12,6 +12,7 @@ from openpypeline.core.file_use import (
 
 
 def test_file_state_detects_modification_and_missing_file(tmp_path):
+    """Detect changed file metadata and return no state after deletion."""
     scene = tmp_path / "asset.ma"
     scene.write_bytes(b"scene")
     original_state = get_file_state(str(scene))
@@ -26,6 +27,7 @@ def test_file_state_detects_modification_and_missing_file(tmp_path):
 
 
 def test_file_use_notice_is_visible_to_another_session(tmp_path):
+    """Expose one artist's project-relative notice to another session."""
     project = tmp_path / "project"
     project.mkdir()
     scene = project / "scenes" / "asset.ma"
@@ -54,6 +56,7 @@ def test_file_use_notice_is_visible_to_another_session(tmp_path):
 
 
 def test_release_removes_only_the_current_session_notice(tmp_path):
+    """Remove only the releasing registry's notice for a shared file."""
     project = tmp_path / "project"
     project.mkdir()
     scene = project / "asset.ma"
@@ -71,6 +74,7 @@ def test_release_removes_only_the_current_session_notice(tmp_path):
 
 
 def test_heartbeat_keeps_notice_visible_and_release_clears_state(tmp_path):
+    """Refresh a notice for observers and clear local state on release."""
     project = tmp_path / "project"
     project.mkdir()
     scene = project / "asset.ma"
@@ -88,6 +92,7 @@ def test_heartbeat_keeps_notice_visible_and_release_clears_state(tmp_path):
 
 
 def test_heartbeat_recreates_a_notice_removed_by_sync(tmp_path):
+    """Recreate this session's notice when synchronization removes it."""
     project = tmp_path / "project"
     project.mkdir()
     scene = project / "asset.ma"
@@ -106,6 +111,7 @@ def test_heartbeat_recreates_a_notice_removed_by_sync(tmp_path):
 
 
 def test_case_distinct_files_have_independent_notices_when_supported(tmp_path):
+    """Keep notices distinct for case-different files on case-sensitive disks."""
     project = tmp_path / "project"
     project.mkdir()
     lower_case_scene = project / "asset.ma"
@@ -125,6 +131,7 @@ def test_case_distinct_files_have_independent_notices_when_supported(tmp_path):
 
 
 def test_old_notice_is_reported_as_stale_not_silently_removed(tmp_path):
+    """Report expired notices as stale without deleting their metadata."""
     project = tmp_path / "project"
     project.mkdir()
     scene = project / "asset.ma"
@@ -152,6 +159,7 @@ def test_old_notice_is_reported_as_stale_not_silently_removed(tmp_path):
 
 
 def test_file_outside_project_is_rejected(tmp_path):
+    """Reject attempts to acquire a notice for a file outside the project."""
     project = tmp_path / "project"
     project.mkdir()
     outside_file = tmp_path / "outside.ma"
@@ -166,6 +174,7 @@ def test_file_outside_project_is_rejected(tmp_path):
 
 
 def test_corrupt_notice_fails_closed(tmp_path):
+    """Raise a registry error rather than ignoring malformed notice data."""
     project = tmp_path / "project"
     project.mkdir()
     scene = project / "asset.ma"

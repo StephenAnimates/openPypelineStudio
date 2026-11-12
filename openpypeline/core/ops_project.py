@@ -79,6 +79,7 @@ def rewrite_proj_file(proj_list):
 
 
 def close_proj_ui(*args):
+    """Retain the legacy project-UI close hook; it currently performs no action."""
     pass
 
 
@@ -147,6 +148,7 @@ def edit_users_save_file(users):
 class EditUsersDialog(QtWidgets.QDialog):
     """PySide6 Dialog for adding and removing global project users."""
     def __init__(self, parent=None):
+        """Build the user list and connect its add, remove, and close controls."""
         super().__init__(parent)
         self.setWindowTitle("Add / Remove Users")
         self.setMinimumSize(340, 230)
@@ -173,10 +175,12 @@ class EditUsersDialog(QtWidgets.QDialog):
         layout.addLayout(btn_layout)
         
     def _refresh_list(self):
+        """Reload the visible user list from the shared users file."""
         self.user_list.clear()
         self.user_list.addItems(get_users())
         
     def on_add(self):
+        """Prompt for a user name and save it if it is not already listed."""
         name, ok = QtWidgets.QInputDialog.getText(self, "Add User", "Enter Name:")
         if ok and name.strip():
             users = get_users()
@@ -186,6 +190,7 @@ class EditUsersDialog(QtWidgets.QDialog):
                 self._refresh_list()
                 
     def on_remove(self):
+        """Remove selected user names from the shared users file."""
         selected = [item.text() for item in self.user_list.selectedItems()]
         if not selected: return
         

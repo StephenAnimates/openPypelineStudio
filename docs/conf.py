@@ -3,7 +3,7 @@ Sphinx configuration for openPypeline Studio documentation.
 
 To build the HTML documentation, open Terminal on macOS, a terminal emulator
 on Linux, or PowerShell or Command Prompt on Windows. Change to the repository's
-top-level folder (the folder containing ``docs/`` and ``openpypeline/``), then
+top-level (root) folder (the folder containing ``docs/`` and ``openpypeline/``), then
 enter:
     sphinx-apidoc -f -o docs/ openpypeline/
     sphinx-build -b html docs/ docs/_build/html

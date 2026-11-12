@@ -29,6 +29,7 @@ def _ensure_context(func):
     """Decorator to support both ItemContext objects and legacy (tab, level1, level2, level3) arguments."""
     @wraps(func)
     def wrapper(*args, **kwargs):
+        """Convert legacy positional context arguments before delegating."""
         if args and isinstance(args[0], ItemContext):
             return func(*args, **kwargs)
         elif len(args) >= 4 and isinstance(args[0], int):

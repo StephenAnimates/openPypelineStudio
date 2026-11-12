@@ -35,6 +35,7 @@ _session_id = uuid.uuid5(
 
 
 def _configured_user():
+    """Return the configured user name, falling back to the operating-system user."""
     user = str(prefs.get_pref("ops_currentUser", "")).strip()
     if not user or user.casefold() == "default":
         user = getpass.getuser().strip()
@@ -42,6 +43,7 @@ def _configured_user():
 
 
 def _get_registry():
+    """Return a registry for the active project, releasing it if paths change."""
     global _registry, _project_root
 
     project_root = str(prefs.get_pref("ops_currProjectPath", "")).strip()
@@ -62,14 +64,17 @@ def _get_registry():
 
 
 def _current_scene_path():
+    """Return Maya's current scene path, or an empty string for an untitled scene."""
     return cmds.file(query=True, sceneName=True) or ""
 
 
 def _resolved_path(filepath):
+    """Expand and resolve a scene path to its canonical absolute form."""
     return str(Path(filepath).expanduser().resolve())
 
 
 def _is_in_project(registry, filepath):
+    """Return whether a resolved scene path is inside the registry's project."""
     try:
         target = Path(filepath).expanduser().resolve()
         target.relative_to(registry.project_root)
@@ -79,6 +84,7 @@ def _is_in_project(registry, filepath):
 
 
 def _notice_text(notices):
+    """Format file-use notices for warnings shown to Maya users."""
     lines = []
     for notice in notices:
         state = "possibly stale" if notice.stale else "reported open"
@@ -87,6 +93,7 @@ def _notice_text(notices):
 
 
 def _before_open_check(file_object, *_args):
+    """Capture the target path and disk state before Maya opens a scene."""
     global _pending_open_path, _pending_open_state
     del _args
     filepath = file_object.resolvedFullName() or file_object.fullName()
@@ -105,6 +112,7 @@ def _before_open_check(file_object, *_args):
 
 
 def _warn_open_notices(notices):
+    """Warn that another session may already have the requested scene open."""
     if notices:
         QtWidgets.QMessageBox.warning(
             None,
@@ -118,6 +126,7 @@ def _warn_open_notices(notices):
 
 
 def _warn_saved_to_in_use_file(notices):
+    """Warn after saving to a path with notices from other sessions."""
     if notices:
         QtWidgets.QMessageBox.warning(
             None,
@@ -131,6 +140,7 @@ def _warn_saved_to_in_use_file(notices):
 
 
 def _release_current():
+    """Release the active file-use notice and clear registry state."""
     global _registry, _project_root
     if _registry:
         try:
@@ -142,6 +152,7 @@ def _release_current():
 
 
 def _after_open(*_args):
+    """Acquire a notice for an opened in-project scene and warn about peers."""
     global _opened_path, _opened_file_state
     global _pending_open_path, _pending_open_state
     del _args
@@ -180,6 +191,7 @@ def _after_open(*_args):
 
 
 def _before_save_check(*_args):
+    """Check for competing use or disk changes and gate Maya's save callback."""
     global _opened_path
     del _args
     registry = _get_registry()
@@ -250,6 +262,7 @@ def _before_save_check(*_args):
 
 
 def _after_new(*_args):
+    """Release scene-use state and clear paths after creating a new scene."""
     global _opened_path, _opened_file_state
     global _pending_open_path, _pending_open_state
     del _args
@@ -261,6 +274,7 @@ def _after_new(*_args):
 
 
 def _after_save(*_args):
+    """Update scene state and move or create a notice after a completed save."""
     global _opened_path, _opened_file_state
     del _args
     registry = _get_registry()
@@ -294,6 +308,7 @@ def _after_save(*_args):
 
 
 def _heartbeat():
+    """Refresh the current session's notice while Maya remains open."""
     if not _registry or not _registry.has_notice:
         return
     try:

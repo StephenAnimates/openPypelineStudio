@@ -13,16 +13,18 @@ License: Common Public License 1.0 (CPL-1.0)
 from PySide6 import QtWidgets, QtCore
 
 from . import ui_objects as UIObjects
-from ..core import ops_loader as opsLoader
-from ....core import ops_project as opsProject
-from ....core import ops_actions as opsActions
-from ..core import ops_utils as opsUtils
+from openpypeline.app.maya.core import ops_loader as opsLoader
+from openpypeline.core import ops_project as opsProject
+from openpypeline.core import ops_actions as opsActions
+from openpypeline.app.maya.core import ops_utils as opsUtils
 from openpypeline.core.util import prefs
 from openpypeline.core.localization import localization
 from .ops_project_manager_gui import opsProjectManagerGUI
 
 class OpsProjectManagerController(QtCore.QObject):
+    """Coordinate project-manager view events with project operations."""
     def __init__(self):
+        """Create the project manager view and initialize its controls and data."""
         super().__init__()
         self.UIObjects = UIObjects.UIObjects()
         self.view = opsProjectManagerGUI()
@@ -31,9 +33,11 @@ class OpsProjectManagerController(QtCore.QObject):
         self._populate_initial_data()
 
     def showWindow(self):
+        """Display the project manager window."""
         self.view.showWindow()
 
     def _connect_signals(self):
+        """Connect project manager buttons and list events to controller methods."""
         self.view.edit_locations_btn.clicked.connect(self.on_edit_locations)
         self.view.edit_users_btn.clicked.connect(self.on_edit_users)
         self.view.project_list_widget.itemSelectionChanged.connect(self.on_project_selection)
@@ -45,17 +49,21 @@ class OpsProjectManagerController(QtCore.QObject):
         self.view.close_btn.clicked.connect(self.on_close)
 
     def _populate_initial_data(self):
+        """Populate location fields and refresh the configured project list."""
         self.view.script_location_field.setText(opsLoader._root_path)
         self.view.project_location_field.setText(prefs.get_pref("ops_projectFilePath", "Not Set"))
         self.on_refresh_list()
 
     def on_edit_locations(self, *args):
+        """Open the setup dialog for project and script locations."""
         opsLoader.openPypelineSetup()
         
     def on_edit_users(self, *args):
+        """Open the global project-user editor."""
         opsProject.proj_edit_users()
         
     def on_project_selection(self, *args):
+        """Enable project actions and display details for the selected project."""
         selected_items = self.view.project_list_widget.selectedItems()
         if not selected_items:
             self.view.edit_proj_btn.setEnabled(False)
@@ -69,12 +77,14 @@ class OpsProjectManagerController(QtCore.QObject):
         self.view.project_info_field.setPlainText(info_string)
         
     def on_new_project(self, *args):
+        """Open the project editor in new-project mode."""
         self._ensure_dialog_exists()
         self.UIObjects.opsProjDialogController.mode = 0
         self.UIObjects.opsProjDialogController.old_name = ""
         self.UIObjects.opsProjDialogController.showWindow()
         
     def on_edit_project(self, *args):
+        """Open the project editor for the currently selected project."""
         selected_items = self.view.project_list_widget.selectedItems()
         if not selected_items:
             return
@@ -84,6 +94,7 @@ class OpsProjectManagerController(QtCore.QObject):
         self.UIObjects.opsProjDialogController.showWindow()
         
     def _ensure_dialog_exists(self):
+        """Reload and lazily create the project editor controller."""
         import importlib
         from . import ops_proj_dialog_controller
         importlib.reload(ops_proj_dialog_controller)
@@ -91,6 +102,7 @@ class OpsProjectManagerController(QtCore.QObject):
             self.UIObjects.opsProjDialogController = ops_proj_dialog_controller.OpsProjDialogController()
 
     def on_remove_project(self, *args):
+        """Confirm and remove the selected project, then refresh the list."""
         selected_items = self.view.project_list_widget.selectedItems()
         if not selected_items: return
         proj_name = selected_items[0].text()
@@ -104,6 +116,7 @@ class OpsProjectManagerController(QtCore.QObject):
             else: QtWidgets.QMessageBox.warning(self.view, localization.get_string("win_error"), localization.get_string("msg_projectNotFound"))
                 
     def on_refresh_list(self, *args):
+        """Reload project names and clear selection-dependent information."""
         self.view.project_list_widget.clear()
         proj_list = [p.get("name") for p in opsProject.get_projects_data() if isinstance(p, dict)]
         if proj_list: self.view.project_list_widget.addItems(proj_list)
@@ -112,5 +125,6 @@ class OpsProjectManagerController(QtCore.QObject):
         self.view.remove_proj_btn.setEnabled(False)
         
     def on_close(self, *args):
+        """Run the project UI close hook and close the manager window."""
         opsProject.close_proj_ui()
         self.view.close()

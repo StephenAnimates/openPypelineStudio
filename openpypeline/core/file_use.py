@@ -19,6 +19,8 @@ class FileUseRegistryError(RuntimeError):
 
 @dataclass(frozen=True)
 class FileUseNotice:
+    """Describe another session's advisory use of a project file."""
+
     user: str
     machine: str
     file_path: str
@@ -55,6 +57,7 @@ class FileUseRegistry:
         stale_after: timedelta = timedelta(minutes=5),
         session_id: str | None = None,
     ):
+        """Initialize this session's registry and validate the project root."""
         self.project_root = Path(project_root).expanduser().resolve()
         self.user = user.strip() or "Unknown user"
         self.machine = machine or socket.gethostname()
@@ -72,9 +75,11 @@ class FileUseRegistry:
 
     @property
     def has_notice(self) -> bool:
+        """Report whether this registry currently tracks a file-use notice."""
         return bool(self._lock_path and self._locked_file_key)
 
     def _file_key(self, file_path: str) -> tuple[str, str]:
+        """Validate a project-relative path and derive its stable notice key."""
         target = Path(file_path).expanduser().resolve()
         try:
             relative = target.relative_to(self.project_root)
@@ -119,6 +124,7 @@ class FileUseRegistry:
         return file_id, relative_path
 
     def _notices_directory(self, file_id: str) -> Path:
+        """Return the directory containing notices for the given file key."""
         return self.project_root / ".openpypeline" / "file_use" / file_id
 
     @staticmethod
@@ -126,6 +132,7 @@ class FileUseRegistry:
         value: str,
         metadata_path: Path,
     ) -> datetime:
+        """Parse a timezone-aware notice timestamp and normalize it to UTC."""
         try:
             timestamp = datetime.fromisoformat(value)
         except (TypeError, ValueError) as exc:
@@ -192,6 +199,8 @@ class FileUseRegistry:
                 metadata_path,
             )
             age = now - heartbeat_at
+            # Treat future heartbeats as stale too; clock skew must not make
+            # an implausibly recent notice appear to be a live session.
             stale = (
                 age > self.stale_after
                 or age < -self.stale_after
@@ -214,6 +223,7 @@ class FileUseRegistry:
         relative_path: str,
         started_at: datetime,
     ) -> None:
+        """Atomically write this session's notice and update local state."""
         directory = self._notices_directory(file_id)
         lock_path = directory / f"{self.session_id}.json"
         temporary_path = directory / f"{self.session_id}.tmp"

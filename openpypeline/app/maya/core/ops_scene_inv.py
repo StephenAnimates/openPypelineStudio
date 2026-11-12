@@ -20,6 +20,7 @@ logger = logging.getLogger("openPypeline.sceneInv")
 
 
 def existed_asset(input_mode):
+    """List library assets or their expected master paths and validation state."""
     current_project = prefs.get_pref("ops_currProjectPath", "")
     the_path = prefs.get_pref("ops_libPath", "")
     if not the_path and current_project:
@@ -58,6 +59,7 @@ def existed_asset(input_mode):
 
 
 def existed_seq(input_mode):
+    """List scene components or expected master paths with existence status."""
     current_project = prefs.get_pref("ops_currProjectPath", "")
     seq_path = os.path.join(current_project, "scenes/").replace("\\", "/") if current_project else ""
     
@@ -102,6 +104,7 @@ def existed_seq(input_mode):
 
 
 def existed_ref_asset(input_mode):
+    """Return loaded-state, reference paths, or short names for asset references."""
     all_ref_asset = []
     ref_asset_loaded = []
     asset_short_name = []
@@ -134,6 +137,7 @@ def existed_ref_asset(input_mode):
 
 
 def existed_ref_seq(input_mode):
+    """Return loaded-state, reference paths, or short names for shot references."""
     all_ref_seq = []
     ref_seq_loaded = []
     seq_short_name = []
@@ -166,6 +170,7 @@ def existed_ref_seq(input_mode):
 
 
 def create_reference(input_mode, input_path):
+    """Reference a sequence or asset into Maya and refresh the inventory window."""
     if input_mode == "seq":
         cmds.file(input_path, reference=True)
     elif input_mode == "asset":
@@ -184,6 +189,7 @@ def create_reference(input_mode, input_path):
 class SceneInventoryUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
     """PySide6 implementation of the Scene Inventory and Reference manager."""
     def __init__(self, parent=None):
+        """Initialize the scene inventory window and construct its controls."""
         super().__init__(parent)
         self.setWindowTitle("Scene Inventory")
         self.setObjectName("opsSceneInventoryUI")
@@ -192,10 +198,12 @@ class SceneInventoryUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         self._build_ui()
 
     def showWindow(self):
+        """Refresh reference data before displaying the scene inventory."""
         self.refresh_all()
         self.show()
 
     def _build_ui(self):
+        """Build the reference tree and its refresh control."""
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         
@@ -219,9 +227,11 @@ class SceneInventoryUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         layout.addWidget(ref_group)
         
     def refresh_all(self):
+        """Reload all listed scene references."""
         self._populate_refs()
 
     def _populate_refs(self):
+        """Fill the tree with asset and sequence references and load states."""
         self.ref_tree.blockSignals(True)
         self.ref_tree.clear()
         
@@ -240,6 +250,7 @@ class SceneInventoryUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         self.ref_tree.blockSignals(False)
 
     def _on_ref_item_changed(self, item, column):
+        """Load or unload a Maya reference when its checkbox changes."""
         if column == 0:
             path = item.data(0, QtCore.Qt.UserRole)
             load = (item.checkState(0) == QtCore.Qt.Checked)

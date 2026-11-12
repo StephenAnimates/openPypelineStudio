@@ -30,9 +30,11 @@ class Version():
     
     '''
     def __init__(self):
+        """Initialize the version manager."""
         pass
 
     def getByIndex(self, index):
+        """Provide the extension point for resolving a version by index."""
         pass
     
     def latest(self, path):
@@ -108,6 +110,8 @@ class Version():
     
     
 class svn(Version):
+    """Publish versioned files through Subversion."""
+
     def publish(self, filepath, comment="Publishing new version"):
         """Publishes a file to SVN."""
         import subprocess
@@ -123,6 +127,8 @@ class svn(Version):
             return False
 
 class git(Version):
+    """Publish versioned files through Git."""
+
     def publish(self, filepath, comment="Publishing new version"):
         """Publishes a file to Git."""
         import subprocess
@@ -139,9 +145,13 @@ class git(Version):
             return False
 
 class cvs(Version):
+    """Version manager reserved for CVS-backed publishing."""
+
     pass
 
 class perforce(Version):
+    """Publish versioned files through Perforce."""
+
     def publish(self, filepath, comment="Publishing new version"):
         """Publishes a file to Perforce."""
         import subprocess

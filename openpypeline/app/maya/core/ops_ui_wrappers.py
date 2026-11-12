@@ -14,8 +14,8 @@ import os
 import webbrowser
 from PySide6 import QtWidgets, QtCore, QtGui
 from openpypeline.core.models import ItemContext, Tab, Level
-from ....core import ops_info as opsInfo
-from ....core import ops_actions as opsActions
+from openpypeline.core import ops_info as opsInfo
+from openpypeline.core import ops_actions as opsActions
 from ..ui import ui_objects as UIObjects
 from openpypeline.core.util import prefs
 
@@ -26,6 +26,7 @@ def _get_resource(folder, filename):
     return os.path.abspath(os.path.join(base_dir, "..", "..", "..", "resources", folder, filename)).replace("\\", "/")
 
 def _get_ui():
+    """Return the live main UI instance, or None if it is unavailable."""
     ui_obj = UIObjects.UIObjects()
     ui = ui_obj.opsMainUI if hasattr(ui_obj, 'opsMainUI') else None
     if ui:
@@ -47,12 +48,14 @@ def refresh_ui(*args):
 
 
 def remove_secondary_windows(*args):
+    """Close the main window's active secondary dialog, if one is open."""
     ui = _get_ui()
     if ui and hasattr(ui, 'active_dialog') and ui.active_dialog:
         ui.active_dialog.close()
 
 
 def close_ui(*args):
+    """Close the managed main window when it is available."""
     ui = _get_ui()
     if ui:
         ui.close()
@@ -61,6 +64,7 @@ def close_ui(*args):
 # --- Primary UI Updaters ---
 
 def update_currently_open(*args):
+    """Refresh the currently-open item panel from preferences and file state."""
     ui = _get_ui()
     if not ui: return
 
@@ -143,6 +147,7 @@ def update_currently_open(*args):
 
 
 def update_working_tab(index=0, *args):
+    """Store the selected tab and refresh the corresponding inventory panel."""
     prefs.set_pref("ops_currTab", index + 1)
     if index == 2: update_currently_open()
     elif index == 0: update_asset_type_list()
@@ -152,6 +157,7 @@ def update_working_tab(index=0, *args):
 # --- Asset Inventory Updaters ---
 
 def update_asset_type_list(*args):
+    """Reload asset types, restore the current selection, and update assets."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.TYPE_OR_SEQUENCE)
@@ -167,6 +173,7 @@ def update_asset_type_list(*args):
 
 
 def update_asset_list(preserve_selection=1, *args):
+    """Populate the asset list with status indicators and optional selection restore."""
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
@@ -220,6 +227,7 @@ def update_asset_list(preserve_selection=1, *args):
 
 
 def asset_selected(preserve_selection=1, *args):
+    """Populate components for the selected asset and update related controls."""
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
@@ -276,6 +284,7 @@ def asset_selected(preserve_selection=1, *args):
     
 
 def component_selected(*args):
+    """Update component controls, asset details, and asset history."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
@@ -288,6 +297,7 @@ def component_selected(*args):
 # --- Shot Inventory Updaters ---
 
 def update_sequence_list(*args):
+    """Reload sequences, restore the current selection, and update shots."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.TYPE_OR_SEQUENCE)
@@ -303,6 +313,7 @@ def update_sequence_list(*args):
 
 
 def update_shot_list(preserve_selection=1, *args):
+    """Populate the shot list with status indicators and optional selection restore."""
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
@@ -355,6 +366,7 @@ def update_shot_list(preserve_selection=1, *args):
 
 
 def shot_selected(preserve_selection=1, *args):
+    """Populate components for the selected shot and update related controls."""
     ui = _get_ui()
     if not ui: return
     if isinstance(preserve_selection, (list, tuple, str)): preserve_selection = int(preserve_selection[0]) if isinstance(preserve_selection, (list, tuple)) else int(preserve_selection)
@@ -410,6 +422,7 @@ def shot_selected(preserve_selection=1, *args):
     
 
 def shot_component_selected(*args):
+    """Update shot-component controls, details, and history for the selection."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
@@ -422,6 +435,7 @@ def shot_component_selected(*args):
 # --- Information and History Blocks ---
 
 def asset_information(*args):
+    """Display the selected asset's folder, notes, and preview image."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
@@ -445,6 +459,7 @@ def asset_information(*args):
 
 
 def shot_information(*args):
+    """Display the selected shot's folder, notes, preview, and playblast state."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
@@ -468,6 +483,7 @@ def shot_information(*args):
 
 
 def load_asset_history(*args):
+    """Display event notes for the currently selected asset component."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.COMPONENT)
@@ -477,6 +493,7 @@ def load_asset_history(*args):
     
 
 def load_shot_history(*args):
+    """Display event notes for the currently selected shot component."""
     ui = _get_ui()
     if not ui: return
     selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.COMPONENT)
@@ -486,6 +503,7 @@ def load_shot_history(*args):
     
 
 def load_current_history(*args):
+    """Display event notes for the item shown in the currently-open panel."""
     ui = _get_ui()
     if not ui: return
     tab = prefs.get_pref("ops_currOpenTab", 0)
@@ -497,12 +515,14 @@ def load_current_history(*args):
     
 
 def clear_current_history(*args):
+    """Clear the currently-open item's read-only history display."""
     ui = _get_ui()
     if not ui: return
     ui.ops_currOpenAssetNote_scrollField.setPlainText("")
 
 
 def open_currently_selected(tab, level, item_type, version_offset=0, *args):
+    """Open the selected item version, switch to its tab, and refresh the UI."""
     context = opsInfo.get_current_context(tab, level)
     if opsActions.open_item(context, item_type, version_offset):
         ui = _get_ui()
@@ -511,27 +531,32 @@ def open_currently_selected(tab, level, item_type, version_offset=0, *args):
 
 
 def import_selected(tab, level, item_type, *args):
+    """Import the selected item of the requested type into the current scene."""
     context = opsInfo.get_current_context(tab, level)
     opsActions.import_item(context, item_type, "")
 
 
 def reference_selected(tab, level, item_type, *args):
+    """Reference the selected item of the requested type into the current scene."""
     context = opsInfo.get_current_context(tab, level)
     opsActions.reference_item(context, item_type, "")
 
 
 def remove_process(tab, depth, *args):
+    """Remove the item at the selected hierarchy depth and refresh on success."""
     context = opsInfo.get_current_context(tab, depth)
     if opsActions.remove_item(context):
         refresh_ui()
 
 
 def explore_selected(tab, *args):
+    """Open the filesystem location for the selected inventory item."""
     context = opsInfo.get_current_context(tab, 3)
     opsActions.open_location(context)
 
 
 def explore_current(*args):
+    """Open the filesystem location for the currently-open item."""
     tab = prefs.get_pref("ops_currOpenTab", 0)
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
@@ -541,11 +566,13 @@ def explore_current(*args):
 
 
 def view_playblast_selected(tab, *args):
+    """Open the playblast associated with the selected inventory item."""
     context = opsInfo.get_current_context(tab, 3)
     opsActions.view_playblast(context)
 
 
 def view_playblast_current(*args):
+    """Open the playblast associated with the currently-open item."""
     tab = prefs.get_pref("ops_currOpenTab", 0)
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
@@ -555,6 +582,7 @@ def view_playblast_current(*args):
 
 
 def record_current_playblast(*args):
+    """Record a playblast for the current item and refresh the UI."""
     tab = prefs.get_pref("ops_currOpenTab", 0)
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
@@ -565,6 +593,7 @@ def record_current_playblast(*args):
 
 
 def take_snapshot(*args):
+    """Create and display a thumbnail for the currently-open item."""
     tab = prefs.get_pref("ops_currOpenTab", 0)
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
     level2 = prefs.get_pref("ops_currOpenLevel2", "")
@@ -577,6 +606,7 @@ def take_snapshot(*args):
 
 
 def save_note(*args):
+    """Save the currently-open item's edited custom notes."""
     ui = _get_ui()
     if not ui: return
     tab = prefs.get_pref("ops_currOpenTab", 0)
@@ -590,6 +620,7 @@ def save_note(*args):
 
 
 def clear_note(*args):
+    """Clear and save the custom notes for the currently-open item."""
     ui = _get_ui()
     if ui:
         ui.ops_currOpen_scrollField.setPlainText("")
@@ -597,11 +628,13 @@ def clear_note(*args):
 
 
 def close_current(*args):
+    """Close the active scene file and refresh the UI when successful."""
     if opsActions.close_file():
         refresh_ui()
 
 
 def launch_help(*args):
+    """Open the bundled help page or the project's online documentation."""
     base_dir = os.path.dirname(__file__)
     docs_index = os.path.abspath(os.path.join(base_dir, "..", "..", "docs", "_build", "html", "index.html")).replace("\\", "/")
     
@@ -613,7 +646,9 @@ def launch_help(*args):
 # --- UI Dialog Wrappers ---
 
 class ItemCreationDialog(QtWidgets.QDialog):
+    """Collect an item name and the requested scene-creation mode."""
     def __init__(self, parent, title, field_label, create_callback):
+        """Build the name field, export-mode choices, and dialog buttons."""
         super().__init__(parent)
         self.setWindowTitle(title)
         self.create_callback = create_callback
@@ -645,6 +680,7 @@ class ItemCreationDialog(QtWidgets.QDialog):
         layout.addLayout(btn_layout)
         
     def on_create(self):
+        """Pass the selected creation mode and trimmed name to the callback."""
         mode = 1
         if self.radio_export_sel.isChecked(): mode = 2
         elif self.radio_export_all.isChecked(): mode = 3
@@ -652,6 +688,7 @@ class ItemCreationDialog(QtWidgets.QDialog):
         self.accept()
 
 def prompt_new_asset_type(*args):
+    """Prompt for and create a new asset type in the active project."""
     ui = _get_ui()
     if not prefs.get_pref("ops_currProjectName", ""):
         QtWidgets.QMessageBox.warning(ui, "Error", "No Project is currently active.")
@@ -663,6 +700,7 @@ def prompt_new_asset_type(*args):
 
 
 def prompt_new_sequence(*args):
+    """Prompt for and create a new shot sequence in the active project."""
     ui = _get_ui()
     if not prefs.get_pref("ops_currProjectName", ""):
         QtWidgets.QMessageBox.warning(ui, "Error", "No Project is currently active.")
@@ -674,12 +712,14 @@ def prompt_new_sequence(*args):
 
 
 def prompt_new_asset(*args):
+    """Prompt for an asset name and whether to export scene content into it."""
     ui = _get_ui()
     selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.TYPE_OR_SEQUENCE)
     if not selected[0]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Asset Type selected.")
         return
     def _create(mode, name):
+        """Create the asset under the selected type using the chosen mode."""
         context = ItemContext(Tab.ASSET, selected[0], name)
         if opsActions.create_new_item(context, mode):
             refresh_ui()
@@ -689,12 +729,14 @@ def prompt_new_asset(*args):
 
 
 def prompt_new_asset_component(*args):
+    """Prompt for and create a component under the selected asset."""
     ui = _get_ui()
     selected = opsInfo.get_currently_selected_item(Tab.ASSET, Level.ASSET_OR_SHOT)
     if not selected[1]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Asset selected.")
         return
     def _create(mode, name):
+        """Create the component under the selected asset using the chosen mode."""
         context = ItemContext(Tab.ASSET, selected[0], selected[1], name)
         if opsActions.create_new_item(context, mode):
             refresh_ui()
@@ -704,12 +746,14 @@ def prompt_new_asset_component(*args):
 
 
 def prompt_new_shot(*args):
+    """Prompt for and create a shot under the selected sequence."""
     ui = _get_ui()
     selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.TYPE_OR_SEQUENCE)
     if not selected[0]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Sequence selected.")
         return
     def _create(mode, name):
+        """Create the shot under the selected sequence using the chosen mode."""
         context = ItemContext(Tab.SHOT, selected[0], name)
         if opsActions.create_new_item(context, mode):
             refresh_ui()
@@ -719,12 +763,14 @@ def prompt_new_shot(*args):
 
 
 def prompt_new_shot_component(*args):
+    """Prompt for and create a component under the selected shot."""
     ui = _get_ui()
     selected = opsInfo.get_currently_selected_item(Tab.SHOT, Level.ASSET_OR_SHOT)
     if not selected[1]:
         QtWidgets.QMessageBox.warning(ui, "Error", "No Shot selected.")
         return
     def _create(mode, name):
+        """Create the component under the selected shot using the chosen mode."""
         context = ItemContext(Tab.SHOT, selected[0], selected[1], name)
         if opsActions.create_new_item(context, mode):
             refresh_ui()
@@ -734,6 +780,7 @@ def prompt_new_shot_component(*args):
 
 
 def prompt_rename_asset(*args):
+    """Prompt for a replacement asset name and apply the rename."""
     ui = _get_ui()
     selected = opsInfo.get_currently_selected_item(2, 2)
     if not selected[1]: return
@@ -746,6 +793,7 @@ def prompt_rename_asset(*args):
 
 
 def prompt_save_wip(*args):
+    """Prompt for a WIP comment, save the current scene, and refresh the UI."""
     ui = _get_ui()
     w_name = prefs.get_pref("ops_wip", "WIP").upper()
     comment, ok = QtWidgets.QInputDialog.getText(ui, f"Save {w_name}", "Comment:")
@@ -755,7 +803,9 @@ def prompt_save_wip(*args):
 
 
 class ReviveDialog(QtWidgets.QDialog):
+    """Let the user choose an older WIP version to restore."""
     def __init__(self, parent, w_name, workshops, context):
+        """Build a list of older WIP versions and connect the revive action."""
         super().__init__(parent)
         self.setWindowTitle(f"Revive {w_name}")
         self.context = context
@@ -785,6 +835,7 @@ class ReviveDialog(QtWidgets.QDialog):
         layout.addLayout(btn_layout)
         
     def on_revive(self):
+        """Open the selected older WIP, save it as a new version, and refresh."""
         sel = self.list_widget.selectedItems()
         if not sel: return
         offset = sel[0].data(QtCore.Qt.UserRole)
@@ -795,6 +846,7 @@ class ReviveDialog(QtWidgets.QDialog):
 
 
 def prompt_revive(*args):
+    """Open the version-revival dialog when older WIP versions are available."""
     ui = _get_ui()
     tab = prefs.get_pref("ops_currOpenTab", 0)
     level1 = prefs.get_pref("ops_currOpenLevel1", "")
@@ -818,7 +870,9 @@ def prompt_revive(*args):
 
 
 class ArchiveDialog(QtWidgets.QDialog):
+    """Configure archiving, retrieval, and deletion of an item's old versions."""
     def __init__(self, parent, context):
+        """Build controls for archiving, retrieving, and deleting old versions."""
         super().__init__(parent)
         self.context = context
         
@@ -895,6 +949,7 @@ class ArchiveDialog(QtWidgets.QDialog):
         layout.addWidget(btn_close)
         
     def on_archive(self):
+        """Archive selected WIP and master versions while retaining chosen counts."""
         w_val = self.spin_w.value() if self.chk_w.isChecked() else 0
         m_val = self.spin_m.value() if self.chk_m.isChecked() else 0
         opsActions.archive_item(self.context, w_val, m_val)
@@ -902,16 +957,19 @@ class ArchiveDialog(QtWidgets.QDialog):
         self.accept()
         
     def on_retrieve(self):
+        """Retrieve the selected archived file categories and refresh the UI."""
         opsActions.retrieve_archive(self.context, self.r_chk_w.isChecked(), self.r_chk_m.isChecked())
         refresh_ui()
         self.accept()
         
     def on_delete(self):
+        """Move the item's archived files to the deleted-items location."""
         opsActions.remove_archive(self.context)
         self.accept()
 
 
 def prompt_archive(tab, level, *args):
+    """Open the archive dialog for the item at the requested selection depth."""
     ui = _get_ui()
     context = opsInfo.get_current_context(tab, level)
     if not context.level1: return
@@ -921,6 +979,7 @@ def prompt_archive(tab, level, *args):
 
 
 def about_dialog(*args):
+    """Display the openPypeline Studio description and documentation link."""
     text = ("openPypeline Studio (ops)<br><br>"
             "An open source, free, and customizable python pipeline tool for production.<br><br>"
             "Originally created by Kickstand as a MEL code, it has now been modernized to Python 3, with added functionality.<br><br>"

@@ -42,6 +42,7 @@ class OpsEngine:
     It acts as the bridge between the UI/preferences, the core data models, and the host DCC.
     """
     def __init__(self):
+        """Detect the host application and load its file-operation adapter."""
         # Detect the environment to adapt pipeline behaviors accordingly upon initialization
         self.host_app = self._detect_host_app()
         logger.info(f"Initialized OpsEngine. Detected host: {self.host_app}")

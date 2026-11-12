@@ -19,6 +19,7 @@ class ProductionTracker(ABC):
     """
     
     def __init__(self, url, auth_user, auth_key):
+        """Store the tracker endpoint and credentials and mark it disconnected."""
         self.url = url
         self.auth_user = auth_user
         self.auth_key = auth_key

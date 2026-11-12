@@ -16,6 +16,7 @@ class WindowManager:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
+        """Return the shared window manager and initialize its registries once."""
         if cls._instance is None:
             cls._instance = super(WindowManager, cls).__new__(cls, *args, **kwargs)
             cls._instance.windows = []
@@ -23,10 +24,12 @@ class WindowManager:
         return cls._instance
 
     def addWindow(self, window=None):
+        """Keep a reference to a window so it remains alive while managed."""
         if window and window not in self.windows:
             self.windows.append(window)
             
     def addDockControl(self, dock_ctrl=None):
+        """Keep a reference to a dock control so it remains alive while managed."""
         if dock_ctrl and dock_ctrl not in self.dock_controls:
             self.dock_controls.append(dock_ctrl)
             

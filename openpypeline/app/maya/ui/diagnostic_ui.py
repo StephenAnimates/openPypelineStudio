@@ -32,24 +32,26 @@ importlib.reload(opsMainUI)
 from . import ops_main_controller as opsMainController
 importlib.reload(opsMainController)
 
-from ....core import ops_project as opsProject
+from openpypeline.core import ops_project as opsProject
 importlib.reload(opsProject)
 
-from ....core import ops_actions as opsActions
+from openpypeline.core import ops_actions as opsActions
 importlib.reload(opsActions)
 
-from ..core import ops_ui_wrappers as opsUIWrappers
+from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
 importlib.reload(opsUIWrappers)
 
-from ....core import ops_info as opsInfo
+from openpypeline.core import ops_info as opsInfo
 importlib.reload(opsInfo)
 
-from ..core import ops_loader as opsLoader
+from openpypeline.app.maya.core import ops_loader as opsLoader
 importlib.reload(opsLoader)
 
 class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
+    """Provide developer controls for launching and inspecting application windows."""
 
     def __init__(self, filePath=None, parent=None):
+        """Initialize managed controllers and build the diagnostic window."""
         super().__init__(parent=parent)
         self.UIObjects = UIObjects.UIObjects()
         self.filePath = filePath
@@ -73,6 +75,7 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self._build_ui()
 
     def showWindow(self):
+        """Show the diagnostic manager and refresh its visible-window report."""
         self.show()
         self.updateTextField()
     
@@ -164,6 +167,7 @@ class diagnosticUI(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self.updateTextField()
     
     def buttonRelease(self, window):
+        """Show the named managed window and refresh the diagnostic report."""
         getattr(self.UIObjects, window).showWindow()
         self.updateTextField()
     

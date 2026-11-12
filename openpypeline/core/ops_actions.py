@@ -25,6 +25,7 @@ _MAYA_FILE_TYPES = {
 
 
 def _save_scene_file(dcc, filepath: str) -> bool:
+    """Save or export a scene using the active DCC's supported file operation."""
     extension = os.path.splitext(filepath)[1].lower()
     file_type = _MAYA_FILE_TYPES.get(extension)
     if file_type in {"USD Export", "Alembic"}:

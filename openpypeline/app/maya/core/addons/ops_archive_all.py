@@ -15,6 +15,7 @@ except ImportError:
 ADDON_NAME = "Archive All"
 
 def run():
+    """Create and display the Maya window for bulk archive operations."""
     if cmds.window("ops_secondaryUI", exists=True):
         cmds.deleteUI("ops_secondaryUI")
 
@@ -80,12 +81,15 @@ def _process_all_archives(action):
 
 
 def ops_archiveAllProc():
+    """Archive older WIP and master files across the asset and shot libraries."""
     _process_all_archives('archive')
 
 
 def ops_retrieveArchiveAllProc():
+    """Retrieve archived files across the asset and shot libraries."""
     _process_all_archives('retrieve')
 
 
 def ops_deleteArchiveAllProc():
+    """Move archived files across the asset and shot libraries to deleted items."""
     _process_all_archives('delete')

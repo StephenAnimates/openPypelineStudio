@@ -6,6 +6,7 @@ from openpypeline import ops_engine
 
 
 def test_ops_engine_imports_host_adapter_from_package(monkeypatch):
+    """Load the host-specific file adapter from the package namespace."""
     imported = []
     adapter = ModuleType("maya_file_adapter")
     maya = ModuleType("maya")
@@ -14,6 +15,7 @@ def test_ops_engine_imports_host_adapter_from_package(monkeypatch):
     monkeypatch.setitem(sys.modules, "maya.cmds", maya_cmds)
 
     def fake_import(module_path):
+        """Record the adapter import and return its mocked module."""
         imported.append(module_path)
         return adapter
 
@@ -28,6 +30,7 @@ def test_ops_engine_imports_host_adapter_from_package(monkeypatch):
 
 
 def test_workspace_root_uses_maya_workspace(monkeypatch, tmp_path):
+    """Use Maya's workspace root when running inside Maya."""
     maya_cmds = ModuleType("maya.cmds")
     maya_cmds.workspace = lambda **_kwargs: str(tmp_path)
     monkeypatch.setattr(
@@ -40,12 +43,14 @@ def test_workspace_root_uses_maya_workspace(monkeypatch, tmp_path):
 
 
 def test_workspace_root_uses_current_directory_for_standalone(monkeypatch):
+    """Use the process working directory outside a DCC host."""
     monkeypatch.setattr(ops_engine.os, "getcwd", lambda: "/workspace")
 
     assert ops_engine._get_workspace_root("standalone") == "/workspace"
 
 
 def test_ui_diagnostics_do_not_open_scene(monkeypatch):
+    """Keep diagnostic inventory logging from opening a scene file."""
     from openpypeline.core.file import inventory, master
     from openpypeline.core.notes import notes
     from openpypeline.core.util import prefs
@@ -65,17 +70,23 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch):
     )
 
     class InventoryStub:
+        """Supply predictable inventory results to the diagnostic test."""
         def __init__(self, _elements):
+            """Accept path elements without requiring a filesystem inventory."""
             pass
 
         def list(self):
+            """Return the single item used by the diagnostic test."""
             return ["hero"]
 
         def getPath(self):
+            """Return the fixture item's expected directory."""
             return "/project/lib/characters/hero/components/model"
 
     class VersionStub:
+        """Provide deterministic WIP versions to the diagnostic test."""
         def all(self, _path):
+            """Return the item's available version numbers."""
             return [1, 2]
 
     monkeypatch.setattr(inventory, "Inventory", InventoryStub)
@@ -93,6 +104,7 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch):
 
 
 def test_open_latest_workshop_opens_latest_version(monkeypatch):
+    """Open the path resolved for the item's highest WIP version."""
     from openpypeline.core.file import wip
     from openpypeline.core.version import Version
 

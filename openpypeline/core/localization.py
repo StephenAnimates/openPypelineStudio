@@ -12,7 +12,10 @@ from openpypeline.core.util import prefs
 logger = logging.getLogger("openPypeline.localization")
 
 class LocalizationManager:
+    """Load localized UI strings and provide keyed lookups."""
+
     def __init__(self):
+        """Initialize an empty English-language string table."""
         self.strings = {}
         self.current_lang = "en"
 
@@ -36,6 +39,7 @@ class LocalizationManager:
             self.strings = {}
 
     def get_string(self, key, default=None):
+        """Return a translated string, caller fallback, or visible key marker."""
         return self.strings.get(key, default or f"[{key}]")
 
 localization = LocalizationManager()
