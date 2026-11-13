@@ -1,8 +1,6 @@
 """
 File: renameAsset.py
-Description: Utility to rename an asset and all associated files/folders within openPypeline Studio.
-             It safely traverses the directory structure bottom-up to ensure paths aren't broken
-             during the rename process.
+Description: Utility to rename an asset and all associated files/folders within openPypeline Studio. It safely traverses the directory structure bottom-up to ensure paths aren't broken during the rename process.
 
 Usage:
     import renameAsset
@@ -19,9 +17,8 @@ logger = logging.getLogger("openPypeline.renameAsset")
 
 def renameAsset(folderPath, newName, oldName=''):
     """
-    Renames an asset directory and all of its contents (files and subdirectories)
-    that match the old asset name.
-    
+    Renames an asset directory and all of its contents (files and subdirectories) that match the old asset name.
+
     Args:
         folderPath (str): The absolute path to the top-level directory of the asset to rename.
         newName (str): The new name to apply to the asset and its contents.
@@ -44,8 +41,7 @@ def renameAsset(folderPath, newName, oldName=''):
         logger.error(f"An asset named '{newName}' already exists.")
         return
         
-    # Walk bottom-up (topdown=False) so renaming child directories doesn't break the paths
-    # we still need to traverse for the parent directories.
+    # Walk bottom-up (topdown=False) so renaming child directories doesn't break the paths we still need to traverse for the parent directories.
     for root, dirs, files in os.walk(folderPath, topdown=False):
         # First, rename all matching files within the current directory level
         for filename in files:

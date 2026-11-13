@@ -1,13 +1,9 @@
 """
 File: opsInfo.py
-Description: Info Retrieval functions for openPypeline Studio.
-             Handles fetching the current state of the pipeline, reading 
-             paths, versions, UI states, etc.
-             Refactored from openPipelineInfo.mel to Python 3. 
-                
+Description: Info Retrieval functions for openPypeline Studio. Handles fetching the current state of the pipeline, reading paths, versions, UI states, etc. Refactored from openPipelineInfo.mel to Python 3.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
-
 """
 
 import os
@@ -159,8 +155,7 @@ def get_latest_wip_version(context):
 @_ensure_context
 def get_file_name(context, mode, offset=0, archive=0):
     """
-    Returns the full path of a folder or filename pertinent to the given item, 
-    dictating openPypeline's file naming conventions.
+    Returns the full path of a folder or filename pertinent to the given item, dictating openPypeline's file naming conventions.
     """
     file_name = ""
     w_name = prefs.get_pref("ops_wip", "workshop")

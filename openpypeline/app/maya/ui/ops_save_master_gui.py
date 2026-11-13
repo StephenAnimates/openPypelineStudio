@@ -1,9 +1,8 @@
 """
 Module: ops_save_master_gui.py
 
-Description:
-    Launches the UI for Mastering.
-    
+Description: Launches the UI for Mastering.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

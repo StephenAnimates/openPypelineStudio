@@ -1,7 +1,6 @@
 """
 File: ops_migrate_legacy_notes.py
-Description: openPypeline Add-on for migrating legacy XML notes to JSON.
-             Scans a project directory and safely translates info.xml and *Note.xml files.
+Description: openPypeline Add-on for migrating legacy XML notes to JSON. Scans a project directory and safely translates info.xml and *Note.xml files.
 """
 
 import os

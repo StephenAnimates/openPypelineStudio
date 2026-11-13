@@ -1,8 +1,7 @@
 """
 File: opsInit.py
-Description: Initializes all of the preferences and configurations for openPypeline Studio.
-             Refactored from openPipelineInit.mel (now opsInit.py) to use modern Python libraries.
-             
+Description: Initializes all of the preferences and configurations for openPypeline Studio. Refactored from openPipelineInit.mel (now opsInit.py) to use modern Python libraries.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
@@ -79,9 +78,7 @@ def opsInitialize():
 
 def opsReset():
     """
-    Resets all of the preferences for openPypeline Studio.
-    This reverts openPypeline Studio to a state in which no project is activated 
-    and no item is open for editing.
+    Resets all of the preferences for openPypeline Studio. This reverts openPypeline Studio to a state in which no project is activated and no item is open for editing.
     """
     prefs.set_pref("ops_currProjectName", "")
     opsInitialize()

@@ -1,7 +1,6 @@
 """
 File: file.py
-Description: Nuke-specific file handling operations for openPypeline Studio.
-             This module is dynamically loaded by opsEngine when Nuke is detected.
+Description: Nuke-specific file handling operations for openPypeline Studio. This module is dynamically loaded by opsEngine when Nuke is detected.
 """
 
 import nuke

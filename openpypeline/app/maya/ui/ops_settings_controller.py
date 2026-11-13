@@ -1,10 +1,8 @@
 """
 Module: ops_settings_controller.py
 
-Description:
-    The Controller class for the openPypeline Studio Global Settings Dialog.
-    Handles logic for populating and saving global preferences.
-    
+Description: The Controller class for the openPypeline Studio Global Settings Dialog. Handles logic for populating and saving global preferences.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

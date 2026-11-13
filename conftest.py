@@ -1,10 +1,6 @@
 """
 File: conftest.py
-Description: Pytest configuration file for openPypeline Studio.
-             This file is automatically discovered by pytest before running any tests.
-             It mocks DCC-specific modules (like maya.cmds) so that the core Python
-             logic can be tested in CI environments (like GitHub Actions) without
-             requiring a headless Maya, Nuke, or Houdini installation.
+Description: Pytest configuration file for openPypeline Studio. This file is automatically discovered by pytest before running any tests. It mocks DCC-specific modules (like maya.cmds) so that the core Python logic can be tested in CI environments (like GitHub Actions) without requiring a headless Maya, Nuke, or Houdini installation.
 """
 
 import sys

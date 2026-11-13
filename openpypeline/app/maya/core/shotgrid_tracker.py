@@ -1,7 +1,6 @@
 """
 File: shotgrid_tracker.py
-Description: ShotGrid (Flow Production Tracking) implementation of the ProductionTracker API.
-             Provides concrete methods to interface with Autodesk ShotGrid using shotgun_api3.
+Description: ShotGrid (Flow Production Tracking) implementation of the ProductionTracker API. Provides concrete methods to interface with Autodesk ShotGrid using shotgun_api3.
 """
 
 import logging

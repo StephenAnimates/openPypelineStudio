@@ -1,11 +1,8 @@
 """
 Module: ops_project_manager_controller.py
 
-Description:
-    The Controller class for the openPypeline Studio Project Manager.
-    Handles logic for browsing locations, refreshing the list of projects,
-    and launching the creation/edit dialogues.
-    
+Description: The Controller class for the openPypeline Studio Project Manager. Handles logic for browsing locations, refreshing the list of projects, and launching the creation/edit dialogues.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

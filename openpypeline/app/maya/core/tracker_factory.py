@@ -1,7 +1,6 @@
 """
 File: tracker_factory.py
-Description: Factory for creating and connecting to a production tracker instance.
-             Dynamically loads the appropriate tracker based on user settings.
+Description: Factory for creating and connecting to a production tracker instance. Dynamically loads the appropriate tracker based on user settings.
 """
 
 import logging
@@ -11,9 +10,8 @@ logger = logging.getLogger("openPypeline.tracking.factory")
 
 def get_tracker(tracker_type=None, url=None, user=None, key=None):
     """
-    Factory function to get an instance of the configured production tracker.
-    Reads pipeline preferences to determine which tracker to instantiate and connect to.
-    
+    Factory function to get an instance of the configured production tracker. Reads pipeline preferences to determine which tracker to instantiate and connect to.
+
     Returns:
         An instance of a ProductionTracker subclass if successful, otherwise None.
     """

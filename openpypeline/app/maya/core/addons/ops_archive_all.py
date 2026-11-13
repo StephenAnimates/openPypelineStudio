@@ -1,7 +1,6 @@
 """
 File: ops_archive_all.py
-Description: openPypeline "Archive All" add-on refactored to Python.
-             Archives, retrieves, or deletes all items in the library.
+Description: openPypeline "Archive All" add-on refactored to Python. Archives, retrieves, or deletes all items in the library.
 """
 
 import maya.cmds as cmds
@@ -50,8 +49,7 @@ def _update_ui():
 
 def _process_all_archives(action):
     """
-    Helper to iterate through all items and apply an archive action.
-    action parameter should be one of: 'archive', 'retrieve', 'delete'
+    Helper to iterate through all items and apply an archive action. action parameter should be one of: 'archive', 'retrieve', 'delete'
     """
     tabs = [Tab.ASSET, Tab.SHOT]  # Asset library and shot library tabs
     

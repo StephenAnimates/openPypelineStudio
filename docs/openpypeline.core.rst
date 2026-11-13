@@ -88,6 +88,14 @@ openpypeline.core.test\_ops\_actions module
    :show-inheritance:
    :undoc-members:
 
+openpypeline.core.test\_project\_onboarding module
+--------------------------------------------------
+
+.. automodule:: openpypeline.core.test_project_onboarding
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

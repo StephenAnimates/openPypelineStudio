@@ -1,10 +1,7 @@
 """
 File: opsLoader.py
-Description: Main initialization and setup script for openPypeline Studio in Maya.
-             It provides a modern Python-based entry point to manage script
-             and project path configurations using the DCC-agnostic prefs module, sources 
-             necessary MEL and Python modules, and launches the main UI.
-             
+Description: Main initialization and setup script for openPypeline Studio in Maya. It provides a modern Python-based entry point to manage script and project path configurations using the DCC-agnostic prefs module, sources necessary MEL and Python modules, and launches the main UI.
+
 Original Framework: OpenPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
@@ -241,8 +238,7 @@ def openPypeline():
     """
     Main entry point for openPypeline Studio.
 
-    Retrieves stored path configurations, validates them,
-    sources all required modules, and launches the main UI.
+    Retrieves stored path configurations, validates them, sources all required modules, and launches the main UI.
 
     Returns:
         None

@@ -1,8 +1,6 @@
 """
 File: ops_actions.py
-Description: Central action handler for openPypeline Studio.
-             This module contains the core logic for operations like creating items,
-             saving files, and interacting with the pipeline, decoupled from the UI.
+Description: Central action handler for openPypeline Studio. This module contains the core logic for operations like creating items, saving files, and interacting with the pipeline, decoupled from the UI.
 """
 import logging
 import os

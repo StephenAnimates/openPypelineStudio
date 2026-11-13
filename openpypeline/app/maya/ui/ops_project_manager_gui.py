@@ -1,8 +1,7 @@
 """
 Module: opsProjectManagerGUI.py
 
-Description:
-    Creates the openPypeline Studio Project Manager UI using PySide6.
+Description: Creates the openPypeline Studio Project Manager UI using PySide6.
 """
 
 from PySide6 import QtWidgets, QtCore
@@ -34,8 +33,7 @@ OPS_PROJ_MANAGER_STYLESHEET = """
 
 class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     """
-    A PySide-based Maya window for managing openPypeline Studio projects.
-    It allows users to select, create, edit, and remove projects, and manage users.
+    A PySide-based Maya window for managing openPypeline Studio projects. It allows users to select, create, edit, and remove projects, and manage users.
     """
 
     def __init__(self, parent=None):

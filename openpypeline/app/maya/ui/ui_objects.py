@@ -1,17 +1,14 @@
 """
 File: ui_objects.py
-Description: Window Manager for openPypeline Studio.
-             A modern Singleton that maintains references to active UI instances
-             to prevent garbage collection and allows cross-communication.
-             
+Description: Window Manager for openPypeline Studio. A modern Singleton that maintains references to active UI instances to prevent garbage collection and allows cross-communication.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """
 
 class WindowManager:
-    """ 
-    A modern Singleton Window Manager for tracking open UIs.
-    Replaces the legacy 'singleton.py' implementation.
+    """
+    A modern Singleton Window Manager for tracking open UIs. Replaces the legacy 'singleton.py' implementation.
     """
     _instance = None
 

@@ -1,10 +1,6 @@
 """
 File: ops_dev_launcher.py
-Description:
-    This script provides a developer-focused entry point for launching and testing
-    the openPypeline Studio Maya GUI components. It prompts the user to select
-    the root script directory, adds it to the system path, and then launches
-    a diagnostic UI to manage and view the various GUI windows.
+Description: This script provides a developer-focused entry point for launching and testing the openPypeline Studio Maya GUI components. It prompts the user to select the root script directory, adds it to the system path, and then launches a diagnostic UI to manage and view the various GUI windows.
 
     This is primarily intended for development and debugging, not as the main
     entry point for artists. The main entry point is `ops_loader.py`.
@@ -27,19 +23,17 @@ import importlib
 import os
 from PySide6 import QtWidgets
 
-# TODO: Remember to run the end-to-end manual test for OpenUSD (.usd, .usda) 
-#       and Alembic (.abc) project creation and export using this diagnostic launcher!
+# TODO: Remember to run the end-to-end manual test for OpenUSD (.usd, .usda) and Alembic (.abc) project creation and export using this diagnostic launcher!
 
 class OpsDevLauncher:
     """Launch the developer diagnostic window after locating the source tree."""
 
     def __init__(self):
-        '''
+        """
         Initializes the developer launcher.
 
-        This constructor orchestrates the process of getting the source directory,
-        updating the system path, and launching the diagnostic UI.
-        '''
+        This constructor orchestrates the process of getting the source directory, updating the system path, and launching the diagnostic UI.
+        """
         self.srcDir = ""
         # First, prompt the user to select the root script directory.
         self.sourceFilesPath()
@@ -65,8 +59,7 @@ class OpsDevLauncher:
         """
         Imports and launches the main diagnostic UI window.
 
-        This UI acts as a control panel for showing/hiding the various
-        component GUIs of the openPypeline Studio application.
+        This UI acts as a control panel for showing/hiding the various component GUIs of the openPypeline Studio application.
         """
         # Import the diagnostic UI module.
         from . import diagnostic_ui as diagnosticUI

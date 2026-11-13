@@ -27,8 +27,7 @@ from openpypeline.core.models import ProjectConfig, ItemContext, Tab
 @patch('openpypeline.app.maya.core.ops_actions.ops_engine.OpsEngine')
 def test_create_new_item_export_formats(mock_OpsEngine, mock_get_pref, mock_get_category, mock_get_file_name, mock_isdir, mock_makedirs, file_ext, expected_file_type):
     """
-    Test that OpenUSD and Alembic file formats trigger the correct 
-    `export_file` calls during item creation (mode 2 and 3).
+    Test that OpenUSD and Alembic file formats trigger the correct `export_file` calls during item creation (mode 2 and 3).
     """
     mock_engine_instance = MagicMock()
     mock_file_handler = MagicMock()
@@ -150,9 +149,7 @@ def test_save_master_export_formats(mock_OpsEngine, mock_get_pref, mock_get_file
 @patch('openpypeline.core.util.prefs.get_pref')
 def test_create_new_project(mock_get_pref, mock_rewrite, mock_get_data, tmp_path):
     """
-    Test that opsActions.create_or_edit_project successfully handles 
-    creating a new project (mode 0), making the necessary directories, 
-    and generating the correct XML string for the database.
+    Test that opsActions.create_or_edit_project successfully handles creating a new project (mode 0), making the necessary directories, and generating the correct XML string for the database.
     """
     
     # 1. Setup Test Data

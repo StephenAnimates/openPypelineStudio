@@ -43,10 +43,10 @@ def get_file_state(file_path: str) -> tuple[int, int] | None:
 
 
 class FileUseRegistry:
-    """Stores advisory file-use notices inside a synchronized project folder.
+    """
+    Stores advisory file-use notices inside a synchronized project folder.
 
-    Sync clients propagate these files asynchronously, so notices are
-    informative only and cannot provide guaranteed mutual exclusion.
+    Sync clients propagate these files asynchronously, so notices are informative only and cannot provide guaranteed mutual exclusion.
     """
 
     def __init__(
@@ -90,9 +90,7 @@ class FileUseRegistry:
 
         relative_path = relative.as_posix()
         if target.exists():
-            # resolve() does not consistently return stored filename casing.
-            # Canonicalize aliases on case-insensitive filesystems, while
-            # retaining exact spellings for distinct case-sensitive files.
+            # resolve() does not consistently return stored filename casing. Canonicalize aliases on case-insensitive filesystems, while retaining exact spellings for distinct case-sensitive files.
             parts = []
             parent = self.project_root
             try:
@@ -199,8 +197,7 @@ class FileUseRegistry:
                 metadata_path,
             )
             age = now - heartbeat_at
-            # Treat future heartbeats as stale too; clock skew must not make
-            # an implausibly recent notice appear to be a live session.
+            # Treat future heartbeats as stale too; clock skew must not make an implausibly recent notice appear to be a live session.
             stale = (
                 age > self.stale_after
                 or age < -self.stale_after

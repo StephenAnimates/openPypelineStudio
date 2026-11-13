@@ -1,9 +1,7 @@
 """
 Module: ops_save_master_controller.py
 
-Description:
-    The Controller class for the openPypeline Studio Save Master Dialog.
-    Handles logic, comment capturing, and validation for saving master files.
+Description: The Controller class for the openPypeline Studio Save Master Dialog. Handles logic, comment capturing, and validation for saving master files.
 
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
@@ -97,8 +95,7 @@ class OpsSaveMasterController(QtCore.QObject):
         self.worker.error.connect(self._on_tasks_error)
         
         # Cleanup
-        # Quit the worker thread on either outcome and defer QObject disposal
-        # until Qt has delivered the completion signal.
+        # Quit the worker thread on either outcome and defer QObject disposal until Qt has delivered the completion signal.
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.worker.error.connect(self.thread.quit)

@@ -1,10 +1,8 @@
 """
 Module: ops_proj_dialog_gui.py
 
-Description:
-    Opens the Project Dialog Window. This is used either for creating a new project 
-    or editing an existing project using PySide6.
-    
+Description: Opens the Project Dialog Window. This is used either for creating a new project or editing an existing project using PySide6.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

@@ -1,8 +1,6 @@
 """
 File: prefs.py
-Description: DCC-agnostic preference manager for openPypeline Studio.
-             Replaces Maya's optionVars by storing configurations in a 
-             centralized JSON file in the user's home directory.
+Description: DCC-agnostic preference manager for openPypeline Studio. Replaces Maya's optionVars by storing configurations in a centralized JSON file in the user's home directory.
 """
 
 import os

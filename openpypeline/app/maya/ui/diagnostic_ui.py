@@ -1,10 +1,8 @@
 """
 Module: diagnosticUI.py
 
-Description:
-    Developer-focused diagnostic tool for launching, reloading, and tracking the state of 
-    various PySide6 GUIs within the openPypeline Studio framework.
-    
+Description: Developer-focused diagnostic tool for launching, reloading, and tracking the state of various PySide6 GUIs within the openPypeline Studio framework.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

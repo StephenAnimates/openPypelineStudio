@@ -1,8 +1,6 @@
 """
 File: Version.py
-Description: Core version control management for openPypeline Studio.
-             Handles parsing, incrementing, and verifying file versions.
-             Designed to be extensible for custom integrations like Git, SVN, or CVS.
+Description: Core version control management for openPypeline Studio. Handles parsing, incrementing, and verifying file versions. Designed to be extensible for custom integrations like Git, SVN, or CVS.
 """
 
 import os
@@ -16,19 +14,15 @@ from ..util import prefs
 importlib.reload(prefs)
 
 class Version():
-    '''
-    The Version class contains the functionality for legacy OpenPipeline 1.0
-    file version control, which is just making copies of files. Simple but it
-    works.  Classes for SVN or CVS can derive from this to take advantage of
-    other other revision control schemas.
-    
+    """
+    The Version class contains the functionality for legacy OpenPipeline 1.0 file version control, which is just making copies of files. Simple but it works.  Classes for SVN or CVS can derive from this to take advantage of other other revision control schemas.
+
     Default naming:
         [name]_wip_####.type
-    
+
     Examples:
         testMaster_wip_0003.mb
-    
-    '''
+    """
     def __init__(self):
         """Initialize the version manager."""
         pass

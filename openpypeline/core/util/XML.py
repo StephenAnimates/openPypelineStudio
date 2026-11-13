@@ -33,12 +33,9 @@ class xmlfile(object):
 		
 	# helper functions
 	def getMod(self, cls):
-		'''
-		cls would be in the form like module1.module2.cls
-		Loops through __main__ to see how module1.module2 is imported
-		Returns the class(obj) using the existing import method
-		Returns None if the module or class isn't found
-		'''
+		"""
+		cls would be in the form like module1.module2.cls Loops through __main__ to see how module1.module2 is imported Returns the class(obj) using the existing import method Returns None if the module or class isn't found
+		"""
 		import __main__
 		import sys
 		
@@ -69,8 +66,9 @@ class xmlfile(object):
 		return None
 	
 	def getType(self, obj):
-		""" Generates string representation of class of obj 
-			discarding decoration """
+		"""
+		Generates string representation of class of obj discarding decoration
+		"""
 		return str(obj.__class__).split("'")[1]
 		
 	_easyToPickle = [ "int", "float", "str", "unicode", "long" ]
@@ -200,8 +198,7 @@ class xmlfile(object):
 	def _unpickleList(self, node):
 		"""Rebuild a list from indexed child elements in serialized XML."""
 		li = []
-		# collect entries, you can not assume that the
-		# members of the list appear in the right order !
+		# collect entries, you can not assume that the members of the list appear in the right order !
 		for name, element in self._getElementChilds(node):
 			if name != "item":
 				raise xmlunpicklingException()

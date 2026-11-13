@@ -1,9 +1,7 @@
 """
 Module: localization.py
 
-Description:
-    Provides the Maya UI package with access to the shared localization manager
-    and its active localization instance.
+Description: Provides the Maya UI package with access to the shared localization manager and its active localization instance.
 
     Add Maya-specific helpers here later if the Maya UI needs behavior that shouldn’t belong in the shared core.
 """

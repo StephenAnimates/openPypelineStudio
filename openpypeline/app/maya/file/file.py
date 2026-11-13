@@ -1,7 +1,6 @@
 """
 File: file.py
-Description: Maya-specific file handling operations for openPypeline Studio.
-             This module is dynamically loaded by opsEngine when Maya is detected.
+Description: Maya-specific file handling operations for openPypeline Studio. This module is dynamically loaded by opsEngine when Maya is detected.
 """
 
 import maya.cmds as cmds

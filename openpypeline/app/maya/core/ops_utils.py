@@ -1,9 +1,7 @@
 """
 File: ops_utils.py
-Description:
-    General utility functions for openPypeline Studio.
-    Replaces the legacy openPipelineUtility.mel script.
-             
+Description: General utility functions for openPypeline Studio. Replaces the legacy openPipelineUtility.mel script.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

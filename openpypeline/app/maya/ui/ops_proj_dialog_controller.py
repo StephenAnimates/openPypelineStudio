@@ -1,10 +1,8 @@
 """
 Module: ops_proj_dialog_controller.py
 
-Description:
-    The Controller class for the openPypeline Studio Project Dialog.
-    Handles logic, data population, and validation for creating or editing projects.
-    
+Description: The Controller class for the openPypeline Studio Project Dialog. Handles logic, data population, and validation for creating or editing projects.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

@@ -1,14 +1,10 @@
 """
 File: ops_project.py
 
-Description:
-    Project Management UI and backend logic for openPypeline Studio.
-    Handles creating, editing, removing projects, and user management.
-    Refactored from openPipelineProject.mel to Python 3.
-             
+Description: Project Management UI and backend logic for openPypeline Studio. Handles creating, editing, removing projects, and user management. Refactored from openPipelineProject.mel to Python 3.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
-
 """
 
 import os

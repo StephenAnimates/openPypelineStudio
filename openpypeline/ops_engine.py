@@ -1,8 +1,6 @@
 """
 File: ops_engine.py
-Description: The central, DCC-agnostic pipeline engine for openPypeline Studio.
-             This module orchestrates the core data flow, detects the host application
-             dynamically, and delegates file operations to the appropriate application handlers.
+Description: The central, DCC-agnostic pipeline engine for openPypeline Studio. This module orchestrates the core data flow, detects the host application dynamically, and delegates file operations to the appropriate application handlers.
 
 Usage Example (Testing):
 '''
@@ -38,8 +36,7 @@ def _get_workspace_root(host_app):
 
 class OpsEngine:
     """
-    The main engine class that drives openPypeline Studio.
-    It acts as the bridge between the UI/preferences, the core data models, and the host DCC.
+    The main engine class that drives openPypeline Studio. It acts as the bridge between the UI/preferences, the core data models, and the host DCC.
     """
     def __init__(self):
         """Detect the host application and load its file-operation adapter."""
@@ -102,8 +99,7 @@ class OpsEngine:
 
     def ui(self):
         """
-        Log inventory, version, master, and note status for the current selection.
-        This diagnostic does not open or modify scene files.
+        Log inventory, version, master, and note status for the current selection. This diagnostic does not open or modify scene files.
         """
         # --- 1. Load Core Modules ---
         # Reload modules to ensure the latest code is executing (useful for development)
@@ -129,8 +125,7 @@ class OpsEngine:
             logger.warning("'ops_currProjectPath' preference is not set. Using host workspace root as fallback.")
             project = _get_workspace_root(self.host_app)
             
-        # Fetch the active UI selection states (Tab, Level 1/2/3) from preferences
-        # Fallbacks are provided to allow testing outside of the actual UI
+        # Fetch the active UI selection states (Tab, Level 1/2/3) from preferences. Fallbacks are provided to allow testing outside of the actual UI.
         tab = prefs.get_pref("ops_currOpenTab", 2)
         level1 = prefs.get_pref("ops_currOpenLevel1", "")
         level2 = prefs.get_pref("ops_currOpenLevel2", "")

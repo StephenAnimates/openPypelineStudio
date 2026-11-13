@@ -1,14 +1,11 @@
 """
 Sphinx configuration for openPypeline Studio documentation.
 
-To build the HTML documentation, open Terminal on macOS, a terminal emulator
-on Linux, or PowerShell or Command Prompt on Windows. Change to the repository's
-top-level (root) folder (the folder containing ``docs/`` and ``openpypeline/``), then
-enter:
+To build the HTML documentation locally, open Terminal on macOS, a terminal emulator on Linux, or PowerShell or Command Prompt on Windows. From the repository root (the folder containing ``docs/`` and ``openpypeline/``), run:
     sphinx-apidoc -f -o docs/ openpypeline/
-    sphinx-build -b html docs/ docs/_build/html
+    sphinx-build -b html -W --keep-going docs/ docs/_build/html
 
-The first command generates the API reference pages used by the toctree.
+The first command regenerates the tracked API reference pages in ``docs/``. Run it locally when you want those generated changes included in a commit. GitHub Actions on this repo also regenerates the pages and builds the documentation for pull requests and pushes, but changes made in its checkout are not committed back to the repo. Running the HTML build locally is optional if you are relying on CI for validation.
 """
 
 from pathlib import Path

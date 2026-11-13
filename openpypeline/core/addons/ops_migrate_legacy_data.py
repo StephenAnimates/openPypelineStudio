@@ -1,7 +1,6 @@
 """
 File: ops_migrate_legacy_data.py
-Description: openPypeline Add-on for migrating legacy XML databases to JSON.
-             Converts projects, users, and all history/note files.
+Description: openPypeline Add-on for migrating legacy XML databases to JSON. Converts projects, users, and all history/note files.
 """
 
 import os

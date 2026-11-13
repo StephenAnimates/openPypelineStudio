@@ -1,8 +1,6 @@
 """
 File: models.py
-Description: Core Data Classes and Enums for openPypeline Studio.
-             These models encapsulate pipeline data, replacing long argument lists
-             and magic numbers throughout the framework.
+Description: Core Data Classes and Enums for openPypeline Studio. These models encapsulate pipeline data, replacing long argument lists and magic numbers throughout the framework.
 """
 
 from dataclasses import dataclass
@@ -22,8 +20,7 @@ class Level(IntEnum):
 @dataclass
 class ItemContext:
     """
-    Encapsulates the location of an item within the openPypeline hierarchy.
-    Replaces the repetitive (tab, level1, level2, level3) arguments.
+    Encapsulates the location of an item within the openPypeline hierarchy. Replaces the repetitive (tab, level1, level2, level3) arguments.
     """
     tab: int
     level1: str = ""
@@ -52,8 +49,7 @@ class ItemContext:
 @dataclass
 class ProjectConfig:
     """
-    Encapsulates all settings and paths for a Project.
-    Replaces functions that take 22+ arguments.
+    Encapsulates all settings and paths for a Project. Replaces functions that take 22+ arguments.
     """
     name: str
     path: str

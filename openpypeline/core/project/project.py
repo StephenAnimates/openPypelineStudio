@@ -42,11 +42,10 @@ class Project():
         pass
         
     def path(self):
-        '''
-        Description: 	Returns the full path of the Project File
-        Input: 		none
-        Returns: 	The full path of the Project File (string)
-        '''
+        """
+        Description:    Returns the full path of the Project File Input:          none
+        Returns:        The full path of the Project File (string)
+        """
         
         projectFilePath = os.path.join(self.openPipeline_projectFilePath, self.openPipeline_projList)
         return projectFilePath

@@ -1,7 +1,6 @@
 """
 File: localization.py
-Description: Core Localization Manager for openPypeline Studio.
-             Handles loading JSON language files and retrieving UI strings.
+Description: Core Localization Manager for openPypeline Studio. Handles loading JSON language files and retrieving UI strings.
 """
 
 import os

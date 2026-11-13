@@ -1,9 +1,7 @@
 """
 Module: ops_main_controller.py
 
-Description:
-    The Controller class for the main openPypeline Studio UI.
-    Handles signal routing between the ops_main_ui View and the core backend.
+Description: The Controller class for the main openPypeline Studio UI. Handles signal routing between the ops_main_ui View and the core backend.
 
 License: Common Public License 1.0 (CPL-1.0)
 """
@@ -207,8 +205,7 @@ class OpsMainController:
 
     def on_project_changed(self, text):
         """
-        Handles project switching from the main dropdown.
-        Activates the newly selected project and refreshes the entire UI to reflect its contents.
+        Handles project switching from the main dropdown. Activates the newly selected project and refreshes the entire UI to reflect its contents.
         """
         if not text:
             return
@@ -272,8 +269,7 @@ class OpsMainController:
 
     def _asset_context_menu(self, position):
         """
-        Builds and displays the right-click context menu for Assets.
-        Triggered when the user right-clicks an item in the Asset browser list.
+        Builds and displays the right-click context menu for Assets. Triggered when the user right-clicks an item in the Asset browser list.
         """
         # Create the popup menu instance
         menu = QtWidgets.QMenu()

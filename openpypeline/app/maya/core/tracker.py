@@ -1,8 +1,6 @@
 """
 File: tracker.py
-Description: Abstract Base Class for Production Tracking APIs.
-             Defines the standard interface that all tracker modules
-             (e.g., ShotGrid, Ftrack, Kitsu) must implement.
+Description: Abstract Base Class for Production Tracking APIs. Defines the standard interface that all tracker modules (e.g., ShotGrid, Ftrack, Kitsu) must implement.
 """
 
 import logging
@@ -13,9 +11,7 @@ logger = logging.getLogger("openPypeline.tracking")
 
 class ProductionTracker(ABC):
     """
-    Abstract base class for production tracking systems.
-    Any tracking integration must inherit from this class and implement
-    these methods to ensure DCC-agnostic compatibility within openPypeline.
+    Abstract base class for production tracking systems. Any tracking integration must inherit from this class and implement these methods to ensure DCC-agnostic compatibility within openPypeline.
     """
     
     def __init__(self, url, auth_user, auth_key):
@@ -28,8 +24,7 @@ class ProductionTracker(ABC):
     @abstractmethod
     def connect(self):
         """
-        Authenticates and establishes a connection with the tracking API.
-        Returns True if successful, False otherwise.
+        Authenticates and establishes a connection with the tracking API. Returns True if successful, False otherwise.
         """
         pass
 

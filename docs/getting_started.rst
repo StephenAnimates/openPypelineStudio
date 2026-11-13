@@ -19,6 +19,7 @@ Typical scripts locations are:
 4. Copy the following setup python code.
 5. Update the path in the code for your operating system and replacing it with your actual install location. The path must point to the directory containing the ``openpypeline`` package.
 6. Execute the code (Command > Execute or Ctrl/Cmd + Enter).
+
 This will add the openPypeline package to your Python path and run the setup function. The setup function will prompt you to define your Script Path and Project Path.
 
 .. code-block:: python

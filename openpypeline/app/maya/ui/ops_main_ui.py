@@ -1,15 +1,11 @@
 """
 Module: ops_main_ui.py
 
-Description: 
-    Creates and manages the main openPypeline Studio UI in Maya.
-    This module defines the `openPipelineMainUI` class, which inherits from 
-    the base `window` class. It constructs the primary user interface containing 
-    the Asset Browser, Shot Browser, and "Currently Open" working area tabs.
-    
-    This UI serves as the central hub for artists to interact with the 
+Description: Creates and manages the main openPypeline Studio UI in Maya. This module defines the `openPipelineMainUI` class, which inherits from the base `window` class. It constructs the primary user interface containing the Asset Browser, Shot Browser, and "Currently Open" working area tabs.
+
+    This UI serves as the central hub for artists to interact with the
     openPypeline Studio framework, manage their files, and navigate the project hierarchy.
-        
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 

@@ -1,7 +1,6 @@
 """
 File: file.py
-Description: Houdini-specific file handling operations for openPypeline Studio.
-             This module is dynamically loaded by opsEngine when Houdini is detected.
+Description: Houdini-specific file handling operations for openPypeline Studio. This module is dynamically loaded by opsEngine when Houdini is detected.
 """
 
 import hou

@@ -1,9 +1,7 @@
 """
 File: opsSceneInv.py
-Description: Scene and Asset Inventory functions for openPypeline Studio.
-             Handles tracking existing assets, sequences, and reference loading.
-             Refactored from openPipelineSceneInv.mel to Python 3 and PySide6.
-             
+Description: Scene and Asset Inventory functions for openPypeline Studio. Handles tracking existing assets, sequences, and reference loading. Refactored from openPipelineSceneInv.mel to Python 3 and PySide6.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 """

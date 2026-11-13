@@ -1,9 +1,7 @@
 """
 File: opsUIWrappers.py
-Description: UI action wrappers for openPypeline Studio.
-             Connects the UI button commands to the core opsActions logic.
-             Replaces the legacy wrapper dialogs from openPipelineUI.mel.
-    
+Description: UI action wrappers for openPypeline Studio. Connects the UI button commands to the core opsActions logic. Replaces the legacy wrapper dialogs from openPipelineUI.mel.
+
 Original Framework: openPipeline by Kickstand
 License: Common Public License 1.0 (CPL-1.0)
 
