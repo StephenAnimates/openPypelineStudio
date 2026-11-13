@@ -56,11 +56,12 @@ class opsProjDialogGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
         path_layout = QtWidgets.QHBoxLayout()
         self.proj_path_field = QtWidgets.QLineEdit()
+        self.proj_path_field.setReadOnly(True)
         self.proj_path_field.setToolTip(localization.get_string("anno_projPath"))
-        self.path_browse_btn = QtWidgets.QPushButton(localization.get_string("btn_browse"))
+        self.path_override_btn = QtWidgets.QPushButton(localization.get_string("btn_overrideProjectPath"))
         
         path_layout.addWidget(self.proj_path_field)
-        path_layout.addWidget(self.path_browse_btn)
+        path_layout.addWidget(self.path_override_btn)
 
         self.desc_field = QtWidgets.QLineEdit()
         self.desc_field.setMaxLength(250)

@@ -6,14 +6,22 @@ Description: Central action handler for openPypeline Studio.
 """
 import logging
 import os
+import ntpath
+import uuid
+from dataclasses import asdict
 
 from ..ops_engine import OpsEngine
 from . import ops_info
-from .models import ItemContext
+from .models import ItemContext, ProjectConfig
 from .util import prefs
 from .version.Version import git, perforce, svn
 
 logger = logging.getLogger("openPypeline.actions")
+
+
+class ProjectActionError(Exception):
+    """An expected project operation failure that can be shown to the user."""
+
 
 _MAYA_FILE_TYPES = {
     ".ma": "mayaAscii",
@@ -22,6 +30,249 @@ _MAYA_FILE_TYPES = {
     ".usda": "USD Export",
     ".abc": "Alembic",
 }
+
+
+def _project_config_data(config: ProjectConfig) -> dict:
+    """Convert project configuration to a validated, local-root-aware mapping."""
+    from . import ops_project
+
+    if not isinstance(config, ProjectConfig):
+        raise ProjectActionError("Project settings are invalid.")
+    project_data = asdict(config)
+    project_data["name"] = str(project_data.get("name", "")).strip()
+    project_root = str(project_data.get("path", "")).strip()
+    if not project_data["name"]:
+        raise ProjectActionError("A project name is required.")
+    if not project_root:
+        raise ProjectActionError("A project folder is required.")
+    if str(project_data.get("status", "1")) not in {"0", "1"}:
+        raise ProjectActionError("Project status must be active or inactive.")
+
+    project_root = os.path.abspath(os.path.expanduser(project_root))
+    project_root_real = os.path.realpath(project_root)
+    project_data["path"] = project_root
+    for folder_field in ops_project.PROJECT_FOLDER_FIELDS:
+        folder = str(project_data.get(folder_field, "")).strip()
+        if not folder:
+            continue
+        drive, _ = ntpath.splitdrive(folder)
+        if os.path.isabs(folder) or ntpath.isabs(folder) or drive:
+            raise ProjectActionError(f"{folder_field} must be a relative path inside the project folder.")
+        folder = folder.replace("\\", "/")
+        project_data[folder_field] = folder
+        if any(part == ".." for part in folder.split("/")):
+            raise ProjectActionError(f"{folder_field} cannot escape the project folder.")
+        target = os.path.realpath(os.path.join(project_root, *folder.split("/")))
+        try:
+            if os.path.commonpath((project_root_real, target)) != project_root_real:
+                raise ProjectActionError(f"{folder_field} must stay inside the project folder.")
+        except ValueError as error:
+            raise ProjectActionError(f"{folder_field} must stay inside the project folder.") from error
+    return project_data
+
+
+def _get_project_store():
+    """Return the project registry module after checking local setup."""
+    from . import ops_project
+
+    if not ops_project.get_proj_file():
+        raise ProjectActionError(
+            "The local project registry location is not set. Configure it in Project Manager first."
+        )
+    return ops_project
+
+
+def _read_registered_projects(ops_project) -> list:
+    """Read the local registry without turning corruption into an empty registry."""
+    try:
+        return ops_project.read_projects_data()
+    except (OSError, ValueError) as error:
+        raise ProjectActionError(f"Could not read the local project registry: {error}") from error
+
+
+def _activate_registered_project(project_data: dict) -> bool:
+    """Set local preferences to use one registered, active project."""
+    if str(project_data.get("status", "1")) == "0":
+        raise ProjectActionError("This project is inactive and cannot be selected.")
+    project_root = os.path.abspath(os.path.expanduser(str(project_data.get("path", ""))))
+    if not os.path.isdir(project_root):
+        raise ProjectActionError(f"The project folder does not exist: {project_root}")
+
+    path_preferences = {
+        "ops_currProjectPath": None,
+        "ops_libPath": "libraryfolder",
+        "ops_shotPath": "scenesfolder",
+        "ops_scriptsPath": "scriptsfolder",
+        "ops_rendersPath": "rendersfolder",
+        "ops_particlesPath": "particlesfolder",
+        "ops_texturesPath": "texturesfolder",
+        "ops_archivePath": "archivefolder",
+        "ops_deletePath": "deletedfolder",
+    }
+    prefs.set_pref("ops_currProjectName", project_data["name"])
+    for preference, field in path_preferences.items():
+        value = project_root if field is None else os.path.join(project_root, str(project_data.get(field, "")))
+        prefs.set_pref(preference, value.replace("\\", "/"))
+    prefs.set_pref("ops_wip", project_data.get("wipname", "wip"))
+    prefs.set_pref("ops_wipFormat", project_data.get("wipformat", "ma"))
+    prefs.set_pref("ops_masterName", project_data.get("mastername", "master"))
+    prefs.set_pref("ops_masterFormat", project_data.get("masterformat", "ma"))
+    return True
+
+
+def activate_project(project_name: str) -> bool:
+    """Activate a registered project using this artist's local project path."""
+    ops_project = _get_project_store()
+    for project_data in _read_registered_projects(ops_project):
+        if project_data.get("name") == project_name:
+            return _activate_registered_project(project_data)
+    raise ProjectActionError(f"Project '{project_name}' is not registered on this computer.")
+
+
+def deactivate_project() -> None:
+    """Clear local project preferences when no registered project is active."""
+    for key in (
+        "ops_currProjectName",
+        "ops_currProjectPath",
+        "ops_libPath",
+        "ops_shotPath",
+        "ops_scriptsPath",
+        "ops_rendersPath",
+        "ops_particlesPath",
+        "ops_texturesPath",
+        "ops_archivePath",
+        "ops_deletePath",
+    ):
+        prefs.set_pref(key, "")
+
+
+def create_or_edit_project(mode: int, old_name: str, config: ProjectConfig) -> int:
+    """Create or edit a project, its shared manifest, and this artist's registry."""
+    if mode not in (0, 1):
+        raise ProjectActionError(f"Unsupported project operation mode: {mode}")
+    ops_project = _get_project_store()
+    project_data = _project_config_data(config)
+    projects = _read_registered_projects(ops_project)
+    existing_index = next(
+        (index for index, project in enumerate(projects) if project.get("name") == old_name),
+        None,
+    ) if mode == 1 else None
+    if mode == 1 and existing_index is None:
+        raise ProjectActionError(f"Project '{old_name}' is not registered on this computer.")
+    if any(
+        project.get("name") == project_data["name"] and index != existing_index
+        for index, project in enumerate(projects)
+    ):
+        raise ProjectActionError(f"A project named '{project_data['name']}' is already registered.")
+
+    existing_project = projects[existing_index] if existing_index is not None else {}
+    manifest_path = ops_project.get_project_manifest_path(project_data["path"])
+    if mode == 0 and os.path.exists(manifest_path):
+        raise ProjectActionError(
+            "This folder already has an openPypeline project manifest. Use Join Existing instead."
+        )
+
+    project_id = str(existing_project.get("project_id") or uuid.uuid4())
+    if mode == 1 and os.path.isfile(manifest_path):
+        try:
+            manifest = ops_project.read_project_manifest(project_data["path"])
+        except (OSError, ValueError) as error:
+            raise ProjectActionError(str(error)) from error
+        manifest_id = manifest["project_id"]
+        if existing_project.get("project_id") and existing_project["project_id"] != manifest_id:
+            raise ProjectActionError("The local project registration does not match this folder's manifest.")
+        project_id = manifest_id
+
+    try:
+        os.makedirs(project_data["path"], exist_ok=True)
+        for field in ops_project.PROJECT_FOLDER_FIELDS:
+            folder = str(project_data.get(field, "")).strip()
+            if folder:
+                os.makedirs(
+                    os.path.join(project_data["path"], *folder.split("/")),
+                    exist_ok=True,
+                )
+    except OSError as error:
+        raise ProjectActionError(f"Could not create the project folder structure: {error}") from error
+
+    if not ops_project.write_project_manifest(project_data["path"], project_id, project_data):
+        raise ProjectActionError("Could not write the shared project manifest.")
+
+    project_data["project_id"] = project_id
+    if existing_index is None:
+        projects.append(project_data)
+    else:
+        projects[existing_index] = project_data
+    if not ops_project.rewrite_proj_file(projects):
+        raise ProjectActionError("Could not update this artist's local project registry.")
+
+    if str(project_data.get("status", "1")) == "0":
+        if prefs.get_pref("ops_currProjectName", "") in {old_name, project_data["name"]}:
+            deactivate_project()
+    else:
+        _activate_registered_project(project_data)
+    return 1
+
+
+def join_existing_project(project_root: str) -> int:
+    """Register a shared project locally without creating or changing its files."""
+    ops_project = _get_project_store()
+    selected_root = str(project_root).strip()
+    if not selected_root:
+        raise ProjectActionError("Select a project folder to join.")
+    root = os.path.abspath(os.path.expanduser(selected_root))
+    if not os.path.isdir(root):
+        raise ProjectActionError(f"The selected project folder does not exist: {root}")
+
+    try:
+        manifest = ops_project.read_project_manifest(root)
+    except (OSError, ValueError) as error:
+        raise ProjectActionError(str(error)) from error
+
+    manifest_project = dict(manifest["project"])
+    config_fields = set(ProjectConfig.__dataclass_fields__)
+    config_data = {
+        key: value
+        for key, value in manifest_project.items()
+        if key in config_fields
+    }
+    config_data["path"] = root
+    project_data = _project_config_data(ProjectConfig(**config_data))
+    project_data["project_id"] = manifest["project_id"]
+
+    projects = _read_registered_projects(ops_project)
+    for existing in projects:
+        if (
+            existing.get("name") == project_data["name"]
+            and existing.get("project_id") != manifest["project_id"]
+        ):
+            raise ProjectActionError(
+                f"A different project named '{project_data['name']}' is already registered."
+            )
+    for index, existing in enumerate(projects):
+        if existing.get("project_id") == manifest["project_id"]:
+            existing_path = os.path.abspath(os.path.expanduser(str(existing.get("path", ""))))
+            if existing_path != root:
+                raise ProjectActionError(
+                    f"Project '{project_data['name']}' is already registered at {existing_path}."
+                )
+            projects[index] = project_data
+            if not ops_project.rewrite_proj_file(projects):
+                raise ProjectActionError("Could not update this artist's local project registry.")
+            if str(project_data.get("status", "1")) != "0":
+                _activate_registered_project(project_data)
+            elif prefs.get_pref("ops_currProjectName", "") == existing.get("name"):
+                deactivate_project()
+            return 1
+
+    if not os.path.isdir(root):
+        raise ProjectActionError(f"The selected project folder does not exist: {root}")
+    projects.append(project_data)
+    if not ops_project.rewrite_proj_file(projects):
+        raise ProjectActionError("Could not update this artist's local project registry.")
+    if str(project_data.get("status", "1")) != "0":
+        _activate_registered_project(project_data)
+    return 1
 
 
 def _save_scene_file(dcc, filepath: str) -> bool:

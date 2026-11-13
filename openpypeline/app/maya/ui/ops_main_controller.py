@@ -13,6 +13,7 @@ from openpypeline.core.localization import localization
 from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
 from openpypeline.core import ops_actions as opsActions
 from openpypeline.core import ops_project as opsProject
+from openpypeline.core.util import prefs
 from .ops_main_ui import opsMainUI
 from openpypeline.core.models import Tab, Level
 
@@ -118,8 +119,42 @@ class OpsMainController:
 
     def _populate_initial_data(self):
         """Initialize the main window with project data and available add-ons."""
-        # Initialize the UI with data from the Model
+        self.refresh_project_selector()
         self._load_addons()
+
+    def refresh_project_selector(self):
+        """Populate active local projects and restore the artist's selected project."""
+        projects = [
+            project
+            for project in opsProject.get_projects_data()
+            if str(project.get("status", "1")) != "0"
+        ]
+        project_names = [project.get("name", "") for project in projects if project.get("name")]
+        current_name = prefs.get_pref("ops_currProjectName", "")
+        if current_name not in project_names:
+            current_name = ""
+            opsActions.deactivate_project()
+
+        combo = self.view.ops_projName_optionMenu
+        previous_block_state = combo.blockSignals(True)
+        combo.clear()
+        combo.addItems(project_names)
+        if current_name:
+            combo.setCurrentText(current_name)
+        else:
+            combo.setCurrentIndex(-1)
+        combo.blockSignals(previous_block_state)
+
+        if current_name:
+            try:
+                opsActions.activate_project(current_name)
+            except opsActions.ProjectActionError as error:
+                QtWidgets.QMessageBox.warning(self.view, "Project Unavailable", str(error))
+                opsActions.deactivate_project()
+                previous_block_state = combo.blockSignals(True)
+                combo.setCurrentIndex(-1)
+                combo.blockSignals(previous_block_state)
+        self.view.ops_projPath_txtField.setText(prefs.get_pref("ops_currProjectPath", ""))
 
     def _load_addons(self):
         """Dynamically discovers and loads core and app-specific add-ons."""
@@ -175,8 +210,14 @@ class OpsMainController:
         Handles project switching from the main dropdown.
         Activates the newly selected project and refreshes the entire UI to reflect its contents.
         """
-        # Tell the backend to switch active project paths and configurations
-        opsActions.activate_project(text)
+        if not text:
+            return
+        try:
+            opsActions.activate_project(text)
+        except opsActions.ProjectActionError as error:
+            QtWidgets.QMessageBox.warning(self.view, "Could Not Activate Project", str(error))
+            return
+        self.view.ops_projPath_txtField.setText(prefs.get_pref("ops_currProjectPath", ""))
         try:
             # Refresh all UI elements (dropdowns, lists, labels) to show the new project's data
             opsUIWrappers.refresh_ui()

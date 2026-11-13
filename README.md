@@ -4,6 +4,8 @@ openPypeline Studio is a locally installed, open-source framework for managing a
 
 Originally developed as a MEL-based Autodesk Maya plug-in by Kickstand called OpenPipeline, the project has been redesigned and rebadged as **openPypeline Studio**, then modernized in **Python 3**. Maya remains the first supported host, while the project is moving toward a host-neutral core and modular adapters for additional software. The shared core focuses on production needs such as directory structures, file naming, versioning, and workflow data; host-specific modules provide application-aware behavior and UI.
 
+**Project documentation:** [Read the documentation](https://stephenanimates.github.io/openPypelineStudio/).
+
 ## ✨ Features
 * **Automated Directory Structures:** Ensures all project files are strictly organized and standardized across your team.
 * **Strict Naming Conventions:** Eliminates messy file names; the framework handles naming and versioning automatically.

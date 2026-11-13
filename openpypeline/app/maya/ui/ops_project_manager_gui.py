@@ -132,12 +132,15 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.new_proj_btn.setProperty("styleClass", "positiveAction")
         self.new_proj_btn.clicked.connect(self.on_new_project)
 
+        self.join_proj_btn = QtWidgets.QPushButton("Join Existing...")
+
         self.remove_proj_btn = QtWidgets.QPushButton("Remove")
         self.remove_proj_btn.setProperty("styleClass", "negativeAction")
         self.remove_proj_btn.setEnabled(False)
         self.remove_proj_btn.clicked.connect(self.on_remove_project)
 
         project_buttons_layout.addWidget(self.new_proj_btn)
+        project_buttons_layout.addWidget(self.join_proj_btn)
         project_buttons_layout.addWidget(self.remove_proj_btn)
 
         self.edit_proj_btn = QtWidgets.QPushButton("Edit...")

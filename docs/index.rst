@@ -36,6 +36,7 @@ The API reference is generated from the Python package during the documentation 
 
    about
    getting_started
+   maya_project_setup
    production_workflows
    architecture
    architecture_migration

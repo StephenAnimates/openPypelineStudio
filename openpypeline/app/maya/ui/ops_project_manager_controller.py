@@ -17,6 +17,7 @@ from openpypeline.app.maya.core import ops_loader as opsLoader
 from openpypeline.core import ops_project as opsProject
 from openpypeline.core import ops_actions as opsActions
 from openpypeline.app.maya.core import ops_utils as opsUtils
+from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
 from openpypeline.core.util import prefs
 from openpypeline.core.localization import localization
 from .ops_project_manager_gui import opsProjectManagerGUI
@@ -43,6 +44,7 @@ class OpsProjectManagerController(QtCore.QObject):
         self.view.project_list_widget.itemSelectionChanged.connect(self.on_project_selection)
         self.view.project_list_widget.itemDoubleClicked.connect(self.on_edit_project)
         self.view.new_proj_btn.clicked.connect(self.on_new_project)
+        self.view.join_proj_btn.clicked.connect(self.on_join_project)
         self.view.remove_proj_btn.clicked.connect(self.on_remove_project)
         self.view.edit_proj_btn.clicked.connect(self.on_edit_project)
         self.view.refresh_btn.clicked.connect(self.on_refresh_list)
@@ -82,6 +84,32 @@ class OpsProjectManagerController(QtCore.QObject):
         self.UIObjects.opsProjDialogController.mode = 0
         self.UIObjects.opsProjDialogController.old_name = ""
         self.UIObjects.opsProjDialogController.showWindow()
+
+    def on_join_project(self, *args):
+        """Register a synchronized project using its shared manifest."""
+        start_path = prefs.get_pref("ops_projectFilePath", "")
+        project_root = QtWidgets.QFileDialog.getExistingDirectory(
+            self.view,
+            "Join Existing Project",
+            start_path,
+        )
+        if not project_root:
+            return
+        try:
+            project_name = opsProject.read_project_manifest(project_root)["project"]["name"]
+            opsActions.join_existing_project(project_root)
+        except (opsActions.ProjectActionError, OSError, ValueError) as error:
+            QtWidgets.QMessageBox.warning(self.view, "Could Not Join Project", str(error))
+            return
+
+        self.on_refresh_list()
+        matches = self.view.project_list_widget.findItems(
+            project_name,
+            QtCore.Qt.MatchExactly,
+        )
+        if matches:
+            self.view.project_list_widget.setCurrentItem(matches[0])
+        opsUIWrappers.refresh_ui()
         
     def on_edit_project(self, *args):
         """Open the project editor for the currently selected project."""
@@ -123,6 +151,9 @@ class OpsProjectManagerController(QtCore.QObject):
         self.view.project_info_field.clear()
         self.view.edit_proj_btn.setEnabled(False)
         self.view.remove_proj_btn.setEnabled(False)
+        main_controller = getattr(self.UIObjects, "opsMainController", None)
+        if main_controller:
+            main_controller.refresh_project_selector()
         
     def on_close(self, *args):
         """Run the project UI close hook and close the manager window."""

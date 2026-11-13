@@ -61,7 +61,7 @@ class OpsProjDialogController(QtCore.QObject):
     def _connect_signals(self):
         """Connect dialog controls to their handlers and live field validation."""
         # Connect browse and dialog buttons to their respective actions.
-        self.view.path_browse_btn.clicked.connect(lambda: self._browse_directory(self.view.proj_path_field, append_proj_name=True))
+        self.view.path_override_btn.clicked.connect(self._override_project_path)
         
         self.view.custom_users_chk.stateChanged.connect(self._toggle_custom_users)
         self.view.custom_users_btn.clicked.connect(self._select_custom_users)
@@ -133,17 +133,24 @@ class OpsProjDialogController(QtCore.QObject):
             line_edit.setCursorPosition(max(0, cursor_pos - diff))
             self._show_warning(warning_msg)
 
-    def _browse_directory(self, line_edit, append_proj_name=False):
-        """Browse for a directory and optionally append the entered project name."""
+    def _browse_directory(self, line_edit):
+        """Set a directory field to the folder selected in the browser."""
         # Leave the current field unchanged if the user cancels the directory picker.
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self.view, localization.get_string("win_selectLocation"))
         if dir_path:
-            # The project-root picker selects a parent folder, so append the project folder.
-            if append_proj_name:
-                proj_name = self.view.proj_name_field.text().strip()
-                if proj_name:
-                    dir_path = os.path.join(dir_path, proj_name)
             line_edit.setText(dir_path.replace("\\", "/"))
+
+    def _override_project_path(self):
+        """Confirm and choose a project path different from Maya's current workspace."""
+        reply = QtWidgets.QMessageBox.warning(
+            self.view,
+            localization.get_string("win_projectPathOverride"),
+            localization.get_string("msg_projectPathOverride"),
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Cancel,
+        )
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            self._browse_directory(self.view.proj_path_field)
 
     def _populate_from_maya(self):
         """Populate project and folder fields from the current Maya workspace."""
@@ -359,7 +366,11 @@ class OpsProjDialogController(QtCore.QObject):
         )
         
         # Save through the shared action layer; refresh the UI only after success.
-        result = opsActions.create_or_edit_project(self.mode, self.old_name, config)
+        try:
+            result = opsActions.create_or_edit_project(self.mode, self.old_name, config)
+        except opsActions.ProjectActionError as error:
+            QtWidgets.QMessageBox.warning(self.view, "Could Not Save Project", str(error))
+            return
         
         if result:
             self.view.close()
