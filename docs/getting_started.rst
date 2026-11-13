@@ -59,9 +59,9 @@ The Maya project directory is the folder Maya uses as its current project/worksp
 1. Create a new Maya project or set an existing one as the current workspace. The Maya project directory can be anywhere on your computer, but for a shared project, it should be in a cloud-synchronized folder or a working copy managed by `Apache Subversion (SVN) <https://subversion.apache.org/>`_, a centralized version-control system.
 
 * If a Maya project directory already exists:
-   In Maya's main User Interface (UI), choose :menuselection:\File --> **Set Project** and select the existing Maya project directory. This will be the directory with the workspace.mel file and the project folders, such as ``scenes``, ``sourceimages``, and ``images``). Confirm that Maya's current project/workspace points to the intended directory.
+   In Maya's main User Interface (UI), choose :menuselection:`File --> Set Project` and select the existing Maya project directory. This will be the directory with the workspace.mel file and the project folders, such as ``scenes``, ``sourceimages``, and ``images``). Confirm that Maya's current project/workspace points to the intended directory.
 * If a Maya project directory does not exist yet:
-   In Maya's main User Interface (UI), choose :menuselection:\File --> **Project Window**, click the :guilabel: 'New' button, name the new project, and set its location.
+   In Maya's main User Interface (UI), choose :menuselection:`File --> Project Window`, click the :guilabel:`New` button, name the new project, and set its location.
 
 For detailed step-by-step instructions, see :doc:`maya_project_setup`.
 
