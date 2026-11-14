@@ -16,7 +16,11 @@ OpenPipeline's original website describes it as supported by the animation commu
 
 History & Origins
 -----------------
-First drafted as the *openPipeline Specification v0.1* in August 2007, its first implementation was a MEL-based plug-in for Autodesk Maya that handled specific aspects of production: automatic directory structures, file naming conventions, revision control, and modularity that makes multi-artist workflows possible.
+First drafted as the *openPipeline Specification v0.1* in August 2007, the framework was founded on a simple definition of an animation production pipeline:
+
+   *"An animation pipeline handles the flow of data as it travels through the stages of production... Abstractly, a pipeline is both an established set of decisions and a collection of tools developed before production and managed throughout so that the focus for the artist is on creative and technical challenges, not the nuts and bolts of production."*
+
+Its initial implementation was a MEL-based plug-in for Autodesk Maya that established standardized directory structures, file naming conventions, revision control, and the modularity that makes multi-artist collaboration possible. openPypeline Studio preserves this foundational philosophy while rebuilding the codebase from the ground up in modern Python 3.
 
 Credits
 -------

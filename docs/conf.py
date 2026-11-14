@@ -23,8 +23,16 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
     "myst_parser",
 ]
+
+# Enable copy button on code blocks if installed
+try:
+    import sphinx_copybutton  # noqa: F401
+    extensions.append("sphinx_copybutton")
+except ImportError:
+    pass
 
 # DCC SDKs and Qt are provided by host applications, not the docs build environment.
 autodoc_mock_imports = [
@@ -36,6 +44,23 @@ autodoc_mock_imports = [
     "PySide6",
 ]
 autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+
+# Napoleon docstring configuration
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_include_init_with_doc = True
+
+# Intersphinx mapping for Python stdlib cross-references
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
+
+# MyST Markdown parser options
+myst_heading_anchors = 3
+myst_enable_extensions = [
+    "colon_fence",
+]
 
 root_doc = "index"
 templates_path = ["_templates"]
@@ -47,10 +72,13 @@ source_suffix = {
 
 html_theme = "sphinx_rtd_theme"
 html_title = f"{project} {release}"
+html_logo = "_static/logo.svg"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_js_files = ["image-lightbox.js"]
 html_theme_options = {
+    "logo_only": False,
     "navigation_depth": 4,
     "collapse_navigation": False,
+    "style_external_links": True,
 }

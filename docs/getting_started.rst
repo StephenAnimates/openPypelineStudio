@@ -20,7 +20,9 @@ Typical Maya script locations are:
 A. After the folder is in the proper Maya script location, open Maya.
 B. Create a new Maya project or set an existing one as the current workspace. The Maya project directory can be anywhere on your computer, but for a shared project, it should be in a cloud-synchronized folder or a working copy managed by `Apache Subversion (SVN) <https://subversion.apache.org/>`_, a centralized version-control system.
 
-:attention:`The Maya project directory is the folder Maya uses as its current project/workspace. OpenPypeline Studio uses that same folder as its project root and adds its settings, manifest, and configured pipeline folders there.`
+.. attention::
+
+   The Maya project directory is the folder Maya uses as its current project/workspace. OpenPypeline Studio uses that same folder as its project root and adds its settings, manifest, and configured pipeline folders there.
 
 * If a Maya project directory already exists:
    In Maya's main User Interface (UI), choose :menuselection:`File` > :menuselection:`Set Project` and select the existing Maya project directory. This will be the directory with the workspace.mel file and the project folders, such as ``scenes``, ``sourceimages``, and ``images``). Confirm that Maya's current project/workspace points to the intended directory.
@@ -51,7 +53,8 @@ C. Copy the following setup python code.
    # macOS example - the path to the directory containing the downloaded openpypeline package
    ops_install_path = "/Users/Shared/Autodesk/maya/scripts/openPypelineStudio"
 
-   # Windows example - the path to the directory containing the downloaded openpypeline package (uncomment the line below and comment out the macOS example above)
+   # Windows example - the path to the directory containing the downloaded openpypeline
+   # package (uncomment the line below and comment out the macOS example above)
    # ops_install_path = r"C:\Users\YourName\maya\scripts\openPypelineStudio"
 
    if ops_install_path not in sys.path:
@@ -62,6 +65,10 @@ C. Copy the following setup python code.
 
 D. Change the path in the code for your operating system and replace it with your actual install location. The path must point to the directory containing the downloaded ``openpypeline`` package.
 E. Execute the code (:menuselection:`Command` > :menuselection:`Execute` or press :kbd:`Ctrl` + :kbd:`Enter` on Windows or :kbd:`Cmd` + :kbd:`Enter` on macOS).
+
+.. tip::
+
+   On Windows, always prefix your path with an ``r`` (e.g., ``r"C:\Users\..."``) or use forward slashes (``"C:/Users/..."``) so Python does not misinterpret backslashes as escape characters.
 
 This will add the openPypeline package to your Python path and open the **openPypeline Studio Setup** window.
 
@@ -84,7 +91,7 @@ When openPypeline Studio launches, it checks the local project registry. If no p
 * **Create New Project:** Select this to configure your current Maya workspace as a new openPypeline project.
 * **Join Existing Project:** Select this if a teammate has already configured the project and you are connecting your local synchronized copy or version control checkout.
 
-Create a New Project
+A. Create a New Project
 ~~~~~~~~~~~~~~~~~~~~
 
 If you choose **Create New Project** (or navigate to :menuselection:`Project` > :menuselection:`Project Manager...` > :menuselection:`New...`), the project creation dialog opens:
@@ -104,9 +111,13 @@ The dialog initially populates the project path from Maya's current workspace:
 * **Project folders:** Set the asset library, shot scenes, scripts, textures, renders, particles, archive, and deleted-item folders.
 * **Optional project details:** Set dates and configure custom users if needed.
 
+.. warning::
+
+   Using :guilabel:`Override...` changes openPypeline's target directory without changing Maya's active workspace. To ensure relative file paths, textures, and references resolve cleanly, it is strongly recommended to keep openPypeline's project root matched to Maya's current workspace directory.
+
 Review the project name and folder paths, then click :guilabel:`Accept`. openPypeline writes its project manifest (``.openpypeline/project.json``), creates the configured pipeline folders, and automatically activates the project in the main UI.
 
-Join an Existing Project
+B. Join an Existing Project
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 If a teammate has already created the project:
@@ -114,6 +125,10 @@ If a teammate has already created the project:
 1. In the first-time prompt (or via :menuselection:`Project` > :menuselection:`Project Manager...` > :menuselection:`Join Existing...`), select **Join Existing Project**.
 2. Browse to and select the local folder containing ``.openpypeline/project.json``.
 3. openPypeline adds the project to your local registry and activates it without recreating or overwriting existing project folders.
+
+.. important::
+
+   **Do not synchronize your local registry:** Never share or cloud-sync your local ``openpypeline_projects.json`` file or your Maya scripts directory. Only share the actual project folder that contains the ``.openpypeline/project.json`` manifest.
 
 5. Launch openPypeline Studio daily
 -----------------------------------
@@ -143,7 +158,15 @@ For a shared project, keep the Maya project folder in the team's synchronized cl
 
 The shared manifest stores project settings, not an absolute machine-specific path, so each artist's local registry can point to their own synchronized folder or SVN working copy.
 
+.. note::
+
+   openPypeline's file notices are **advisory**, warning you when another artist has a scene open. Cloud synchronization services (Dropbox, OneDrive, Google Drive) update files asynchronously and cannot enforce real-time distributed locking. Always confirm sync status before modifying shared files.
+
 Custom project icons
 --------------------
 
 To customize the image displayed for a project in the main openPypeline Studio UI, place an image named ``openPypelineIcon.png`` in the root folder of that project.
+
+.. tip::
+
+   For best results, use a square PNG (such as 128x128 or 256x256 pixels) with a transparent background for the ``openPypelineIcon.png``.

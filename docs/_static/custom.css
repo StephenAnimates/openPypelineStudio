@@ -43,3 +43,10 @@
     outline: 3px solid #fff;
     outline-offset: 2px;
 }
+
+.wy-side-nav-search .logo {
+    max-height: 90px;
+    width: auto;
+    margin-bottom: 0.5rem;
+}
+

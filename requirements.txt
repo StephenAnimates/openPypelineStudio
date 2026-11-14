@@ -3,3 +3,4 @@ pytest
 sphinx
 sphinx-rtd-theme
 myst-parser
+sphinx-copybutton
