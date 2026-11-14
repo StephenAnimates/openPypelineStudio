@@ -32,9 +32,9 @@ New Maya project directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. In Maya, choose **File** > **Project Window**.
-2. Click **New**.
+2. Click :guilabel:`New`.
 3. Enter a project name and choose the location for the new project directory. Use the shared cloud-synchronized location or the appropriate folder in the SVN working copy.
-4. Confirm the new project in Maya's Project Window and check that Maya's current project/workspace points to the new directory.
+4. Confirm the new project in Maya's :guilabel:`Project Window` and check that Maya's current project/workspace points to the new directory.
 
 Create the openPypeline project
 -------------------------------
