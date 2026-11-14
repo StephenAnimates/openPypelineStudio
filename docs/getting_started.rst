@@ -4,7 +4,7 @@ Maya Setup and Getting Started
 This guide covers installing the current openPypeline Studio Maya integration and creating an initial project. For tested Maya and Python versions, see the requirements in the `README <https://github.com/StephenAnimates/OpenPipeline/blob/master/README.md#-requirements>`_.
 
 openPypeline Studio Install and set up
------------------------
+--------------------------------------
 
 Download ``openPypelineStudio.zip`` from the `GitHub nightly releases <https://github.com/StephenAnimates/OpenPipeline/releases>`_ and extract it into your Maya scripts directory. The archive creates an ``openPypelineStudio`` folder. If you decide to clone the repository instead, name the checkout folder ``openPypelineStudio``.
 
@@ -48,9 +48,15 @@ This will add the openPypeline package to your Python path and run the setup fun
 
 The setup function will create the openPypeline Studio default project folder structure if it does not already exist.
 
-
-
 Follow the setup prompts to define your **Script Path** and **Project Path**.
+
+.. figure:: images/create_new_project_window.png
+   :alt: openPypeline Studio Create New Project dialog showing project settings and folders
+   :width: 80%
+   :align: center
+
+   The openPypeline Studio Create New Project dialog.
+
 
 The shared engine can detect a standalone Python process, but that does not provide a separate standalone user interface. Host-specific workflows require an integration for that application.
 
@@ -58,6 +64,13 @@ Create a Maya/openPypeline Studio project
 -----------------------------------------
 
 The Maya project directory is the folder Maya uses as its current project/workspace. OpenPypeline Studio uses that same folder as its project root and adds its settings, manifest, and configured pipeline folders there. These are separate actions. Maya's :guilabel:`Project Window` creates or selects the Maya project directory; openPypeline's :menuselection:`Project Manager...` > :menuselection:`New...` registers and configures that directory for the openPypeline project. The openPypeline action does not change Maya's current workspace.
+
+.. figure:: images/maya_project_window.png
+   :alt: Maya's New Project window
+   :width: 80%
+   :align: center
+
+   The Maya New Project window.
 
 1. Create a new Maya project or set an existing one as the current workspace. The Maya project directory can be anywhere on your computer, but for a shared project, it should be in a cloud-synchronized folder or a working copy managed by `Apache Subversion (SVN) <https://subversion.apache.org/>`_, a centralized version-control system.
 

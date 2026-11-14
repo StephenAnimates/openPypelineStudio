@@ -19,6 +19,8 @@ particles/
 # Render outputs and playblasts
 renders/
 images/
+!docs/images/
+!docs/images/**
 movies/
 *.avi
 *.mov
