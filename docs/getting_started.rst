@@ -1,9 +1,9 @@
 Maya Setup and Getting Started
 ==============================
 
-This guide covers installing the current Maya integration and creating a first project. For tested Maya and Python versions, see the requirements in the `README <https://github.com/StephenAnimates/OpenPipeline/blob/master/README.md#-requirements>`_.
+This guide covers installing the current openPypeline Studio Maya integration and creating an initial project. For tested Maya and Python versions, see the requirements in the `README <https://github.com/StephenAnimates/OpenPipeline/blob/master/README.md#-requirements>`_.
 
-Install and set up Maya
+openPypeline Studio Install and set up
 -----------------------
 
 Download ``openPypelineStudio.zip`` from the `GitHub nightly releases <https://github.com/StephenAnimates/OpenPipeline/releases>`_ and extract it into your Maya scripts directory. The archive creates an ``openPypelineStudio`` folder. If you decide to clone the repository instead, name the checkout folder ``openPypelineStudio``.
@@ -13,19 +13,19 @@ Typical scripts locations are:
 * **macOS:** ``~/maya/scripts/`` or ``/Users/Shared/Autodesk/maya/scripts``
 * **Windows:** ``%USERPROFILE%\maya\scripts\`` or ``C:\Users\YourName\maya\scripts``
 
-1. Open Maya
-2. Open the **Script Editor** (:menuselection:`Windows` > :menuselection:`General Editors` > :menuselection:`Script Editor`).
+1. After the folder is in the proper location, open Maya.
+2. Open the **Script Editor** window (:menuselection:`Windows` > :menuselection:`General Editors` > :menuselection:`Script Editor`).
 3. Open a new Python tab (:menuselection:`Tabs` > :menuselection:`New Tab` then choose **Python** from the :guilabel:`Source Type` window)
-4. Copy the setup python code.
+4. Copy the following setup python code.
 
 .. code-block:: python
 
    import sys
 
-   # macOS example
+   # macOS example - the path to the directory containing the downloaded openpypeline package
    ops_install_path = "/Users/Shared/Autodesk/maya/scripts/openPypelineStudio"
 
-   # Windows example
+   # Windows example - the path to the directory containing the downloaded openpypeline package (uncomment the line below and comment out the macOS example above)
    # ops_install_path = r"C:\Users\YourName\maya\scripts\openPypelineStudio"
 
    if ops_install_path not in sys.path:
@@ -35,18 +35,20 @@ Typical scripts locations are:
    ops_loader.openPypelineSetup()
 
 5. Change the path in the code for your operating system and replace it with your actual install location. The path must point to the directory containing the downloaded ``openpypeline`` package.
-6. Execute the code (:menuselection:`Command` > :menuselection:`Execute` or press :kbd:`Ctrl+Enter` on Windows or :kbd:`Cmd+Enter` on macOS).
+6. Execute the code (:menuselection:`Command` > :menuselection:`Execute` or press :kbd:`Ctrl + Enter` on Windows or :kbd:`Cmd + Enter` on macOS).
 
 This will add the openPypeline package to your Python path and run the setup function. The setup function will prompt you to define your **Script Path** and **Project Path**.
 
-1. If this is an initial project setup, in the :guilabel:`openPypeline Studio Setup` window, either choose the default **Script Path** and **Project Path** or click the :guilabel:`Browse` button to select your own. The default paths are:
+1. If this is an initial project setup, in the :guilabel:`openPypeline Studio Setup` window, either choose the default :guilabel:`Script Path` and :guilabel:`Project Path` or click the :guilabel:`Browse` button to select your own. The default paths are:
 
-   * **Script Path:** ``~/maya/scripts/openPypelineStudio`` (macOS) or ``%USERPROFILE%\maya\scripts\openPypelineStudio`` (Windows)
-   * **Project Path:** ``~/maya/projects/openPypeline`` (macOS) or ``%USERPROFILE%\maya\projects\openPypeline`` (Windows)
+   * :guilabel:`Script Path:` ``~/maya/scripts/openPypelineStudio`` (macOS) or ``%USERPROFILE%\maya\scripts\openPypelineStudio`` (Windows)
+   * :guilabel:`Project Path:` ``~/maya/projects/openPypeline`` (macOS) or ``%USERPROFILE%\maya\projects\openPypeline`` (Windows)
 
 2. Click the :guilabel:`Accept` button to save the paths and complete the setup.
 
-The setup function will create the default project folder structure if it does not already exist.
+The setup function will create the openPypeline Studio default project folder structure if it does not already exist.
+
+
 
 Follow the setup prompts to define your **Script Path** and **Project Path**.
 
