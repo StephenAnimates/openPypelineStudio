@@ -20,7 +20,7 @@ Typical Maya script locations are:
 A. After the folder is in the proper Maya script location, open Maya.
 B. Create a new Maya project or set an existing one as the current workspace. The Maya project directory can be anywhere on your computer, but for a shared project, it should be in a cloud-synchronized folder or a working copy managed by `Apache Subversion (SVN) <https://subversion.apache.org/>`_, a centralized version-control system.
 
-:admonition_attention:`The Maya project directory is the folder Maya uses as its current project/workspace. OpenPypeline Studio uses that same folder as its project root and adds its settings, manifest, and configured pipeline folders there.`
+:attention:`The Maya project directory is the folder Maya uses as its current project/workspace. OpenPypeline Studio uses that same folder as its project root and adds its settings, manifest, and configured pipeline folders there.`
 
 * If a Maya project directory already exists:
    In Maya's main User Interface (UI), choose :menuselection:`File` > :menuselection:`Set Project` and select the existing Maya project directory. This will be the directory with the workspace.mel file and the project folders, such as ``scenes``, ``sourceimages``, and ``images``). Confirm that Maya's current project/workspace points to the intended directory.
