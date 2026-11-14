@@ -78,6 +78,13 @@ This will add the openPypeline package to your Python path and open the **openPy
   - Click the :guilabel:`Browse...` button to choose a custom directory.
   - Click the :guilabel:`Default` button at any time to restore the prefilled default path.
 
+.. figure:: images/openPypelineStudio_Setup_window.png
+   :alt: openPypeline Studio Setup window showing the default project registry path
+   :width: 80%
+   :align: center
+
+   The openPypeline Studio Setup window showing the default project registry path.
+
 F. Click the :guilabel:`Accept` button to save the configuration and launch openPypeline Studio.
 G. Close the **Script Editor** window.
 
@@ -86,10 +93,17 @@ G. Close the **Script Editor** window.
 
 Creating a Maya project directory and setting up an openPypeline project are coordinated actions: Maya's :guilabel:`Project Window` or :menuselection:`File` > :menuselection:`Set Project` defines the current workspace, while openPypeline registers and configures that directory with project settings and pipeline folders.
 
-When openPypeline Studio launches, it checks the local project registry. If no projects are registered yet, it automatically prompts you to choose your initial project setup:
+When openPypeline Studio launches, it checks the local project registry. If no projects are registered yet, it automatically prompts you to choose the initial project setup:
 
 * **Create New Project:** Select this to configure your current Maya workspace as a new openPypeline project.
 * **Join Existing Project:** Select this if a teammate has already configured the project and you are connecting your local synchronized copy or version control checkout.
+
+.. figure:: images/choose_initial_project_setup.png
+   :alt: openPypeline Studio prompt to create a new project or join an existing one
+   :width: 80%
+   :align: center
+
+   The openPypeline Studio prompt to create a new project or join an existing one.
 
 A. Create a New Project
 ~~~~~~~~~~~~~~~~~~~~
