@@ -3,3 +3,43 @@
     overflow-wrap: anywhere;
     word-break: break-word;
 }
+
+.image-lightbox {
+    max-width: 95vw;
+    max-height: 95vh;
+    padding: 2.5rem 0 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+}
+
+.image-lightbox::backdrop {
+    background: rgb(0 0 0 / 0.82);
+}
+
+.image-lightbox img {
+    display: block;
+    max-width: 92vw;
+    max-height: 85vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 0.5);
+}
+
+.image-lightbox__close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #fff;
+    border-radius: 0.25rem;
+    color: #fff;
+    background: #333;
+    cursor: pointer;
+}
+
+.image-lightbox__close:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}

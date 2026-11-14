@@ -35,7 +35,7 @@ Typical scripts locations are:
    ops_loader.openPypelineSetup()
 
 5. Change the path in the code for your operating system and replace it with your actual install location. The path must point to the directory containing the downloaded ``openpypeline`` package.
-6. Execute the code (:menuselection:`Command` > :menuselection:`Execute` or press :kbd:`Ctrl + Enter` on Windows or :kbd:`Cmd + Enter` on macOS).
+6. Execute the code (:menuselection:`Command` > :menuselection:`Execute` or press :kbd:`Ctrl` + :kbd:`Enter` on Windows or :kbd:`Cmd` + :kbd:`Enter` on macOS).
 
 This will add the openPypeline package to your Python path and run the setup function. The setup function will prompt you to define your **Script Path** and **Project Path**.
 
