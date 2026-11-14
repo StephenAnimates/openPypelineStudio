@@ -308,5 +308,9 @@
     "anno_customUsers": "Enable to restrict access to specific users.",
     "anno_masterName": "The default folder and base name for published master files.",
     "anno_wipName": "The default folder and base name for work-in-progress files.",
-    "anno_subfolders": "Sub-directory names for organizing different asset types."
+    "anno_subfolders": "Sub-directory names for organizing different asset types.",
+    "win_welcome": "Welcome to openPypeline Studio",
+    "msg_noProjectsPrompt": "No registered projects were found.\n\nWould you like to create a new project or join an existing one?",
+    "btn_newProject": "Create New Project",
+    "btn_joinProject": "Join Existing Project"
 }

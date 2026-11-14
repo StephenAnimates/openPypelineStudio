@@ -6,7 +6,7 @@ Description: The Controller class for the main openPypeline Studio UI. Handles s
 License: Common Public License 1.0 (CPL-1.0)
 """
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 from openpypeline.core.localization import localization
 from openpypeline.app.maya.core import ops_ui_wrappers as opsUIWrappers
 from openpypeline.core import ops_actions as opsActions
@@ -185,23 +185,21 @@ class OpsMainController:
         self.view.menu_tools.addSeparator()
         self.view.menu_tools.addAction(localization.get_string("menu_addonsHelp"), lambda: QtWidgets.QMessageBox.information(self.view, localization.get_string("menu_addons"), localization.get_string("msg_addonsHelp")))
 
-    def on_project_manager_clicked(self):
-        """Launches the Project Manager UI and ensures it is loaded into memory."""
-        # Defer imports to avoid circular dependencies and speed up initial load
+    def _ensure_project_manager(self):
+        """Lazily initialize and return the project manager controller."""
         import importlib
         from . import ui_objects as UIObjects
         from . import ops_project_manager_controller as opsProjectManagerController
         
         # Hot-reload the controller module for development iteration
         importlib.reload(opsProjectManagerController)
-        
-        # Check if the Window Manager (UIObjects singleton) already tracks this controller instance
         if not hasattr(UIObjects.UIObjects(), 'opsProjectManagerController'):
-            # If not tracked, instantiate it and store it to prevent garbage collection
             UIObjects.UIObjects().opsProjectManagerController = opsProjectManagerController.OpsProjectManagerController()
-            
-        # Call the controller's method to bring its view to the front
-        UIObjects.UIObjects().opsProjectManagerController.showWindow()
+        return UIObjects.UIObjects().opsProjectManagerController
+
+    def on_project_manager_clicked(self):
+        """Launches the Project Manager UI and ensures it is loaded into memory."""
+        self._ensure_project_manager().showWindow()
 
     def on_project_changed(self, text):
         """
@@ -372,3 +370,47 @@ class OpsMainController:
     def showWindow(self):
         """Displays the Main UI Window."""
         self.view.showWindow()
+        # If no projects exist in the registry, prompt to create or join one
+        projects = opsProject.get_projects_data()
+        if not projects:
+            QtCore.QTimer.singleShot(100, self.prompt_first_time_project)
+
+    def prompt_first_time_project(self):
+        """Prompt the artist to create or join a project if the registry is empty."""
+        projects = opsProject.get_projects_data()
+        if projects:
+            return
+
+        box = QtWidgets.QMessageBox(self.view)
+        box.setWindowTitle(localization.get_string("win_welcome", "Welcome to openPypeline Studio"))
+        box.setText(
+            localization.get_string(
+                "msg_noProjectsPrompt",
+                "No registered projects were found in your project registry.\n\n"
+                "Would you like to create a new project or join an existing one?"
+            )
+        )
+        box.setIcon(QtWidgets.QMessageBox.Information)
+
+        btn_new = box.addButton(
+            localization.get_string("btn_newProject", "Create New Project"),
+            QtWidgets.QMessageBox.ActionRole,
+        )
+        btn_join = box.addButton(
+            localization.get_string("btn_joinProject", "Join Existing Project"),
+            QtWidgets.QMessageBox.ActionRole,
+        )
+        btn_cancel = box.addButton(
+            localization.get_string("btn_cancel", "Later"),
+            QtWidgets.QMessageBox.RejectRole,
+        )
+
+        box.exec()
+        clicked = box.clickedButton()
+
+        if clicked == btn_new:
+            pm = self._ensure_project_manager()
+            pm.on_new_project()
+        elif clicked == btn_join:
+            pm = self._ensure_project_manager()
+            pm.on_join_project()
