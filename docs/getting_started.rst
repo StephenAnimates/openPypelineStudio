@@ -175,12 +175,3 @@ The shared manifest stores project settings, not an absolute machine-specific pa
 .. note::
 
    openPypeline's file notices are **advisory**, warning you when another artist has a scene open. Cloud synchronization services (Dropbox, OneDrive, Google Drive) update files asynchronously and cannot enforce real-time distributed locking. Always confirm sync status before modifying shared files.
-
-Custom project icons
---------------------
-
-To customize the image displayed for a project in the main openPypeline Studio UI, place an image named ``openPypelineIcon.png`` in the root folder of that project.
-
-.. tip::
-
-   For best results, use a square PNG (such as 128x128 or 256x256 pixels) with a transparent background for the ``openPypelineIcon.png``.

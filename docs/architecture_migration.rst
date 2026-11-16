@@ -1,5 +1,6 @@
+=========================================
 Legacy architecture and contributor guide
-==========================================
+=========================================
 
 The original openPipeline implementation used global MEL procedures, including
 ``openPipelineFile.mel``, ``openPipelineUI.mel``, and

@@ -41,6 +41,7 @@ The API reference is generated from the Python package during the documentation 
    architecture
    architecture_migration
    configuration
+   customization
    host_support
    perforce_setup
    modules

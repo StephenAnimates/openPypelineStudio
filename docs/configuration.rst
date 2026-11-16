@@ -51,7 +51,7 @@ WIP files are placed in a subfolder named for the WIP term (``wip`` by default),
 
 The project model also includes archive and deleted-item folder locations. Their presence in the model does not mean every action involving those locations has identical behavior across hosts.
 
-Maya user preferences
+Maya User Preferences
 ---------------------
 
 The Maya **Settings** dialog exposes date and time display formats, default WIP and Master names, a default scene format, and production-tracker settings. The tracker credentials are local user preferences, not project-shared configuration. The current tracker selector offers ``none`` and ShotGrid; connection and publishing features depend on the tracker integration being configured and available.
