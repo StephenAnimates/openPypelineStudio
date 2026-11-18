@@ -2,7 +2,7 @@
 
 This module validates protocol compliance across Maya, Houdini, and Nuke adapters using test doubles.
 
-TODO: relocate the functions in the integrations for each host to their own test modules, and add more comprehensive tests for file operations and loader functionality. The test host adpaters need to be refactored to use pytest fixtures and parametrization for better maintainability and coverage.
+:TODO: relocate the functions in the integrations for each host to their own test modules, and add more comprehensive tests for file operations and loader functionality. The test host adpaters need to be refactored to use pytest fixtures and parametrization for better maintainability and coverage.
 
 :File: test_host_adapters.py
 :Original Framework: openPipeline by Kickstand
