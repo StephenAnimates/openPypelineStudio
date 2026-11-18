@@ -1,5 +1,5 @@
 Automated Version Control (VCS) Publishing (TODO)
-------------------------------------------
+-------------------------------------------------
 If your project configuration specifies a version control system (``git``, ``svn``, or ``perforce``):
 
 1. OpenPypeline Studio automatically invokes the corresponding VCS handler upon saving a **Master**.
