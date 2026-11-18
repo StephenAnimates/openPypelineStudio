@@ -27,7 +27,7 @@ import logging
 logger = logging.getLogger("openPypeline.engine")
 
 def _get_workspace_root(host_app: str) -> str:
-    """Get the workspace root directory for the current host application or standalone process.
+    """Gets the workspace root directory for the current host application or standalone process.
     This function attempts to retrieve the workspace root from the host-specific file adapter if available.
     If the host application does not provide a workspace root, it falls back to the current working directory.
 
