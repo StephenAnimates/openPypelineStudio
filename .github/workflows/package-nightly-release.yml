@@ -21,8 +21,10 @@ jobs:
     steps:
       - name: Check out default branch
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Create ZIP archive
+      - name: Create ZIP archive and release notes
         id: archive
         env:
           BASE_VERSION: ${{ inputs.version_prefix || 'v2.0.0' }}
@@ -30,6 +32,23 @@ jobs:
           RELEASE_TAG="${BASE_VERSION}-nightly-$(date -u +%Y%m%d)"
           archive="openPypelineStudio.zip"
           git archive --format=zip --prefix=openPypelineStudio/ HEAD > "$archive"
+
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          {
+            echo "Automated nightly build from \`${GITHUB_SHA:0:7}\`."
+            echo ""
+            echo "### Changes"
+            if [ -n "$PREV_TAG" ]; then
+              CHANGES=$(git log "${PREV_TAG}..HEAD" --pretty=format:"* %s (%h) — %an")
+              if [ -z "$CHANGES" ]; then
+                echo "* No new commits since $PREV_TAG."
+              else
+                echo "$CHANGES"
+              fi
+            else
+              git log -n 15 --pretty=format:"* %s (%h) — %an"
+            fi
+          } > release_notes.md
 
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "path=$archive" >> "$GITHUB_OUTPUT"
@@ -42,10 +61,11 @@ jobs:
         run: |
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" "$ARCHIVE_PATH" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$RELEASE_TAG" --notes-file release_notes.md --repo "$GITHUB_REPOSITORY"
           else
             gh release create "$RELEASE_TAG" "$ARCHIVE_PATH" \
               --title "Nightly Build ($RELEASE_TAG)" \
-              --notes "Automated nightly build from \`$GITHUB_SHA\`." \
+              --notes-file release_notes.md \
               --prerelease \
               --target "$GITHUB_REF_NAME" \
               --repo "$GITHUB_REPOSITORY"
