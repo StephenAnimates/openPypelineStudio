@@ -1,8 +1,18 @@
-"""
-Best-effort file-use notices for projects in user-managed sync folders.
+"""Best-effort file-use notices for projects in user-managed sync folders.
+
+Provides :class:`FileUseRegistry`, :class:`FileUseNotice`, and
+:func:`get_file_state` to coordinate advisory file-use markers and detect
+external overwrites inside cloud-synchronized project directories.
 
 :File: file_use.py
 :License: Common Public License 1.0 (CPL-1.0)
+
+Usage Example::
+
+    from openpypeline.core.file.file_use import FileUseRegistry
+
+    registry = FileUseRegistry("/projects/demo", user="Stephen")
+    active = registry.list_notices("/projects/demo/scenes/shot01.ma")
 """
 
 from dataclasses import dataclass
@@ -15,26 +25,41 @@ from pathlib import Path
 import socket
 import uuid
 
+#: Module logger for advisory file-use notice operations.
 logger = logging.getLogger("openPypeline.file_use")
 
 
 class FileUseRegistryError(RuntimeError):
     """Raised when file-use metadata cannot be safely read or written."""
 
+
 @dataclass(frozen=True)
 class FileUseNotice:
     """Describe another session's advisory use of a project file."""
 
+    #: Display name of the user holding the advisory notice.
     user: str
+    #: Hostname of the workstation running the other session.
     machine: str
+    #: POSIX project-relative path to the tracked file.
     file_path: str
+    #: UTC timestamp when the other session began using the file.
     started_at: datetime
+    #: UTC timestamp of the other session's most recent heartbeat update.
     heartbeat_at: datetime
+    #: ``True`` when ``heartbeat_at`` falls outside the active freshness window.
     stale: bool
 
 
 def get_file_state(file_path: str) -> tuple[int, int] | None:
-    """Return size and modification time for overwrite detection."""
+    """Return size and modification time for overwrite detection.
+
+    :param file_path: Filesystem path to inspect.
+    :returns: A ``(size_bytes, mtime_ns)`` tuple, or ``None`` if the file does
+        not exist.
+    :raises FileUseRegistryError: If ``os.stat`` fails due to permissions or an
+        I/O error.
+    """
     try:
         stat = os.stat(file_path)
     except FileNotFoundError:
@@ -47,10 +72,23 @@ def get_file_state(file_path: str) -> tuple[int, int] | None:
 
 
 class FileUseRegistry:
-    """
-    Stores advisory file-use notices inside a synchronized project folder.
+    """Store advisory file-use notices inside a synchronized project folder.
 
-    Sync clients propagate these files asynchronously, so notices are informative only and cannot provide guaranteed mutual exclusion.
+    Sync clients propagate these JSON metadata files asynchronously, so
+    notices are informative only and cannot provide guaranteed mutual
+    exclusion.
+
+    :ivar project_root: Resolved root directory of the shared project.
+    :vartype project_root: Path
+    :ivar user: Sanitized display name for the current session's user.
+    :vartype user: str
+    :ivar machine: Hostname identifying the local workstation.
+    :vartype machine: str
+    :ivar stale_after: Maximum allowed age (or future clock skew) before a
+        notice heartbeat is marked stale.
+    :vartype stale_after: timedelta
+    :ivar session_id: Unique hex identifier for this registry session.
+    :vartype session_id: str
     """
 
     def __init__(
@@ -60,8 +98,20 @@ class FileUseRegistry:
         machine: str | None = None,
         stale_after: timedelta = timedelta(minutes=5),
         session_id: str | None = None,
-    ):
-        """Initialize this session's registry and validate the project root."""
+    ) -> None:
+        """Initialize this session's registry and validate the project root.
+
+        :param project_root: Root directory of the synchronized project folder.
+        :param user: Name of the current user (falls back to ``"Unknown user"``
+            if blank).
+        :param machine: Optional workstation hostname; defaults to
+            ``socket.gethostname()``.
+        :param stale_after: Freshness threshold applied to notice heartbeats.
+        :param session_id: Optional explicit session identifier; defaults to a
+            random UUID hex string.
+        :raises FileUseRegistryError: If ``project_root`` does not exist or is
+            not a directory.
+        """
         self.project_root = Path(project_root).expanduser().resolve()
         self.user = user.strip() or "Unknown user"
         self.machine = machine or socket.gethostname()
@@ -79,11 +129,23 @@ class FileUseRegistry:
 
     @property
     def has_notice(self) -> bool:
-        """Report whether this registry currently tracks a file-use notice."""
+        """Report whether this registry currently tracks an active file-use notice.
+
+        :returns: ``True`` if a lock file path and file key are currently active,
+            otherwise ``False``.
+        """
         return bool(self._lock_path and self._locked_file_key)
 
     def _file_key(self, file_path: str) -> tuple[str, str]:
-        """Validate a project-relative path and derive its stable notice key."""
+        """Validate a project-relative path and derive its stable notice key.
+
+        Resolves canonical on-disk filename casing on case-insensitive
+        filesystems and computes a SHA-256 hash of the POSIX relative path.
+
+        :param file_path: Target file path inside :attr:`project_root`.
+        :returns: A ``(file_id, relative_path)`` tuple containing the SHA-256 hex digest and normalized POSIX project-relative path.
+        :raises FileUseRegistryError: If ``file_path`` lies outside :attr:`project_root` or its on-disk casing cannot be resolved.
+        """
         target = Path(file_path).expanduser().resolve()
         try:
             relative = target.relative_to(self.project_root)
@@ -126,7 +188,11 @@ class FileUseRegistry:
         return file_id, relative_path
 
     def _notices_directory(self, file_id: str) -> Path:
-        """Return the directory containing notices for the given file key."""
+        """Return the directory containing notices for the given file key.
+
+        :param file_id: SHA-256 hex digest identifying the tracked file.
+        :returns: Path under ``<project_root>/.openpypeline/file_use/<file_id>``.
+        """
         return self.project_root / ".openpypeline" / "file_use" / file_id
 
     @staticmethod
@@ -134,7 +200,14 @@ class FileUseRegistry:
         value: str,
         metadata_path: Path,
     ) -> datetime:
-        """Parse a timezone-aware notice timestamp and normalize it to UTC."""
+        """Parse a timezone-aware notice timestamp and normalize it to UTC.
+
+        :param value: ISO-8601 timestamp string read from notice metadata.
+        :param metadata_path: Path to the JSON notice file (used in error context).
+        :returns: Timezone-aware ``datetime`` converted to UTC.
+        :raises FileUseRegistryError: If ``value`` is not valid ISO-8601 format or
+            lacks timezone information.
+        """
         try:
             timestamp = datetime.fromisoformat(value)
         except (TypeError, ValueError) as exc:
@@ -146,9 +219,18 @@ class FileUseRegistry:
                 f"Missing timezone in file-use notice: {metadata_path}"
             )
         return timestamp.astimezone(timezone.utc)
-
     def list_notices(self, file_path: str) -> list[FileUseNotice]:
-        """Return all notices for a file, including stale ones."""
+        """Return all external notices for a file, including stale ones.
+
+        Reads all ``.json`` notice files for ``file_path``, skips notices
+        belonging to the current :attr:`session_id`, and flags entries whose
+        heartbeat exceeds :attr:`stale_after` (including future clock skew).
+
+        :param file_path: Target file path inside :attr:`project_root`.
+        :returns: List of :class:`FileUseNotice` records from other sessions.
+        :raises FileUseRegistryError: If ``file_path`` is invalid or any notice
+            JSON file is unreadable, malformed, or uses an unsupported schema.
+        """
         file_id, relative_path = self._file_key(file_path)
         directory = self._notices_directory(file_id)
         try:
@@ -217,14 +299,26 @@ class FileUseRegistry:
                 )
             )
         return notices
-
     def _write_notice(
         self,
         file_id: str,
         relative_path: str,
         started_at: datetime,
     ) -> None:
-        """Atomically write this session's notice and update local state."""
+        """Atomically write this session's notice and update local state.
+
+        Writes JSON metadata to a temporary ``.tmp`` file before replacing
+        ``<session_id>.json`` via ``os.replace`` so sync clients do not observe
+        partially written files.
+
+        :param file_id: SHA-256 hex digest identifying the tracked file.
+        :param relative_path: Normalized POSIX path relative to
+            :attr:`project_root`.
+        :param started_at: UTC timestamp recording when this session first
+            acquired the file notice.
+        :raises FileUseRegistryError: If creating the directory or writing the
+            notice file fails.
+        """
         directory = self._notices_directory(file_id)
         lock_path = directory / f"{self.session_id}.json"
         temporary_path = directory / f"{self.session_id}.tmp"
@@ -252,9 +346,19 @@ class FileUseRegistry:
         self._locked_file_key = file_id
         self._relative_path = relative_path
         self._started_at = started_at
-
     def acquire(self, file_path: str) -> list[FileUseNotice]:
-        """Write this session's notice and return notices already observed."""
+        """Write this session's notice and return notices already observed.
+
+        Releases any previously held notice on a different file via
+        :meth:`release`, preserves the original ``started_at`` timestamp if
+        re-acquiring the same file, and records a fresh heartbeat.
+
+        :param file_path: Target file path inside :attr:`project_root`.
+        :returns: List of existing :class:`FileUseNotice` records from other
+            sessions found prior to writing this session's notice.
+        :raises FileUseRegistryError: If ``file_path`` is invalid or writing the
+            notice fails.
+        """
         file_id, relative_path = self._file_key(file_path)
         existing_notices = self.list_notices(file_path)
         if self._locked_file_key and self._locked_file_key != file_id:
@@ -279,9 +383,15 @@ class FileUseRegistry:
                 )
         self._write_notice(file_id, relative_path, started_at)
         return existing_notices
-
     def heartbeat(self) -> None:
-        """Refresh this session's notice while its file remains open."""
+        """Refresh this session's notice while its file remains open.
+
+        Re-creates the notice file if removed externally, or updates
+        ``heartbeat_at`` while preserving the original ``started_at`` timestamp.
+
+        :raises FileUseRegistryError: If no notice is currently active for this
+            session, or if the existing notice file cannot be read or rewritten.
+        """
         if (
             not self._lock_path
             or not self._locked_file_key
@@ -321,9 +431,15 @@ class FileUseRegistry:
             str(metadata["file_path"]),
             started_at,
         )
-
     def release(self) -> None:
-        """Remove this session's notice on file close or host exit."""
+        """Remove this session's notice on file close or host exit.
+
+        Deletes the active ``<session_id>.json`` file if present and clears
+        internal tracking state.
+
+        :raises FileUseRegistryError: If unlinking the notice file fails due to
+            an OS or permission error.
+        """
         if not self._lock_path:
             return
         try:

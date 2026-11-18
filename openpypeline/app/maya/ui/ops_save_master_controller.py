@@ -32,7 +32,7 @@ class TaskFetcher(QtCore.QObject):
 
     def run(self):
         """Fetch the user's tracker tasks and emit results or an error."""
-        from openpypeline.app.maya.core import tracker_factory
+        from openpypeline.core import tracker_factory
         try:
             tracker = tracker_factory.get_tracker(self.tracker_type, self.url, self.user, self.key)
             if not tracker:

@@ -66,13 +66,11 @@ class OpsEngine:
     :ivar host_app: Identifier of the active host application (for example,
         ``"maya"``, ``"nuke"``, ``"houdini"``, or ``"standalone"``).
     :vartype host_app: str
-    :ivar file_handler: Loaded host-specific file adapter module, or ``None``
-        when running in standalone mode or if loading fails.
+    :ivar file_handler: Loaded host-specific file adapter module, or ``None`` when running in standalone mode or if loading fails.
     :vartype file_handler: Optional[ModuleType]
 
     .. note::
-       Designed to be DCC-agnostic and operates in ``"standalone"`` mode
-       whenever no supported host application is detected.
+       Designed to be DCC-agnostic and operates in ``"standalone"`` mode whenever no supported host application is detected.
     """
 
     def __init__(self, host_app: Optional[str] = None) -> None:
@@ -131,13 +129,10 @@ class OpsEngine:
 
         :param item_path: The absolute path to the item's directory.
         :param item_name: The name of the item to open.
-        :returns: ``True`` if the latest WIP was successfully opened, ``False``
-            otherwise.
+        :returns: ``True`` if the latest WIP was successfully opened, ``False`` otherwise.
 
         .. note::
-        This method relies on the host-specific :attr:`file_handler` to perform
-        the actual file opening operation. If no file handler is available, it
-        logs a warning and returns ``False``.
+        This method relies on the host-specific :attr:`file_handler` to perform the actual file opening operation. If no file handler is available, it logs a warning and returns ``False``.
         """
         from openpypeline.core.file import wip
         from openpypeline.core.version import Version
@@ -166,15 +161,12 @@ class OpsEngine:
     def get_workspace_root(self) -> str:
         """Get the active workspace root directory from the host application.
 
-        Queries :attr:`file_handler` when available, otherwise falls back to
-        resolving the workspace root for :attr:`host_app` (or the current working
-        directory in standalone mode).
+        Queries :attr:`file_handler` when available, otherwise falls back to resolving the workspace root for :attr:`host_app` (or the current working directory in standalone mode).
 
         :returns: The absolute path to the active workspace root directory.
 
         .. note::
-        Delegates to the host-specific :attr:`file_handler` when present;
-        otherwise uses the standalone fallback resolver for :attr:`host_app`.
+        Delegates to the host-specific :attr:`file_handler` when present; otherwise uses the standalone fallback resolver for :attr:`host_app`.
         """
         if callable(getattr(self.file_handler, "get_workspace_root", None)):
             return self.file_handler.get_workspace_root()

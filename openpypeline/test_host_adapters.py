@@ -42,6 +42,7 @@ class TestHostFileHandlerProtocol(unittest.TestCase):
         This test suite checks for the presence of required methods in each host's file adapter module. It does not execute the methods, only verifies their existence and callability.
     """
 
+    # TODO: Move this function to the apps integration. 
     def test_maya_file_handler_protocol(self):
         # Mock maya.cmds for headless testing
         mock_maya = ModuleType("maya")
@@ -55,9 +56,9 @@ class TestHostFileHandlerProtocol(unittest.TestCase):
                 )
                 self.assertTrue(callable(getattr(maya_file, method_name)))
 
+    # TODO: Move this function to the apps integration. Expand this test to include more comprehensive checks for Houdini file operations, including error handling and edge cases.
     def test_houdini_file_handler_protocol(self):
         """Verify that the Houdini file handler implements the required file operations protocol.
-        TODO: Move this function to the apps integration. Expand this test to include more comprehensive checks for Houdini file operations, including error handling and edge cases.
 
         :raises AssertionError: If any required method is missing or not callable in the Houdini file adapter.
         :returns: None
@@ -73,9 +74,9 @@ class TestHostFileHandlerProtocol(unittest.TestCase):
             )
             self.assertTrue(callable(getattr(hou_file, method_name)))
 
+    # TODO: Move this function to the apps integration. Expand this test to include more comprehensive checks for Nuke file operations, including error handling and edge cases.
     def test_nuke_file_handler_protocol(self):
         """Verify that the Nuke file handler implements the required file operations protocol.
-        TODO: Move this function to the apps integration. Expand this test to include more comprehensive checks for Nuke file operations, including error handling and edge cases.
 
         :raises AssertionError: If any required method is missing or not callable in the Nuke file adapter.
         :returns: None
@@ -91,10 +92,9 @@ class TestHostFileHandlerProtocol(unittest.TestCase):
             )
             self.assertTrue(callable(getattr(nuke_file, method_name)))
 
-
+# TODO: can this be used to call the different app integrations from there respective folders?
 class TestHostLoaderProtocol(unittest.TestCase):
     """Verify that every DCC adapter implements the standardized loader protocol.
-    TODO: can this be used to call the different app integrations from there respective folders?
 
     :raises AssertionError: If any required method is missing or not callable in a host loader.
     :returns: None
@@ -102,7 +102,7 @@ class TestHostLoaderProtocol(unittest.TestCase):
     .. warning::
         This test suite checks for the presence of required methods in each host's loader module. It does not execute the methods, only verifies their existence and callability.
     """
-
+    # TODO: move to Maya integration
     def test_maya_loader_protocol(self):
         """
         Mock PySide6 and maya.cmds for headless testing
@@ -133,6 +133,7 @@ class TestHostLoaderProtocol(unittest.TestCase):
                 )
                 self.assertTrue(callable(getattr(maya_loader, func_name)))
 
+    # TODO: move to Houdini integration
     def test_houdini_loader_protocol(self):
         """
         test for Houdini loader
@@ -146,6 +147,7 @@ class TestHostLoaderProtocol(unittest.TestCase):
             self.assertTrue(callable(getattr(hou_loader, func_name)))
             self.assertTrue(hasattr(hou_loader, "install_shelf"))
 
+    # TODO: move to Nuke integration
     def test_nuke_loader_protocol(self):
         """
         test for Nuke loader
@@ -159,10 +161,9 @@ class TestHostLoaderProtocol(unittest.TestCase):
             self.assertTrue(callable(getattr(nuke_loader, func_name)))
             self.assertTrue(hasattr(nuke_loader, "install_menu"))
 
-
+# TODO: Move the class to the Houdini integration directory. Expand tests to verify that the OpsEngine correctly interacts with the Houdini file adapter, including opening, saving, and creating new files.
 class TestHoudiniFileOperations(unittest.TestCase):
     """Test Houdini file operations with a mocked hou SDK.
-    TODO: Move the class to the Houdini integration directory. Expand tests to verify that the OpsEngine correctly interacts with the Houdini file adapter, including opening, saving, and creating new files.
     
     .. warning::
         These tests validate that the Houdini file adapter methods exist and can be called without raising exceptions. They do not perform actual file operations.
@@ -217,7 +218,7 @@ class TestHoudiniFileOperations(unittest.TestCase):
         with patch("os.path.exists", return_value=True):
             self.assertEqual(hou_file.get_workspace_root(), "/projects/my_shot")
 
-
+# TODO: Move the class to the Nuke integration directory. Expand tests to verify that the OpsEngine correctly interacts with the Nuke file adapter, including opening, saving, and creating new files.
 class TestNukeFileOperations(unittest.TestCase):
     """Test Nuke file operations with a mocked nuke SDK.
     

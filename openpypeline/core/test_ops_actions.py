@@ -112,7 +112,7 @@ def test_save_master_does_not_publish_when_next_wip_save_fails(
 
 def test_save_master_publishes_to_the_selected_tracking_task(monkeypatch):
     """Publish the saved master against the explicitly selected tracker task."""
-    from openpypeline.app.maya.core import tracker_factory
+    from openpypeline.core import tracker_factory
 
     publish_version = MagicMock(return_value=True)
     monkeypatch.setattr(

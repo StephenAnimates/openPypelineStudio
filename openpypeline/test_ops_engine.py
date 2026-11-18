@@ -13,10 +13,9 @@ from unittest.mock import MagicMock
 
 from openpypeline import ops_engine
 
-
+# TODO: This test should be expanded to verify that the correct host adapter is imported based on the detected host application, and that the file handler is assigned properly within the OpsEngine instance.
 def test_ops_engine_imports_host_adapter_from_package(monkeypatch: MagicMock):
     """Test that the OpsEngine correctly imports the host-specific file adapter from the package namespace.
-    TODO: This test should be expanded to verify that the correct host adapter is imported based on the detected host application, and that the file handler is assigned properly within the OpsEngine instance.
     
     Loads the host-specific file adapter from the package namespace.
 
@@ -52,10 +51,9 @@ def test_ops_engine_imports_host_adapter_from_package(monkeypatch: MagicMock):
     assert imported == ["openpypeline.app.maya.file.file"]
     assert engine.file_handler is adapter
 
-
+# TODO: This test should be expanded to verify that the OpsEngine correctly retrieves the workspace root from Maya's workspace settings, ensuring that it does not fall back to the current working directory when running inside Maya.
 def test_workspace_root_uses_maya_workspace(monkeypatch: MagicMock, tmp_path: str):
     """Use Maya's workspace root when running inside Maya.
-    TODO: This test should be expanded to verify that the OpsEngine correctly retrieves the workspace root from Maya's workspace settings, ensuring that it does not fall back to the current working directory when running inside Maya.
     
     :param monkeypatch: A pytest fixture for safely modifying the import system.
     :type monkeypatch: pytest.MonkeyPatch
@@ -76,10 +74,9 @@ def test_workspace_root_uses_maya_workspace(monkeypatch: MagicMock, tmp_path: st
 
     assert ops_engine._get_workspace_root("maya") == str(tmp_path)
 
-
+# TODO: This test should be expanded to verify that the OpsEngine correctly falls back to the current working directory when running in a standalone context, ensuring that it does not attempt to access any host-specific workspace settings.
 def test_workspace_root_uses_current_directory_for_standalone(monkeypatch: MagicMock):
     """Use the process working directory outside a DCC host.
-    TODO: This test should be expanded to verify that the OpsEngine correctly falls back to the current working directory when running in a standalone context, ensuring that it does not attempt to access any host-specific workspace settings.
     
     :param monkeypatch: A pytest fixture for safely modifying the import system.
     :type monkeypatch: pytest.MonkeyPatch
@@ -92,10 +89,9 @@ def test_workspace_root_uses_current_directory_for_standalone(monkeypatch: Magic
 
     assert ops_engine._get_workspace_root("standalone") == "/workspace"
 
-
+# TODO: This test should be expanded to verify that the UI diagnostics can run without triggering any file opening operations, ensuring that the OpsEngine's UI can be safely invoked in headless or automated testing environments.
 def test_ui_diagnostics_do_not_open_scene(monkeypatch: MagicMock):
     """Keep diagnostic inventory logging from opening a scene file.
-    TODO: This test should be expanded to verify that the UI diagnostics can run without triggering any file opening operations, ensuring that the OpsEngine's UI can be safely invoked in headless or automated testing environments.
     
     :param monkeypatch: A pytest fixture for safely modifying the import system.
     :type monkeypatch: pytest.MonkeyPatch
@@ -121,17 +117,19 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch: MagicMock):
             "ops_currOpenLevel3": "model",
         }.get(key, default),
     )
+
+# TODO: This stub should be expanded to simulate a more complete inventory structure for comprehensive testing of the OpsEngine's UI diagnostics.
     class InventoryStub:
         """Supply predictable inventory results to the diagnostic test.
-        TODO: This stub should be expanded to simulate a more complete inventory structure for comprehensive testing of the OpsEngine's UI diagnostics.
         
         :returns: None
         :note: 
             This stub simulates the behavior of the Inventory class without requiring an actual filesystem or project structure. It provides a controlled environment for testing the OpsEngine's UI diagnostics.
         """
+
+        # TODO: This constructor should be updated to accept a list of path elements that represent the inventory structure for more comprehensive testing.
         def __init__(self, _elements):
             """Accept path elements without requiring a filesystem inventory.
-            TODO: This constructor should be updated to accept a list of path elements that represent the inventory structure for more comprehensive testing.
             
             :param _elements: A list of path elements representing the inventory structure.
             :note: 
@@ -139,9 +137,9 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch: MagicMock):
             """
             pass
 
+        # TODO: This method should be updated to return a list based on the test's temporary directory structure rather than a hardcoded list.
         def list(self):
             """Lists the single item used by the diagnostic test.
-            TODO: This method should be updated to return a list based on the test's temporary directory structure rather than a hardcoded list.
             
             :returns: A list containing the single item name 'hero'.
             :note: 
@@ -149,9 +147,9 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch: MagicMock):
              """
             return ["hero"]
 
+        # TODO: This method should be updated to return a path based on the test's temporary directory structure rather than a hardcoded path.
         def getPath(self):
             """Get the fixture item's expected directory.
-            TODO: This method should be updated to return a path based on the test's temporary directory structure rather than a hardcoded path.
 
             :returns: The absolute path to the fixture item's directory as a string.
             :note: 
@@ -159,17 +157,18 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch: MagicMock):
             """
             return "/project/lib/characters/hero/components/model"
 
+    # TODO: This stub should be expanded to simulate a more complete versioning system for comprehensive testing of the OpsEngine's UI diagnostics.
     class VersionStub:
         """Provide deterministic WIP versions to the diagnostic test.
-        TODO: This stub should be expanded to simulate a more complete versioning system for comprehensive testing of the OpsEngine's UI diagnostics.
         
         :returns: None
         :note: 
             This stub simulates the behavior of the Version class without requiring an actual versioning system. It provides a controlled environment for testing the OpsEngine's UI diagnostics.
         """
+
+        # TODO: This method should be expanded to simulate a more complete versioning system for comprehensive testing of the OpsEngine's UI diagnostics.
         def all(self, _path):
             """Return the item's available version numbers.
-            TODO: This method should be expanded to simulate a more complete versioning system for comprehensive testing of the OpsEngine's UI diagnostics.
 
             :returns: A list of available version numbers.
             :note: 
@@ -190,10 +189,9 @@ def test_ui_diagnostics_do_not_open_scene(monkeypatch: MagicMock):
 
     file_handler.open.assert_not_called()
 
-
+# TODO: This test should be expanded to verify that the OpsEngine correctly resolves the latest WIP version for a given item and invokes the file handler's open method with the correct path, ensuring that the latest version is opened in the host application.
 def test_open_latest_workshop_opens_latest_version(monkeypatch: MagicMock):
     """Open the path resolved for the item's highest WIP version.
-    TODO: This test should be expanded to verify that the OpsEngine correctly resolves the latest WIP version for a given item and invokes the file handler's open method with the correct path, ensuring that the latest version is opened in the host application.
 
     :returns: None
     :raises AssertionError: If the file handler's open method is not called with the expected path.
