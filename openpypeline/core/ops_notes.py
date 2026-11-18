@@ -1,9 +1,8 @@
-"""
-File: ops_notes.py
-Description: Note Management and Formatting for openPypeline Studio. Handles reading, parsing, and formatting JSON event notes. Refactored from XML legacy formats to modern JSON.
+"""Note Management and Formatting for openPypeline Studio. Handles reading, parsing, and formatting JSON event notes. Refactored from XML legacy formats to modern JSON.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+:File: ops_notes.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
 import os

@@ -9,6 +9,30 @@ import logging
 
 logger = logging.getLogger("openPypeline.maya.file")
 
+FILE_TYPES = {
+    ".ma": "mayaAscii",
+    ".mb": "mayaBinary",
+    ".usd": "USD Export",
+    ".usda": "USD Export",
+    ".usdc": "USD Export",
+    ".abc": "Alembic",
+}
+
+
+def get_file_type(extension):
+    """Return Maya's internal file type identifier for the given extension."""
+    return FILE_TYPES.get(extension.lower()) if extension else None
+
+
+def get_workspace_root():
+    """Return Maya's active workspace root directory."""
+    try:
+        return cmds.workspace(query=True, rootDirectory=True)
+    except Exception as e:
+        logger.warning(f"Failed to query Maya workspace root: {e}")
+        return os.getcwd()
+
+
 def _ensure_plugins_loaded(filepath=None, file_type=None):
     """Helper to ensure required plugins are loaded based on file extension or type."""
     ext = os.path.splitext(filepath)[-1].lower() if filepath else ""

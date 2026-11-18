@@ -1,3 +1,23 @@
+.wy-nav-content {
+    max-width: 1200px !important; /* Or use 100% for full screen */
+}
+
+/* Add underlines to section headers in sphinx_rtd_theme */
+.wy-nav-content h1,
+.wy-nav-content h2 {
+    border-bottom: 2px solid #00bfff;
+    padding-bottom: 0.3em;
+    margin-bottom: 0.8em;
+}
+.wy-nav-content h3,
+.wy-nav-content h4,
+.wy-nav-content h5,
+.wy-nav-content h6 {
+    border-bottom: 2px solid #c300ff;
+    padding-bottom: 0.3em;
+    margin-bottom: 0.8em;
+}
+
 .sig .pre,
 .sig a {
     overflow-wrap: anywhere;
@@ -50,3 +70,15 @@
     margin-bottom: 0.5rem;
 }
 
+/* Force fixed column widths and wrap long text in CSV tables */
+table.docutils.wrap-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+table.docutils.wrap-table th,
+table.docutils.wrap-table td {
+    white-space: normal !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}

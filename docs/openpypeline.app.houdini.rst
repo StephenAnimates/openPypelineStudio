@@ -10,6 +10,17 @@ Subpackages
    openpypeline.app.houdini.file
    openpypeline.app.houdini.ui
 
+Submodules
+----------
+
+openpypeline.app.houdini.loader module
+--------------------------------------
+
+.. automodule:: openpypeline.app.houdini.loader
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

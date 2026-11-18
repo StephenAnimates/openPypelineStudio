@@ -1,4 +1,3 @@
-=========================
 About openPypeline Studio
 =========================
 
@@ -8,7 +7,7 @@ It continues the original project's purpose but is a separate Python codebase, n
 
 Current status
 --------------
-Maya is the current supported integration. For details on implemented capabilities and other hosts, see :doc:`host_support`.
+Maya is the current supported integration. For details on implemented capabilities and other hosts, see :doc:`integrations/index`.
 
 Contribute
 ----------
@@ -18,7 +17,7 @@ History & Origins
 -----------------
 First drafted as the *openPipeline Specification v0.1* in August 2007, the framework was founded on a simple definition of an animation production pipeline:
 
-.. quote::
+.. pull-quote::
    *"An animation pipeline handles the flow of data as it travels through the stages of production... Abstractly, a pipeline is both an established set of decisions and a collection of tools developed before production and managed throughout so that the focus for the artist is on creative and technical challenges, not the nuts and bolts of production."*
 
 Its initial implementation was a MEL-based plug-in for Autodesk Maya that established standardized directory structures, file naming conventions, revision control, and the modularity that makes multi-artist collaboration possible. openPypeline Studio preserves this foundational philosophy while rebuilding the codebase from the ground up in modern Python 3.

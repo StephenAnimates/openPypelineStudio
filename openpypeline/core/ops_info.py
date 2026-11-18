@@ -1,9 +1,8 @@
-"""
-File: opsInfo.py
-Description: Info Retrieval functions for openPypeline Studio. Handles fetching the current state of the pipeline, reading paths, versions, UI states, etc. Refactored from openPipelineInfo.mel to Python 3.
+"""Info Retrieval functions for openPypeline Studio. Handles fetching the current state of the pipeline, reading paths, versions, UI states, etc. Refactored from openPipelineInfo.mel to Python 3.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+:File: opsInfo.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
 import os

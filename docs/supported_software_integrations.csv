@@ -1,0 +1,8 @@
+"Host","Status","Capabilities","Version and Target"
+"Autodesk Maya","Supported (Reference)","Full UI and file operations, including open, save, save-as, referencing, playblasts, thumbnails, and advisory locking.","Maya 2024, 2025, 2026+"
+"SideFX Houdini","In Development (Partial)","Core file handler: open, save, save-as, scene merge, clearing, and unsaved changes tracking. UI in development.","Houdini 20.0, 20.5+"
+"Foundry Nuke","In Development (Partial)","Core script handler: open, save, save-as, node pasting, clearing, and unsaved changes tracking. UI in development.","Nuke 14.0, 15.0+"
+"Adobe Substance 3D Painter","Planned (Priority)","Project versioning (.spp), mesh ingestion, automated PBR texture set exports to sourceimages, and texture manifests.","Painter 9.x, 10.x+"
+"Maxon ZBrush","Planned (Priority)","Script-bridged .ztl and .zpr tool/project versioning, decimation/cage mesh exports, companion advisory locking.","ZBrush 2023, 2024+"
+"Unity","Planned (Priority)","Real-time scene (.unity) and prefab management, automated DCC mesh/texture re-importing, and advisory locking.","Unity 2022 LTS, Unity 6+"
+"Blender & Unreal Engine","Planned (Roadmap)","Blender add-on registration and .blend workflows; Unreal Engine Python plugin and USD/uasset staging.","Roadmap Phase 4"

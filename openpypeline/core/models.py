@@ -1,6 +1,6 @@
-"""
-File: models.py
-Description: Core Data Classes and Enums for openPypeline Studio. These models encapsulate pipeline data, replacing long argument lists and magic numbers throughout the framework.
+"""Core Data Classes and Enums for openPypeline Studio. These models encapsulate pipeline data, replacing long argument lists and magic numbers throughout the framework.
+
+:File: models.py
 """
 
 from dataclasses import dataclass

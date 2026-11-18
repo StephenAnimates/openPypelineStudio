@@ -1,16 +1,10 @@
 =========================================
-Legacy architecture and contributor guide
+Legacy Architecture and Contributor Guide
 =========================================
 
-The original openPipeline implementation used global MEL procedures, including
-``openPipelineFile.mel``, ``openPipelineUI.mel``, and
-``openPipelineProject.mel``. openPypeline Studio is being developed as a
-Python package with shared pipeline code in ``openpypeline/core/`` and
-application-specific behavior in ``openpypeline/app/<host>/``.
+The original openPipeline implementation used global MEL procedures, including ``openPipelineFile.mel``, ``openPipelineUI.mel``, and ``openPipelineProject.mel``. openPypeline Studio is being developed as a Python package with shared pipeline code in ``openpypeline/core/`` and application-specific behavior in ``openpypeline/app/<host>/``.
 
-This table maps historical areas of responsibility to current code locations.
-It is a contributor's navigation aid, not a one-to-one API compatibility
-promise; some workflows and host integrations remain incomplete.
+This table maps historical areas of responsibility to current code locations. It is a contributor's navigation aid, not a one-to-one API compatibility promise; some workflows and host integrations remain incomplete.
 
 .. list-table::
    :header-rows: 1
@@ -45,11 +39,8 @@ Contributor guidance
 --------------------
 
 * Keep reusable data and workflow logic in ``openpypeline/core/``.
-* Keep host SDK imports, scene operations, and host-bound UI in that host's
-  application package.
-* Check the current implementation and tests before assuming a legacy operation
-  still exists or behaves the same way.
-* Add or update tests when migrating behavior, using host doubles for shared
-  logic and host-specific smoke tests where the application is available.
+* Keep host SDK imports, scene operations, and host-bound UI in that host's application package.
+* Check the current implementation and tests before assuming a legacy operation still exists or behaves the same way.
+* Add or update tests when migrating behavior, using host doubles for shared logic and host-specific smoke tests where the application is available.
 
 The generated :doc:`openPypeline Studio <modules>` reference documents the current Python package.

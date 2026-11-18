@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   openpypeline.core.addons
    openpypeline.core.file
    openpypeline.core.notes
    openpypeline.core.project

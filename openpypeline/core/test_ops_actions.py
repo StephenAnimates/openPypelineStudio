@@ -1,4 +1,8 @@
-"""Tests for shared project actions."""
+"""Tests for shared project actions.
+:File: test_ops_actions.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
+"""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock

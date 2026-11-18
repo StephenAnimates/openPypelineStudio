@@ -1,4 +1,9 @@
-"""Best-effort file-use notices for projects in user-managed sync folders."""
+"""
+Best-effort file-use notices for projects in user-managed sync folders.
+
+:File: file_use.py
+:License: Common Public License 1.0 (CPL-1.0)
+"""
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -15,7 +20,6 @@ logger = logging.getLogger("openPypeline.file_use")
 
 class FileUseRegistryError(RuntimeError):
     """Raised when file-use metadata cannot be safely read or written."""
-
 
 @dataclass(frozen=True)
 class FileUseNotice:

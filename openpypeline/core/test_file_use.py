@@ -1,4 +1,9 @@
-"""Tests for file-use state detection and advisory registry behavior."""
+"""Tests for file-use state detection and advisory registry behavior.
+
+:File: test_file_use.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
+"""
 
 import json
 import os

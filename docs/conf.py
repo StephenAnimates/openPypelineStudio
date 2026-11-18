@@ -5,6 +5,13 @@ To build the HTML documentation locally, open Terminal on macOS, a terminal emul
     sphinx-apidoc -f -o docs/ openpypeline/
     sphinx-build -b html -W --keep-going docs/ docs/_build/html
 
+    TO OPEN THE HTML DOCUMENTATION IN A BROWSER, RUN:
+    open docs/_build/html/index.html
+
+    Or combine all of the above into a single command:
+
+    sphinx-apidoc -f -o docs/ openpypeline/ && sphinx-build -b html -W --keep-going docs/ docs/_build/html && open docs/_build/html/index.html
+
 The first command regenerates the tracked API reference pages in ``docs/``. Run it locally when you want those generated changes included in a commit. GitHub Actions on this repo also regenerates the pages and builds the documentation for pull requests and pushes, but changes made in its checkout are not committed back to the repo. Running the HTML build locally is optional if you are relying on CI for validation.
 """
 

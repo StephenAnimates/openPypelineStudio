@@ -10,6 +10,17 @@ Subpackages
    openpypeline.app.nuke.file
    openpypeline.app.nuke.ui
 
+Submodules
+----------
+
+openpypeline.app.nuke.loader module
+-----------------------------------
+
+.. automodule:: openpypeline.app.nuke.loader
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

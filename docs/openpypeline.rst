@@ -22,6 +22,14 @@ openpypeline.ops\_engine module
    :show-inheritance:
    :undoc-members:
 
+openpypeline.test\_host\_adapters module
+----------------------------------------
+
+.. automodule:: openpypeline.test_host_adapters
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 openpypeline.test\_ops\_engine module
 -------------------------------------
 

@@ -1,10 +1,10 @@
-"""
-File: ops_project.py
+"""Project Management UI and backend logic for openPypeline Studio.
 
-Description: Project Management UI and backend logic for openPypeline Studio. Handles creating, editing, removing projects, and user management. Refactored from openPipelineProject.mel to Python 3.
+This file handles creating, editing, removing projects, and user management. Refactored from openPipelineProject.mel to Python 3.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+:File: ops_project.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
 import os
@@ -57,24 +57,35 @@ PROJECT_FOLDER_FIELDS = (
 
 
 def get_proj_file():
-    """Returns the full path of the Project configuration file."""
+    """Gets the set project registry file path from user preferences.
+
+    :returns: The normalized path to ``openpypeline_projects.json``, or an empty string if unset.
+    :note: The path is derived from the user preference "ops_projectFilePath" and does not include the filename itself.
+    """
     proj_path = prefs.get_pref("ops_projectFilePath", "")
     if not proj_path or str(proj_path).strip() in ["", "Not Set"]:
         return ""
     return os.path.join(proj_path, "openpypeline_projects.json").replace("\\", "/")
 
+def get_projects_data() -> list[dict]:
+    """Gets the list of projects from the local registry file.
 
-def get_projects_data():
-    """Returns the full data of all existing projects as a list of dictionaries."""
+    :returns: A list of project dictionaries, or an empty list if loading fails.
+    :note: This function may raise exceptions if the project file is malformed.
+    """
     try:
         return read_projects_data()
     except (OSError, ValueError) as error:
         logger.error("Could not load the project registry: %s", error)
         return []
 
-
 def read_projects_data():
-    """Read the local registry strictly so write operations cannot erase bad data."""
+    """Reads the local registry strictly so write operations cannot erase bad data.
+
+    :returns: A list of project dictionaries.
+    :raises ValueError: If the registry file is malformed or contains invalid data.
+    :note: This function may raise exceptions if the project file is malformed.
+    """
     proj_file = get_proj_file()
     if not proj_file:
         return []
@@ -100,17 +111,28 @@ def read_projects_data():
     return []
 
 
-def get_project_manifest_path(project_root):
-    """Return the shared manifest path for a project root."""
+def get_project_manifest_path(project_root: str) -> str:
+    """Gets the full path to the shared project manifest file.
+
+    :param project_root: The root directory path of the project.
+    :returns: The full normalized path to the project manifest file.
+    :note: The manifest is stored in a hidden subdirectory to avoid cluttering the project root.
+    """
     return os.path.join(
         os.path.abspath(os.path.expanduser(project_root)),
         PROJECT_MANIFEST_DIRECTORY,
         PROJECT_MANIFEST_FILENAME,
     )
 
+def read_project_manifest(project_root: str) -> dict:
+    """Reads and validates the versioned shared project manifest.
 
-def read_project_manifest(project_root):
-    """Read and validate the versioned shared project manifest."""
+    :param project_root: The root directory path of the project.
+    :returns: A dictionary containing the project manifest data.
+    :raises FileNotFoundError: If no project manifest is found at the specified path.
+    :raises ValueError: If the project manifest is malformed or contains invalid data.
+    :note: This function may raise exceptions if the project manifest is malformed.
+    """
     manifest_path = get_project_manifest_path(project_root)
     try:
         with open(manifest_path, "r", encoding="utf-8") as manifest_file:
@@ -137,8 +159,15 @@ def read_project_manifest(project_root):
     return manifest
 
 
-def write_project_manifest(project_root, project_id, project_data):
-    """Atomically write shared project settings without a machine-specific root path."""
+def write_project_manifest(project_root: str, project_id: str, project_data: dict) -> bool:
+    """Atomically write shared project settings without a machine-specific root path.
+
+    :param project_root: The root directory path of the project.
+    :param project_id: The ID of the project.
+    :param project_data: A dictionary containing the project settings.
+    :returns: True if the manifest was written successfully, False otherwise.
+    :note: This function creates a temporary file and replaces the manifest to ensure atomicity.
+    """
     manifest_path = get_project_manifest_path(project_root)
     shared_project = {
         field: project_data[field]
@@ -176,8 +205,13 @@ def write_project_manifest(project_root, project_id, project_data):
     return True
 
 
-def get_project(proj_name):
-    """Returns the data for a single project as a dictionary."""
+def get_project(proj_name: str) -> dict:
+    """Get the project data for a specific project by name.
+    
+    :param proj_name: The name of the project to retrieve.
+    :returns: A dictionary containing the project data, or an empty dictionary if not found.
+    :note: This function may raise exceptions if the project file is malformed.
+    """
     proj_data = get_projects_data()
     for p in proj_data:
         if isinstance(p, dict) and p.get("name") == proj_name:
@@ -185,8 +219,13 @@ def get_project(proj_name):
     return {}
 
 
-def rewrite_proj_file(proj_list):
-    """Rewrites the project JSON file with the given list of dictionaries."""
+def rewrite_proj_file(proj_list: list) -> bool:
+    """Rewrites the project JSON file with the given list of dictionaries.
+    
+    :param proj_list: A list of dictionaries representing the projects to write.
+    :returns: True if the file was written successfully, False otherwise.
+    :note: This function creates a temporary file and replaces the project file to ensure atomicity.
+    """
     proj_file = get_proj_file()
     if not proj_file:
         logger.error("Project file path is not set. Please use 'Edit Locations...' to set it.")
@@ -218,12 +257,21 @@ def rewrite_proj_file(proj_list):
 
 
 def close_proj_ui(*args):
-    """Retain the legacy project-UI close hook; it currently performs no action."""
+    """Close the project management UI dialog.
+
+    :param args: Optional arguments for compatibility with UI callbacks.
+    :note: This function requires a running Qt application context.
+    """
     pass
 
 
-def get_project_info_string(proj_name):
-    """Returns a formatted string containing project details for the UI."""
+def get_project_info_string(proj_name: str) -> str:
+    """Get the project information as a formatted string for display.
+
+    :param proj_name: The name of the project for which to retrieve information.
+    :returns: A formatted string containing the project details.
+    :note: This function may raise exceptions if the project file is malformed.
+    """
     proj = get_project(proj_name)
     if not proj: return ""
     
@@ -255,8 +303,12 @@ def get_project_info_string(proj_name):
     return info
 
 
-def get_users():
-    """Reads the users JSON file."""
+def get_users() -> list:
+    """Get the list of global project users from the users.json file.
+
+    :returns: A list of user names, or an empty list if the file is missing or unreadable.
+    :note: This function may raise exceptions if the users file is malformed.
+    """
     proj_path = prefs.get_pref("ops_projectFilePath", "")
     if not proj_path or str(proj_path).strip() in ["", "Not Set"]:
         return []
@@ -270,28 +322,49 @@ def get_users():
     return []
 
 
-def edit_users_save_file(users):
-    """Updates user.json file with users, overwrites existing."""
+def edit_users_save_file(users: list):
+    """Edit the global project users file with the provided list of users.
+
+    :param users: A list of user names to save.
+    :returns: True if the file was saved successfully, False otherwise.
+    :note: This function may raise exceptions if the users file is malformed.
+    """
     proj_path = prefs.get_pref("ops_projectFilePath", "")
     if not proj_path or str(proj_path).strip() in ["", "Not Set"]:
         logger.warning("Project file path is not set. Cannot save users.")
-        return
+        return False
     users_file = os.path.join(proj_path, "openpypeline_users.json").replace("\\", "/")
     try:
         with open(users_file, "w", encoding="utf-8") as f:
             json.dump(users, f, indent=4)
     except Exception as e:
         logger.error(f"Failed to save users file: {e}")
+        return False
+    return True
 
 
 def proj_edit_users(*args):
-    """Launches the PySide6 UI to edit global project users."""
+    """Edit the global project users through a simple dialog interface.
+
+    :param args: Optional arguments for compatibility with UI callbacks.
+    :returns: True if the dialog was accepted, False otherwise.
+    :note: This function requires a running Qt application context.
+    """
     from PySide6 import QtWidgets
 
     class EditUsersDialog(QtWidgets.QDialog):
-        """Dialog for adding and removing global project users."""
+        """Dialog for adding and removing global project users.
+
+        :returns: True if the dialog was accepted, False otherwise.
+        :note: This dialog does not validate user names or check for duplicates beyond simple string matching.
+        """
 
         def __init__(self, parent=None):
+            """Initialize the dialog with a list of users and buttons for adding/removing users.
+
+            :param parent: The parent widget for the dialog, if any.
+            :note: This dialog requires a running Qt application context.
+            """
             super().__init__(parent)
             self.setWindowTitle("Add / Remove Users")
             self.setMinimumSize(340, 230)
@@ -315,10 +388,17 @@ def proj_edit_users(*args):
             layout.addLayout(button_layout)
 
         def _refresh_list(self):
+            """Refresh the list of users displayed in the dialog.
+
+            :note: This method clears and repopulates the list widget with the current users.
+            """
             self.user_list.clear()
             self.user_list.addItems(get_users())
 
         def on_add(self):
+            """Prompt the user to add a new user name to the list.
+            :note: This method does not validate the input beyond checking for non-empty strings.
+            """
             name, ok = QtWidgets.QInputDialog.getText(self, "Add User", "Enter Name:")
             if ok and name.strip():
                 users = get_users()
@@ -328,6 +408,10 @@ def proj_edit_users(*args):
                     self._refresh_list()
 
         def on_remove(self):
+            """Remove the selected users from the list.
+
+            :note: This method does not validate the selection beyond ensuring items are selected.
+            """
             selected = [item.text() for item in self.user_list.selectedItems()]
             if selected:
                 users = [user for user in get_users() if user not in selected]
@@ -335,4 +419,4 @@ def proj_edit_users(*args):
                 self._refresh_list()
 
     dialog = EditUsersDialog()
-    dialog.exec()
+    return dialog.exec()

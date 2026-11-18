@@ -1,4 +1,9 @@
-"""Tests for local project creation and shared-project onboarding."""
+"""Tests for local project creation and shared-project onboarding.
+
+:File: test_project_onboarding.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
+"""
 
 import json
 
@@ -10,7 +15,8 @@ from openpypeline.core.models import ProjectConfig
 
 @pytest.fixture
 def local_registry(tmp_path, monkeypatch):
-    """Provide an isolated registry path and local preference store."""
+    """Provide an isolated registry path and local preference store.
+    """
     registry_path = tmp_path / "artist" / "openpypeline_projects.json"
     preference_values = {}
     monkeypatch.setattr(ops_project, "get_proj_file", lambda: str(registry_path))
@@ -28,7 +34,10 @@ def local_registry(tmp_path, monkeypatch):
 
 
 def _project_config(name, path, **changes):
-    """Build project settings with the production defaults."""
+    """Build project settings with the production defaults.
+
+    :return: ProjectConfig
+    """
     return ProjectConfig(name=name, path=str(path), **changes)
 
 

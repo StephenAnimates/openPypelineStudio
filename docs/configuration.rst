@@ -1,18 +1,15 @@
 Project and User Configuration
 ==============================
-
-openPypeline Studio has two kinds of configuration: user preferences that apply to the local installation, and project settings that describe a production project. The Maya setup and settings dialogs expose these values; the shared project configuration model is defined by ``ProjectConfig`` in ``openpypeline/core/models.py``.
+OpenPypeline Studio (OPS) has two kinds of configuration: user preferences that apply to the local installation, and project settings that describe a production project. The Maya setup and settings dialogs expose these values; the shared project configuration model is defined by ``ProjectConfig`` in ``openpypeline/core/models.py``.
 
 Configuration files
 -------------------
-
 The preference module stores local user preferences in ``~/.openpypeline/user_prefs.json``. These include the configured project-registry location, current project and browser selection, WIP and Master naming, date/time display formats, and production-tracker connection settings. Do not share or commit this file: tracker credentials may be stored there.
 
 The configured project-registry location contains ``openpypeline_projects.json``, which the project module reads as a list of project records, and ``openpypeline_users.json``, which stores the global list of user names used by the project dialog. These files are distinct from each project's production folder. The registry location is selected during Maya setup.
 
 Project settings
 ----------------
-
 The project dialog and ``ProjectConfig`` model cover the following settings:
 
 * **Identity and status:** project name, root path, description, active/inactive status, creation date, and deadline. Project names are limited to 22 characters in the dialog.
@@ -53,7 +50,6 @@ The project model also includes archive and deleted-item folder locations. Their
 
 Maya User Preferences
 ---------------------
-
 The Maya **Settings** dialog exposes date and time display formats, default WIP and Master names, a default scene format, and production-tracker settings. The tracker credentials are local user preferences, not project-shared configuration. The current tracker selector offers ``none`` and ShotGrid; connection and publishing features depend on the tracker integration being configured and available.
 
-For general installation and project setup steps, see :doc:`getting_started`. For the relationship between shared code and host integrations, see :doc:`architecture`.
+For general installation and project setup steps, see :doc:`installation_and_setup/index`. For the relationship between shared code and host integrations, see :doc:`architecture`.

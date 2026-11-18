@@ -11,6 +11,17 @@ Subpackages
    openpypeline.app.maya.file
    openpypeline.app.maya.ui
 
+Submodules
+----------
+
+openpypeline.app.maya.loader module
+-----------------------------------
+
+.. automodule:: openpypeline.app.maya.loader
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

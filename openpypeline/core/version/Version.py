@@ -1,6 +1,8 @@
-"""
-File: Version.py
-Description: Core version control management for openPypeline Studio. Handles parsing, incrementing, and verifying file versions. Designed to be extensible for custom integrations like Git, SVN, or CVS.
+"""Core version control management for openPypeline Studio. Handles parsing, incrementing, and verifying file versions. Designed to be extensible for custom integrations like Git, SVN, or CVS.
+
+:File: Version.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
 import os

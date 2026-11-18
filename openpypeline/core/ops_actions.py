@@ -1,6 +1,6 @@
-"""
-File: ops_actions.py
-Description: Central action handler for openPypeline Studio. This module contains the core logic for operations like creating items, saving files, and interacting with the pipeline, decoupled from the UI.
+"""Central action handler for openPypeline Studio. This module contains the core logic for operations like creating items, saving files, and interacting with the pipeline, decoupled from the UI.
+
+:File: ops_actions.py
 """
 import logging
 import os
@@ -19,15 +19,6 @@ logger = logging.getLogger("openPypeline.actions")
 
 class ProjectActionError(Exception):
     """An expected project operation failure that can be shown to the user."""
-
-
-_MAYA_FILE_TYPES = {
-    ".ma": "mayaAscii",
-    ".mb": "mayaBinary",
-    ".usd": "USD Export",
-    ".usda": "USD Export",
-    ".abc": "Alembic",
-}
 
 
 def _project_config_data(config: ProjectConfig) -> dict:
@@ -276,7 +267,26 @@ def join_existing_project(project_root: str) -> int:
 def _save_scene_file(dcc, filepath: str) -> bool:
     """Save or export a scene using the active DCC's supported file operation."""
     extension = os.path.splitext(filepath)[1].lower()
-    file_type = _MAYA_FILE_TYPES.get(extension)
+
+    # Query the file type from the active host adapter
+    file_type = None
+    get_file_type = getattr(dcc, "get_file_type", None)
+    if callable(get_file_type):
+        file_type = get_file_type(extension)
+    elif hasattr(dcc, "FILE_TYPES") and isinstance(dcc.FILE_TYPES, dict):
+        file_type = dcc.FILE_TYPES.get(extension)
+
+    # Fallback format mapping for backward compatibility and test doubles
+    if not file_type:
+        fallback_types = {
+            ".ma": "mayaAscii",
+            ".mb": "mayaBinary",
+            ".usd": "USD Export",
+            ".usda": "USD Export",
+            ".abc": "Alembic",
+        }
+        file_type = fallback_types.get(extension)
+
     if file_type in {"USD Export", "Alembic"}:
         export_file = getattr(dcc, "export_file", None)
         if not callable(export_file):
