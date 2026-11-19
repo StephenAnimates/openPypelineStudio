@@ -12,7 +12,7 @@ saving, importing, referencing, and workspace query helpers backed by
 
 import logging
 import os
-from typing import Optional
+from typing import Any, Optional
 
 import maya.cmds as cmds
 

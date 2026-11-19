@@ -22,6 +22,13 @@ from openpypeline.core.localization import localization
 from openpypeline.core.util import prefs
 from openpypeline.ui import ui_objects as UIObjects
 
+try:
+    from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
+except ImportError:
+    class MayaQWidgetBaseMixin:  # type: ignore[no-redef]
+        """Fallback mixin stub when running outside Autodesk Maya."""
+
+
 # --- UI Stylesheet ---
 # Internal Qt stylesheet defining semantic button color classes for project actions.
 _OPS_PROJ_MANAGER_STYLESHEET: str = """

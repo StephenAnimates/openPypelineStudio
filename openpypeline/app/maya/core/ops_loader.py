@@ -74,10 +74,7 @@ def _migrate_legacy_prefs() -> None:
 def openPypelineSetup() -> None:
     """Create and display the openPypeline Studio setup dialog in Maya.
 
-    Migrates legacy Maya ``optionVar`` preferences via
-    :func:`_migrate_legacy_prefs`, reads :data:`PROJECT_PATH_PREF`, and
-    displays a non-modal :class:`~openpypeline.ui.ops_setup_dialog.OpsSetupDialog`
-    configured to call :func:`openPypeline` upon acceptance.
+    Migrates legacy Maya ``optionVar`` preferences via :func:`_migrate_legacy_prefs`, reads :data:`PROJECT_PATH_PREF`, and displays a non-modal :class:`~openpypeline.ui.ops_setup_dialog.OpsSetupDialog` configured to call :func:`openPypeline` upon acceptance.
     """
     global _setup_dialog
     _migrate_legacy_prefs()
@@ -145,7 +142,6 @@ def openPypeline() -> None:
 
 
 __all__ = [
-    "OpsSetupDialog",
     "PROJECT_PATH_PREF",
     "_root_path",
     "core_loader",

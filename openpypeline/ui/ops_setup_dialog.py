@@ -22,24 +22,17 @@ from openpypeline.core.util import prefs
 class OpsSetupDialog(QtWidgets.QDialog):
     """PySide dialog for initializing openPypeline Studio paths.
 
-    Allows the user to accept the default project registry directory inside
-    ``openpypeline/`` or specify a custom directory path before invoking an
-    optional post-setup launch callback.
+    Allows the user to accept the default project registry directory inside ``openpypeline/`` or specify a custom directory path before invoking an optional post-setup launch callback.
 
-    :ivar project_path_initial: Initial project registry directory passed when
-        constructing the dialog.
+    :ivar project_path_initial: Initial project registry directory passed when constructing the dialog.
     :vartype project_path_initial: str
-    :ivar on_success: Optional zero-argument callable invoked after paths are
-        validated and persisted.
+    :ivar on_success: Optional zero-argument callable invoked after paths are validated and persisted.
     :vartype on_success: Optional[Callable[[], None]]
-    :ivar proj_field: Line edit displaying ``"[Default]"`` or the custom
-        project registry path.
+    :ivar proj_field: Line edit displaying ``"[Default]"`` or the custom project registry path.
     :vartype proj_field: QtWidgets.QLineEdit
-    :ivar proj_toggle_btn: Button toggling :attr:`proj_field` between default
-        and editable custom modes.
+    :ivar proj_toggle_btn: Button toggling :attr:`proj_field` between default and editable custom modes.
     :vartype proj_toggle_btn: QtWidgets.QPushButton
-    :ivar proj_browse_btn: Button opening a directory chooser for
-        :attr:`proj_field`.
+    :ivar proj_browse_btn: Button opening a directory chooser for :attr:`proj_field`.
     :vartype proj_browse_btn: QtWidgets.QPushButton
     """
 
