@@ -44,14 +44,6 @@ openpypeline.app.maya.core.ops\_scene\_inv module
    :show-inheritance:
    :undoc-members:
 
-openpypeline.app.maya.core.ops\_ui\_wrappers module
----------------------------------------------------
-
-.. automodule:: openpypeline.app.maya.core.ops_ui_wrappers
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 openpypeline.app.maya.core.ops\_utils module
 --------------------------------------------
 
@@ -76,18 +68,18 @@ openpypeline.app.maya.core.shotgrid\_tracker module
    :show-inheritance:
    :undoc-members:
 
-openpypeline.app.maya.core.test\_file\_use module
--------------------------------------------------
+openpypeline.app.maya.core.test\_adapter module
+-----------------------------------------------
 
-.. automodule:: openpypeline.app.maya.core.test_file_use
+.. automodule:: openpypeline.app.maya.core.test_adapter
    :members:
    :show-inheritance:
    :undoc-members:
 
-openpypeline.app.maya.core.test\_ops\_actions module
-----------------------------------------------------
+openpypeline.app.maya.core.test\_file\_use module
+-------------------------------------------------
 
-.. automodule:: openpypeline.app.maya.core.test_ops_actions
+.. automodule:: openpypeline.app.maya.core.test_file_use
    :members:
    :show-inheritance:
    :undoc-members:

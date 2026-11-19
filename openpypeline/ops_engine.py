@@ -1,7 +1,6 @@
 """The central, DCC-agnostic pipeline engine for openPypeline Studio.
 
-This module orchestrates the core data flow, detects the host application
-dynamically, and delegates file operations to the appropriate application handlers.
+This module orchestrates the core data flow, detects the host application dynamically, and delegates file operations to the appropriate application handlers.
 
 :File: ops_engine.py
 :Original Framework: openPipeline by Kickstand
@@ -17,6 +16,7 @@ Usage Example (Testing)::
     importlib.reload(ops_engine)
 
     ops_engine.OpsEngine().ui()
+
 """
 
 import importlib
@@ -34,9 +34,7 @@ logger = logging.getLogger("openPypeline.engine")
 def _get_workspace_root(host_app: str) -> str:
     """Get the workspace root directory for the active host application.
 
-    Attempts to retrieve the workspace root from the host-specific file adapter
-    (``openpypeline.app.<host_app>.file.file``) when available, falling back
-    to Maya's active workspace or ``os.getcwd()`` in standalone mode.
+    Attempts to retrieve the workspace root from the host-specific file adapter (``openpypeline.app.<host_app>.file.file``) when available, falling back to Maya's active workspace or ``os.getcwd()`` in standalone mode.
 
     :param host_app: Identifier for the active host application (for example,
         ``"maya"``, ``"nuke"``, ``"houdini"``, or ``"standalone"``).
@@ -60,8 +58,7 @@ def _get_workspace_root(host_app: str) -> str:
 class OpsEngine:
     """Main pipeline engine driving openPypeline Studio.
 
-    Acts as the central bridge between the UI, user preferences, core data
-    models, and the active host DCC application.
+    Acts as the central bridge between the UI, user preferences, core data models, and the active host DCC application.
 
     :ivar host_app: Identifier of the active host application (for example,
         ``"maya"``, ``"nuke"``, ``"houdini"``, or ``"standalone"``).
@@ -132,7 +129,7 @@ class OpsEngine:
         :returns: ``True`` if the latest WIP was successfully opened, ``False`` otherwise.
 
         .. note::
-        This method relies on the host-specific :attr:`file_handler` to perform the actual file opening operation. If no file handler is available, it logs a warning and returns ``False``.
+            This method relies on the host-specific :attr:`file_handler` to perform the actual file opening operation. If no file handler is available, it logs a warning and returns ``False``.
         """
         from openpypeline.core.file import wip
         from openpypeline.core.version import Version
@@ -166,7 +163,7 @@ class OpsEngine:
         :returns: The absolute path to the active workspace root directory.
 
         .. note::
-        Delegates to the host-specific :attr:`file_handler` when present; otherwise uses the standalone fallback resolver for :attr:`host_app`.
+            Delegates to the host-specific :attr:`file_handler` when present; otherwise uses the standalone fallback resolver for :attr:`host_app`.
         """
         if callable(getattr(self.file_handler, "get_workspace_root", None)):
             return self.file_handler.get_workspace_root()

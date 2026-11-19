@@ -5,7 +5,6 @@ collections (``list``, ``tuple``, ``dict``), and custom classes inheriting
 from :class:`xmlserialize`.
 
 :File: XML.py
-:Original Framework: openPipeline by Kickstand
 :License: Common Public License 1.0 (CPL-1.0)
 
 Usage Example::

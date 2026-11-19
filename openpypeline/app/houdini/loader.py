@@ -1,57 +1,53 @@
-"""
-File: loader.py
-Description: Main initialization and setup script for openPypeline Studio in SideFX Houdini.
-Provides the entry points to configure project paths, source modules, and launch the UI.
+"""Main initialization and setup script for openPypeline Studio in SideFX Houdini.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+Configures ``sys.path`` for the repository root and provides entry points to
+validate project paths, register a Houdini shelf tool, launch the setup
+dialog, and start :class:`~openpypeline.ops_engine.OpsEngine`.
+
+:File: loader.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
+import logging
 import os
 import sys
-import logging
 
 # Ensure root openpypeline package is in sys.path
-_root_path = os.path.abspath(
+_root_path: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..")
 ).replace("\\", "/")
 if _root_path not in sys.path:
     sys.path.insert(0, _root_path)
 
-from openpypeline.core.util import prefs
 
+#: Module logger for Houdini startup and shelf registration.
 logger = logging.getLogger("openPypeline.houdini.loader")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("[%(name)s] %(levelname)s: %(message)s"))
+    handler.setFormatter(
+        logging.Formatter("[%(name)s] %(levelname)s: %(message)s")
+    )
     logger.addHandler(handler)
 
-PROJECT_PATH_PREF = "ops_projectFilePath"
+from openpypeline.core.ops_loader import (  # noqa: E402
+    PROJECT_PATH_PREF,
+    is_valid_project_file_path,
+)
+from openpypeline.core.util import prefs  # noqa: E402
 
 
-def is_valid_project_file_path(folder):
-    """
-    Checks if the given folder is a valid directory.
+def install_shelf(shelf_name: str = "openPypeline") -> bool:
+    """Create or update the openPypeline launch tool on a Houdini shelf.
 
-    Args:
-        folder (str): Directory path to validate.
+    Creates the target shelf tab if absent, creates or updates the
+    ``openpypeline_launch`` shelf tool script, and attaches the tool to the
+    shelf.
 
-    Returns:
-        bool: True if folder exists and is a directory.
-    """
-    return isinstance(folder, str) and os.path.isdir(folder)
-
-
-def install_shelf(shelf_name="openPypeline"):
-    """
-    Creates or registers an openPypeline shelf tool on Houdini's shelf.
-
-    Args:
-        shelf_name (str): Name of the shelf tab.
-
-    Returns:
-        bool: True if created or updated, False if hou is unavailable.
+    :param shelf_name: Internal name of the Houdini shelf tab.
+    :returns: ``True`` if the shelf tool was created or updated, ``False`` if
+        ``hou`` is unavailable or shelf registration fails.
     """
     try:
         import hou
@@ -87,21 +83,29 @@ def install_shelf(shelf_name="openPypeline"):
             shelf_tools.append(tool)
             shelf.setTools(shelf_tools)
 
-        logger.info(f"Installed openPypeline shelf tool to '{shelf_name}'.")
+        logger.info("Installed openPypeline shelf tool to '%s'.", shelf_name)
         return True
     except Exception as e:
-        logger.error(f"Failed to install Houdini shelf tool: {e}")
+        logger.error("Failed to install Houdini shelf tool: %s", e)
         return False
 
 
-def openPypelineSetup():
-    """
-    Launches the openPypeline Studio Setup dialog in Houdini.
+def openPypelineSetup() -> None:
+    """Launch the openPypeline Studio path setup dialog in Houdini.
+
+    Supports both Houdini builds bundled with ``PySide6`` (Houdini 20.5+) and
+    older builds bundled with ``PySide2``, parenting
+    :class:`~openpypeline.ui.ops_setup_dialog.OpsSetupDialog` to
+    ``hou.qt.mainWindow()`` when available and invoking :func:`openPypeline`
+    upon confirmation.
     """
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
-    logger.info(f"Configuring openPypeline Studio paths (current: '{project_path}')...")
+    logger.info(
+        "Configuring openPypeline Studio paths (current: '%s')...",
+        project_path,
+    )
 
-    # In Houdini with PySide2/PySide6, launch the setup dialog
+    # Support both PySide6 (Houdini 20.5+) and PySide2 (older Houdini releases)
     try:
         from PySide6 import QtWidgets
     except ImportError:
@@ -111,19 +115,30 @@ def openPypelineSetup():
             QtWidgets = None
 
     if QtWidgets:
-        from openpypeline.app.maya.core.ops_loader import OpsSetupDialog
-        import hou
-        parent = hou.qt.mainWindow() if hasattr(hou, "qt") else None
-        dialog = OpsSetupDialog(project_path, parent=parent)
-        dialog.exec_()
+        from openpypeline.ui.ops_setup_dialog import OpsSetupDialog
+
+        try:
+            import hou
+
+            parent = hou.qt.mainWindow() if hasattr(hou, "qt") else None
+        except ImportError:
+            parent = None
+
+        dialog = OpsSetupDialog(
+            project_path, parent=parent, on_success=openPypeline
+        )
+        exec_fn = getattr(dialog, "exec", None) or dialog.exec_
+        exec_fn()
     else:
         logger.warning("Qt/PySide is not available in this Houdini session.")
 
 
-def openPypeline():
-    """
-    Main entry point for openPypeline Studio in Houdini.
-    Validates paths, initializes the engine, and launches the UI or diagnostic console.
+def openPypeline() -> None:
+    """Main entry point for launching openPypeline Studio in Houdini.
+
+    Validates :data:`PROJECT_PATH_PREF` (opening :func:`openPypelineSetup` if
+    unconfigured), initializes :class:`~openpypeline.ops_engine.OpsEngine`,
+    and launches the host UI.
     """
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
     if not is_valid_project_file_path(project_path):
@@ -133,6 +148,7 @@ def openPypeline():
 
     logger.info("Initializing openPypeline Studio in Houdini...")
     from openpypeline.ops_engine import OpsEngine
+
     engine = OpsEngine()
-    logger.info(f"Engine initialized with host: {engine.host_app}")
+    logger.info("Engine initialized with host: %s", engine.host_app)
     engine.ui()

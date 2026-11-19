@@ -1,36 +1,48 @@
-"""
-File: file.py
-Description: Houdini-specific file handling operations for openPypeline Studio.
-This module is dynamically loaded by OpsEngine when Houdini is detected.
+"""Houdini-specific file handling operations for openPypeline Studio.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+Implements the DCC file adapter interface dynamically loaded by ``OpsEngine`` when SideFX Houdini (``hou``) is detected, covering scene loading, saving, merging, workspace resolution, and unsaved-change queries.
+
+:File: file.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
-import os
 import logging
+import os
+from typing import Optional
 
 try:
     import hou
 except ImportError:
     hou = None
 
+#: Module logger for Houdini file I/O operations.
 logger = logging.getLogger("openPypeline.houdini.file")
 
-FILE_TYPES = {
+#: Mapping of supported Houdini scene file extensions to human-readable labels.
+FILE_TYPES: dict[str, str] = {
     ".hip": "Houdini Scene",
     ".hiplc": "Houdini Limited Commercial",
     ".hipnc": "Houdini Non-Commercial",
 }
 
 
-def get_file_type(extension):
-    """Return Houdini's file type identifier for the given extension."""
+def get_file_type(extension: Optional[str]) -> Optional[str]:
+    """Return Houdini's file type description for the given extension.
+
+    :param extension: File extension including leading dot (for example, ``".hip"`` or ``".hiplc"``).
+    :returns: Human-readable Houdini scene type label, or ``None`` if unrecognized.
+    """
     return FILE_TYPES.get(extension.lower()) if extension else None
 
 
-def get_workspace_root():
-    """Return Houdini's current workspace directory or scene directory."""
+def get_workspace_root() -> str:
+    """Return Houdini's current scene directory or process working directory.
+
+    Inspects ``hou.hipFile.path()`` when running inside Houdini and falls back to :func:`os.getcwd` for unsaved scenes or headless sessions.
+
+    :returns: Directory path representing the active Houdini workspace root.
+    """
     if hou and hasattr(hou, "hipFile"):
         try:
             hip_path = hou.hipFile.path()
@@ -41,16 +53,13 @@ def get_workspace_root():
     return os.getcwd()
 
 
+def open(filepath: str) -> bool:
+    """Open a Houdini scene file (``.hip``, ``.hiplc``, or ``.hipnc``).
 
-def open(filepath):
-    """
-    Opens a Houdini scene file (.hip, .hiplc, .hipnc) given the filepath.
+    Displays an error dialog via ``hou.ui.displayMessage`` when running with Houdini's GUI available if ``filepath`` does not exist on disk.
 
-    Args:
-        filepath (str): Full path to the Houdini scene file.
-
-    Returns:
-        bool: True if the file opened successfully, False otherwise.
+    :param filepath: Full filesystem path to the Houdini scene file.
+    :returns: ``True`` if the file loaded successfully, ``False`` otherwise.
     """
     if not os.path.exists(filepath):
         if hou and hasattr(hou, "ui"):
@@ -59,131 +68,120 @@ def open(filepath):
                 severity=hou.severityType.Error,
             )
         else:
-            logger.error(f"File does not exist: {filepath}")
+            logger.error("File does not exist: %s", filepath)
         return False
 
     try:
         hou.hipFile.load(filepath)
-        logger.info(f"Successfully opened {filepath}")
+        logger.info("Successfully opened %s", filepath)
         return True
     except Exception as e:
-        logger.error(f"Failed to open {filepath}. Error: {e}")
+        logger.error("Failed to open %s. Error: %s", filepath, e)
         return False
 
 
-def save():
-    """
-    Saves the current Houdini scene.
+def save() -> bool:
+    """Save the current Houdini scene in place.
 
-    Returns:
-        bool: True if saved successfully, False otherwise.
+    :returns: ``True`` if saved successfully, ``False`` otherwise.
     """
     try:
         hou.hipFile.save()
         logger.info("Successfully saved scene.")
         return True
     except Exception as e:
-        logger.error(f"Failed to save scene. Error: {e}")
+        logger.error("Failed to save scene. Error: %s", e)
         return False
 
 
-def save_as(filepath, file_type=None):
-    """
-    Saves the scene to a new path.
+def save_as(filepath: str, file_type: Optional[str] = None) -> bool:
+    """Save the current Houdini scene to a new path.
 
-    Args:
-        filepath (str): Target file path.
-        file_type (str, optional): Unused in Houdini (format determined by extension).
-
-    Returns:
-        bool: True if saved successfully, False otherwise.
+    :param filepath: Target filesystem path (the file extension determines the Houdini license format).
+    :param file_type: Unused in Houdini; accepted for DCC adapter signature compatibility.
+    :returns: ``True`` if saved successfully, ``False`` otherwise.
     """
+    del file_type
     try:
         hou.hipFile.save(filepath)
-        logger.info(f"Successfully saved as {filepath}")
+        logger.info("Successfully saved as %s", filepath)
         return True
     except Exception as e:
-        logger.error(f"Failed to save as {filepath}. Error: {e}")
+        logger.error("Failed to save as %s. Error: %s", filepath, e)
         return False
 
 
-def import_file(filepath):
-    """
-    Merges a Houdini scene into the current scene.
+def import_file(filepath: str) -> bool:
+    """Merge an external Houdini scene into the current scene.
 
-    Args:
-        filepath (str): Path to the scene file to merge.
-
-    Returns:
-        bool: True if merged successfully, False otherwise.
+    :param filepath: Path to the Houdini scene file to merge.
+    :returns: ``True`` if merged successfully, ``False`` otherwise.
     """
     if not os.path.exists(filepath):
-        logger.error(f"File does not exist for import: {filepath}")
+        logger.error("File does not exist for import: %s", filepath)
         return False
 
     try:
         hou.hipFile.merge(filepath)
-        logger.info(f"Successfully imported/merged {filepath}")
+        logger.info("Successfully imported/merged %s", filepath)
         return True
     except Exception as e:
-        logger.error(f"Failed to import/merge {filepath}. Error: {e}")
+        logger.error("Failed to import/merge %s. Error: %s", filepath, e)
         return False
 
 
-def reference_file(filepath):
-    """
-    References a file into the current Houdini scene.
+def reference_file(filepath: str) -> bool:
+    """Reference an external file into the current Houdini scene.
 
-    Args:
-        filepath (str): Path to the file to reference.
+    Currently a placeholder stub matching the cross-DCC file adapter contract.
 
-    Returns:
-        bool: False (referencing protocol placeholder for Houdini).
+    :param filepath: Path to the file to reference.
+    :returns: Always ``False`` until Houdini referencing is implemented.
     """
+    del filepath
     logger.warning("reference_file is not yet implemented for Houdini.")
     return False
 
 
-def new_file():
-    """
-    Creates a new empty scene.
+def new_file() -> bool:
+    """Clear the current Houdini session to start an empty scene.
 
-    Returns:
-        bool: True if created successfully, False otherwise.
+    :returns: ``True`` if cleared successfully, ``False`` otherwise.
     """
     try:
         hou.hipFile.clear()
         logger.info("Created new scene.")
         return True
     except Exception as e:
-        logger.error(f"Failed to create new scene. Error: {e}")
+        logger.error("Failed to create new scene. Error: %s", e)
         return False
 
 
-def export_file(filepath, file_type=None, selected=False):
-    """
-    Exports the current scene or selection.
+def export_file(
+    filepath: str,
+    file_type: Optional[str] = None,
+    selected: bool = False,
+) -> bool:
+    """Export the current Houdini scene or selected nodes.
 
-    Args:
-        filepath (str): Destination path.
-        file_type (str, optional): Export format.
-        selected (bool): Whether to export only selected nodes.
+    Currently a placeholder stub matching the cross-DCC file adapter contract.
 
-    Returns:
-        bool: False (export is not yet implemented for Houdini).
+    :param filepath: Destination export file path.
+    :param file_type: Optional target export format identifier.
+    :param selected: Whether to export only currently selected nodes.
+    :returns: Always ``False`` until Houdini export is implemented.
     """
+    del filepath, file_type, selected
     logger.warning("export_file is not yet implemented for Houdini.")
     return False
 
 
-def is_modified():
-    """
-    Checks if the current scene has unsaved changes.
+def is_modified() -> bool:
+    """Return whether the current Houdini scene has unsaved changes.
 
-    Returns:
-        bool: True if unsaved changes exist, False otherwise.
+    :returns: ``True`` if unsaved changes exist, ``False`` otherwise (or when ``hou`` is unavailable).
     """
     try:
-        return hou.hipFile.hasUnsavedChanges()
+        return bool(hou.hipFile.hasUnsavedChanges())
     except Exception:
         return False

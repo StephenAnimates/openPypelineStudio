@@ -1,57 +1,83 @@
-"""
-Module: opsProjectManagerGUI.py
+"""Project Manager UI view for openPypeline Studio in Maya.
 
-Description: Creates the openPypeline Studio Project Manager UI using PySide6.
+Provides a dockable PySide6 widget for viewing registered studio projects,
+inspecting project metadata and user rosters, and launching project creation,
+editing, joining, and archiving workflows.
+
+:File: ops_project_manager_gui.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
-from PySide6 import QtWidgets, QtCore
+from typing import Any, Optional
+
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+from PySide6 import QtCore, QtWidgets
 
-from . import ui_objects as UIObjects
 from openpypeline.app.maya.core import ops_loader as opsLoader
-from openpypeline.core import ops_project as opsProject
-from openpypeline.core import ops_actions as opsActions
 from openpypeline.app.maya.core import ops_utils as opsUtils
-from openpypeline.core.util import prefs
+from openpypeline.core import ops_actions as opsActions
+from openpypeline.core import ops_project as opsProject
 from openpypeline.core.localization import localization
+from openpypeline.core.util import prefs
+from openpypeline.ui import ui_objects as UIObjects
 
 # --- UI Stylesheet ---
-OPS_PROJ_MANAGER_STYLESHEET = """
+# Internal Qt stylesheet defining semantic button color classes for project actions.
+_OPS_PROJ_MANAGER_STYLESHEET: str = """
     QPushButton[styleClass="positiveAction"] {
-        background-color: #99cc80; 
+        background-color: #99cc80;
         color: black;
     }
     QPushButton[styleClass="negativeAction"] {
-        background-color: #cc4d4d; 
+        background-color: #cc4d4d;
         color: white;
     }
     QPushButton[styleClass="editAction"] {
-        background-color: #80b3b3; 
+        background-color: #80b3b3;
         color: black;
     }
 """
+class opsProjectManagerGUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
+    """Dockable Maya PySide6 window for managing openPypeline Studio projects.
 
-class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
-    """
-    A PySide-based Maya window for managing openPypeline Studio projects. It allows users to select, create, edit, and remove projects, and manage users.
+    Allows users to browse, create, edit, join, archive, and remove studio
+    projects as well as manage project user rosters.
+
+    :ivar UIObjects: Shared :class:`~openpypeline.ui.ui_objects.WindowManager`
+        singleton reference.
+    :vartype UIObjects: openpypeline.ui.ui_objects.WindowManager
+    :ivar scriptLocation: Resolved root path of the openPypeline installation.
+    :vartype scriptLocation: str
+    :ivar projectLocation: Configured directory path storing the project
+        registry file.
+    :vartype projectLocation: str
     """
 
-    def __init__(self, parent=None):
-        """Initialize the project manager window and its project controls."""
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Initialize the project manager window and its project controls.
+
+        Cleans up any orphaned Maya ``workspaceControl`` or top-level Qt
+        widget instances with the same object name before building the UI and
+        loading the project list.
+
+        :param parent: Optional parent widget for Maya window parenting.
+        """
         super().__init__(parent=parent)
 
         self.UIObjects = UIObjects.UIObjects()
 
         self.setWindowTitle("openPypeline Studio Project Manager")
         self.setObjectName("openPypelineStudioProjectManager")
-        
+
         # Clean up orphaned workspace control from any previous instances
         try:
             import maya.cmds as cmds
+
             workspace_control = self.objectName() + "WorkspaceControl"
             if cmds.workspaceControl(workspace_control, exists=True):
                 cmds.deleteUI(workspace_control)
-                
+
             # Delete any orphaned PySide widgets from previous instances
             for widget in QtWidgets.QApplication.topLevelWidgets():
                 if widget.objectName() == self.objectName() and widget != self:
@@ -59,32 +85,32 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                     widget.deleteLater()
         except ImportError:
             pass
-            
+
         self.setMinimumSize(550, 460)
 
         # Fetch initial paths
-        self.scriptLocation = opsLoader._root_path
-        self.projectLocation = prefs.get_pref("ops_projectFilePath", "Not Set")
+        self.scriptLocation: str = opsLoader._root_path
+        self.projectLocation: str = prefs.get_pref("ops_projectFilePath", "Not Set")
 
         self._build_ui()
         self.on_refresh_list()
 
-    def showWindow(self):
-        """Shows the window as a dockable panel."""
+    def showWindow(self) -> None:
+        """Show the window as a dockable panel, restoring any existing workspace control."""
         try:
             import maya.cmds as cmds
+
             workspace_control = self.objectName() + "WorkspaceControl"
             if cmds.workspaceControl(workspace_control, exists=True):
                 cmds.workspaceControl(workspace_control, edit=True, restore=True)
                 return
         except ImportError:
             pass
-            
-        self.show(dockable=True, floating=True)
 
-    def _build_ui(self):
-        """Constructs the UI using PySide widgets and layouts."""
-        self.setStyleSheet(OPS_PROJ_MANAGER_STYLESHEET)
+        self.show(dockable=True, floating=True)
+    def _build_ui(self) -> None:
+        """Construct the locations, project list, project info, and action layouts."""
+        self.setStyleSheet(_OPS_PROJ_MANAGER_STYLESHEET)
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(5)
@@ -177,81 +203,117 @@ class opsProjectManagerGUI(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         bottom_buttons_layout.addWidget(self.close_btn)
 
         main_layout.addLayout(bottom_buttons_layout)
-
     # --- Button Callbacks ---
 
-    def on_edit_locations(self, *args):
-        """Launches the Setup UI to change the script or project paths."""
+    def on_edit_locations(self, *args: Any) -> None:
+        """Launch the Setup UI to change the script or project paths.
+
+        Delegates to :func:`~openpypeline.app.maya.core.ops_loader.openPypelineSetup`.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         opsLoader.openPypelineSetup()
-        
-    def on_edit_users(self, *args):
-        """Launches the UI to edit user permissions."""
+
+    def on_edit_users(self, *args: Any) -> None:
+        """Launch the UI to edit user permissions.
+
+        Delegates to :func:`~openpypeline.core.ops_project.proj_edit_users`.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         opsProject.proj_edit_users()
-        
-    def on_project_selection(self, *args):
-        """Updates the UI info field when a project is selected."""
+
+    def on_project_selection(self, *args: Any) -> None:
+        """Update the project info display and action buttons for the active selection.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         selected_items = self.project_list_widget.selectedItems()
         if not selected_items:
             self.edit_proj_btn.setEnabled(False)
             self.remove_proj_btn.setEnabled(False)
             return
-        
+
         self.edit_proj_btn.setEnabled(True)
         self.remove_proj_btn.setEnabled(True)
-        
+
         info_string = opsProject.get_project_info_string(selected_items[0].text())
         self.project_info_field.setPlainText(info_string)
-        
-    def on_new_project(self, *args):
-        """Launches the Project Dialog window in 'New' mode."""
+
+    def on_new_project(self, *args: Any) -> None:
+        """Launch the Project Dialog window in New Project mode (``mode = 0``).
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         self.UIObjects.opsProjDialogController.mode = 0
         self.UIObjects.opsProjDialogController.old_name = ""
         self.UIObjects.opsProjDialogController.showWindow()
-        
-    def on_edit_project(self, *args):
-        """Launches the Project Dialog window in 'Edit' mode."""
+
+    def on_edit_project(self, *args: Any) -> None:
+        """Launch the Project Dialog window in Edit Project mode (``mode = 1``).
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         selected_items = self.project_list_widget.selectedItems()
         if not selected_items:
             return
-            
+
         self.UIObjects.opsProjDialogController.mode = 1
         self.UIObjects.opsProjDialogController.old_name = selected_items[0].text()
         self.UIObjects.opsProjDialogController.showWindow()
-        
-    def on_remove_project(self, *args):
-        """Prompts the user and removes the selected project configuration."""
+
+    def on_remove_project(self, *args: Any) -> None:
+        """Prompt for confirmation and remove the selected project configuration.
+
+        Delegates removal to :func:`~openpypeline.core.ops_actions.remove_project`
+        and refreshes the project list via :meth:`on_refresh_list`.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         selected_items = self.project_list_widget.selectedItems()
         if not selected_items:
             return
-            
+
         proj_name = selected_items[0].text()
         reply = QtWidgets.QMessageBox.question(
             self,
             "Remove Project Confirm",
             f"Are you sure you want to remove project {proj_name}?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.Cancel,
-            QtWidgets.QMessageBox.StandardButton.Cancel
+            QtWidgets.QMessageBox.StandardButton.Yes
+            | QtWidgets.QMessageBox.StandardButton.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Cancel,
         )
-        
+
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if opsActions.remove_project(proj_name):
                 self.on_refresh_list()
             else:
-                QtWidgets.QMessageBox.warning(self, "Error", "Project was not found.")
-                
-    def on_refresh_list(self, *args):
-        """Clears and rebuilds the list of available projects."""
+                QtWidgets.QMessageBox.warning(
+                    self, "Error", "Project was not found."
+                )
+
+    def on_refresh_list(self, *args: Any) -> None:
+        """Clear and rebuild the list of registered projects.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         self.project_list_widget.clear()
-        
-        proj_list = [opsUtils.get_xml_data(p, "name") for p in opsProject.get_projects_data()]
+
+        proj_list = [
+            opsUtils.get_xml_data(p, "name")
+            for p in opsProject.get_projects_data()
+        ]
         if proj_list:
             self.project_list_widget.addItems(proj_list)
-            
+
         self.project_info_field.clear()
         self.edit_proj_btn.setEnabled(False)
         self.remove_proj_btn.setEnabled(False)
-        
-    def on_close(self, *args):
-        """Closes the Project Manager UI."""
+
+    def on_close(self, *args: Any) -> None:
+        """Close the Project Manager UI and notify :mod:`~openpypeline.core.ops_project`.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
         opsProject.close_proj_ui()
         self.close()

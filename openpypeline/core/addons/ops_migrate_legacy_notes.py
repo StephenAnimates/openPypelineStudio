@@ -1,8 +1,6 @@
 """Migrate legacy openPipeline XML note and history files to JSON format.
 
-Recursively scans a project directory for ``notes`` folders and translates
-custom ``info.xml`` descriptions and ``*Note.xml`` revision histories into
-``info.json`` and ``*Note.json`` files while preserving original XML backups.
+Recursively scans a project directory for ``notes`` folders and translates custom ``info.xml`` descriptions and ``*Note.xml`` revision histories into ``info.json`` and ``*Note.json`` files while preserving original XML backups.
 
 :File: ops_migrate_legacy_notes.py
 :Original Framework: openPipeline by Kickstand

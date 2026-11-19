@@ -1,93 +1,137 @@
-"""
-File: ops_archive_all.py
-Description: openPypeline "Archive All" add-on refactored to Python. Archives, retrieves, or deletes all items in the library.
+"""Maya add-on for bulk archiving, retrieving, or deleting library items.
+
+Iterates across all asset and shot hierarchy levels in the active project to archive older WIP/master files, restore archived files, or move archived items to deleted storage via :mod:`openpypeline.core.ops_actions`.
+
+:File: ops_archive_all.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
-import maya.cmds as cmds
+from typing import Literal
 
 try:
-    from .....core import ops_info as opsInfo
-    from openpypeline.core.models import ItemContext, Tab
+    import maya.cmds as cmds
 except ImportError:
-    pass
+    cmds = None
 
-ADDON_NAME = "Archive All"
+from openpypeline.core import ops_actions as opsActions
+from openpypeline.core import ops_info as opsInfo
+from openpypeline.core.models import ItemContext, Tab
+from openpypeline.ui import ops_ui_wrappers as opsUIWrappers
 
-def run():
+#: Display name used by the main UI Tools menu when registering this add-on.
+ADDON_NAME: str = "Archive All"
+
+
+def run() -> None:
     """Create and display the Maya window for bulk archive operations."""
+    if cmds is None:
+        return
+
     if cmds.window("ops_secondaryUI", exists=True):
         cmds.deleteUI("ops_secondaryUI")
 
     cmds.window("ops_secondaryUI", title="oP - Archive All", width=300, height=300)
     cmds.columnLayout()
-    
+
     cmds.separator(height=5, width=220, style="none")
-    cmds.button(width=220, label="Archive All", command=lambda *args: ops_archiveAllProc(), bgc=[0.6, 0.7, 0.9])
-    
+    cmds.button(
+        width=220,
+        label="Archive All",
+        command=lambda *args: ops_archiveAllProc(),
+        bgc=[0.6, 0.7, 0.9],
+    )
+
     cmds.separator(height=5, width=220, style="none")
-    cmds.button(width=220, label="Retrieve All Archives", command=lambda *args: ops_retrieveArchiveAllProc(), bgc=[1, 1, 1])
-    
+    cmds.button(
+        width=220,
+        label="Retrieve All Archives",
+        command=lambda *args: ops_retrieveArchiveAllProc(),
+        bgc=[1, 1, 1],
+    )
+
     cmds.separator(height=5, width=220, style="none")
-    cmds.button(width=220, label="Delete All Archives", enable=True, command=lambda *args: ops_deleteArchiveAllProc(), bgc=[1, 0.7, 0.6])
-    
+    cmds.button(
+        width=220,
+        label="Delete All Archives",
+        enable=True,
+        command=lambda *args: ops_deleteArchiveAllProc(),
+        bgc=[1, 0.7, 0.6],
+    )
+
     cmds.separator(height=30, width=220, style="out")
-    cmds.button(width=220, label="Close", command=lambda *args: cmds.deleteUI("ops_secondaryUI"))
-    
+    cmds.button(
+        width=220,
+        label="Close",
+        command=lambda *args: cmds.deleteUI("ops_secondaryUI"),
+    )
+
     cmds.window("ops_secondaryUI", edit=True, width=230, height=200)
     cmds.showWindow("ops_secondaryUI")
 
 
-def _update_ui():
-    """Helper function to update the UI after an operation."""
-    if cmds.window("openPypelineUI", exists=True) or cmds.window("openPipelineUI", exists=True):
+def _update_ui() -> None:
+    """Refresh the openPypeline UI after a bulk archive operation."""
+    if cmds is None:
+        return
+
+    if cmds.window("openPypelineUI", exists=True) or cmds.window(
+        "openPipelineUI", exists=True
+    ):
         try:
-            from .. import ops_ui_wrappers as opsUIWrappers
             opsUIWrappers.update_currently_open()
-        except (ImportError, AttributeError):
+        except Exception:
             pass
 
 
-def _process_all_archives(action):
+def _process_all_archives(
+    action: Literal["archive", "retrieve", "delete"],
+) -> None:
+    """Iterate through all asset and shot items and apply ``action``.
+
+    :param action: Bulk archive operation to perform—one of ``"archive"``, ``"retrieve"``, or ``"delete"``.
     """
-    Helper to iterate through all items and apply an archive action. action parameter should be one of: 'archive', 'retrieve', 'delete'
-    """
-    tabs = [Tab.ASSET, Tab.SHOT]  # Asset library and shot library tabs
-    
+    tabs = [Tab.ASSET, Tab.SHOT]
+
     for tab in tabs:
         items1 = opsInfo.get_children(ItemContext(tab))
         for level1 in items1:
             items2 = opsInfo.get_children(ItemContext(tab, level1))
             for level2 in items2:
-                
-                levels_to_process = [(level1, level2, "")]
-                
+                levels_to_process: list[tuple[str, str, str]] = [
+                    (level1, level2, "")
+                ]
+
                 items3 = opsInfo.get_children(ItemContext(tab, level1, level2))
                 for level3 in items3:
                     levels_to_process.append((level1, level2, level3))
-                    
+
                 for l1, l2, l3 in levels_to_process:
                     try:
-                        from .....core import ops_actions as opsActions
                         context = ItemContext(tab, l1, l2, l3)
-                        if action == 'archive': opsActions.archive_item(context, 1, 1)
-                        elif action == 'retrieve': opsActions.retrieve_archive(context, 1, 1)
-                        elif action == 'delete': opsActions.remove_archive(context)
+                        if action == "archive":
+                            opsActions.archive_item(context, 1, 1)
+                        elif action == "retrieve":
+                            opsActions.retrieve_archive(context, 1, 1)
+                        elif action == "delete":
+                            opsActions.remove_archive(context)
                     except Exception as e:
-                        cmds.warning(f"Archive Add-on error: {e}")
-    
+                        if cmds is not None:
+                            cmds.warning(f"Archive Add-on error: {e}")
+
     _update_ui()
 
 
-def ops_archiveAllProc():
+def ops_archiveAllProc() -> None:
     """Archive older WIP and master files across the asset and shot libraries."""
-    _process_all_archives('archive')
+    _process_all_archives("archive")
 
 
-def ops_retrieveArchiveAllProc():
+def ops_retrieveArchiveAllProc() -> None:
     """Retrieve archived files across the asset and shot libraries."""
-    _process_all_archives('retrieve')
+    _process_all_archives("retrieve")
 
 
-def ops_deleteArchiveAllProc():
+def ops_deleteArchiveAllProc() -> None:
     """Move archived files across the asset and shot libraries to deleted items."""
-    _process_all_archives('delete')
+    _process_all_archives("delete")

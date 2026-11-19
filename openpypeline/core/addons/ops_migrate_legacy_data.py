@@ -1,8 +1,6 @@
 """Migrate legacy openPipeline XML databases to openPypeline JSON format.
 
-Converts legacy ``openPipeline_projects.xml`` and ``openPipeline_users.xml``
-files into ``openpypeline_projects.json`` and ``openpypeline_users.json`` while
-preserving the original XML files as backups.
+Converts legacy ``openPipeline_projects.xml`` and ``openPipeline_users.xml`` files into ``openpypeline_projects.json`` and ``openpypeline_users.json`` while preserving the original XML files as backups.
 
 :File: ops_migrate_legacy_data.py
 :Original Framework: openPipeline by Kickstand

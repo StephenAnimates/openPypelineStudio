@@ -1,1 +1,10 @@
-"""Studio add-ons and data migration utilities for openPypeline."""
+"""Studio add-ons and data migration utilities package for openPypeline Studio.
+
+Provides DCC-agnostic add-on modules, data migration scripts, and pipeline extension tools for the openPypeline Studio framework.
+
+:File: __init__.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
+"""
+
+__all__: list[str] = []

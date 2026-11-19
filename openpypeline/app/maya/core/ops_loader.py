@@ -1,255 +1,108 @@
-"""
-File: opsLoader.py
-Description: Main initialization and setup script for openPypeline Studio in Maya. It provides a modern Python-based entry point to manage script and project path configurations using the DCC-agnostic prefs module, sources necessary MEL and Python modules, and launches the main UI.
+"""Main initialization and setup script for openPypeline Studio in Maya.
 
-Original Framework: OpenPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+Migrates legacy Maya ``optionVar`` entries, validates paths via
+:mod:`openpypeline.core.ops_loader`, sources Maya ``addons/`` and ``custom/``
+modules, registers :mod:`openpypeline.app.maya.core.file_use` scene callbacks,
+and launches :class:`~openpypeline.app.maya.ui.ops_main_controller.OpsMainController`.
+
+:File: ops_loader.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
+import logging
 import os
 import sys
-import importlib
-import logging
-from PySide6 import QtWidgets, QtCore
+from typing import Optional
 
-# Add the root openPypeline directory to sys.path to access core utilities
-_root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")).replace("\\", "/")
+from PySide6 import QtWidgets
+
+# Ensure repository root is registered before importing openpypeline packages
+_root_path: str = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+).replace("\\", "/")
 if _root_path not in sys.path:
     sys.path.insert(0, _root_path)
-from openpypeline.core.util import prefs
 
-# --- Logger Setup ---
+from openpypeline.core import ops_loader as core_loader  # noqa: E402
+from openpypeline.core.ops_loader import (  # noqa: E402
+    PROJECT_PATH_PREF,
+    is_valid_project_file_path,
+    is_valid_script_path,
+    source_python_module,
+)
+from openpypeline.core.util import prefs  # noqa: E402
+from openpypeline.ui.ops_setup_dialog import OpsSetupDialog  # noqa: E402
+
+#: Module logger for openPypeline Studio Maya startup and setup events.
 logger = logging.getLogger("openPypeline")
-logger.setLevel(logging.INFO) # Change to logging.DEBUG to see verbose file sourcing
+logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('[%(name)s] %(levelname)s: %(message)s'))
+    handler.setFormatter(
+        logging.Formatter("[%(name)s] %(levelname)s: %(message)s")
+    )
     logger.addHandler(handler)
 
-# Store the active dialog to prevent garbage collection
-_setup_dialog = None
+#: Active setup dialog reference retained to prevent premature garbage collection.
+_setup_dialog: Optional[QtWidgets.QDialog] = None
 
-# --- Constants for preference keys ---
-PROJECT_PATH_PREF = "ops_projectFilePath"
 
-def _migrate_legacy_prefs():
-    """Migrates legacy Maya optionVars to the DCC-agnostic prefs system."""
+def _migrate_legacy_prefs() -> None:
+    """Migrate legacy Maya ``optionVar`` entries to the DCC-agnostic prefs system.
+
+    Copies ``openPipeline_projectFilePath`` and ``ops_projectFilePath`` from
+    ``maya.cmds.optionVar`` into :mod:`~openpypeline.core.util.prefs` under
+    :data:`PROJECT_PATH_PREF` and removes the legacy ``optionVar`` keys. Safely
+    no-ops when executed outside Autodesk Maya.
+    """
     try:
         import maya.cmds as cmds
+
         migrations = [
             ("openPipeline_projectFilePath", PROJECT_PATH_PREF),
-            (PROJECT_PATH_PREF, PROJECT_PATH_PREF)
+            (PROJECT_PATH_PREF, PROJECT_PATH_PREF),
         ]
         for old_var, new_pref in migrations:
             if cmds.optionVar(exists=old_var) and not prefs.has_pref(new_pref):
                 prefs.set_pref(new_pref, cmds.optionVar(query=old_var))
                 cmds.optionVar(remove=old_var)
     except ImportError:
-        # Not running in Maya, no legacy optionVars to migrate
         pass
 
-def source_python_module(path):
-    """
-    Adds a path to sys.path and imports/reloads all Python modules within it.
 
-    Args:
-        path (str): The directory path to look in.
+def openPypelineSetup() -> None:
+    """Create and display the openPypeline Studio setup dialog in Maya.
 
-    Returns:
-        None
-    """
-    if not os.path.isdir(path):
-        logger.debug(f"Optional module path not found (skipping): {path}")
-        return
-
-    # Add path to sys.path if it's not already there
-    if path not in sys.path:
-        sys.path.append(path)
-        logger.info(f"Appending {path} to sys.path")
-
-    logger.info(f"----- Sourcing Python from {path} ------")
-    for file_name in os.listdir(path):
-        if file_name.endswith(".py") and not file_name.startswith("__"):
-            module_name = os.path.splitext(file_name)[0]
-            logger.info(f"//// Python Source: {module_name}")
-            try:
-                # Import the module if it's the first time
-                module = importlib.import_module(module_name)
-                # Reload it to pick up any changes
-                importlib.reload(module)
-            except Exception as e:
-                logger.warning(f"Failed to load python module {module_name}: {e}")
-
-
-def is_valid_script_path():
-    """
-    Checks if the automatically calculated _root_path is valid.
-
-    Returns:
-        bool: True if the path is a valid script path, False otherwise.
-    """
-    if not _root_path or not os.path.isdir(_root_path):
-        return False
-
-    py_loader_file = os.path.join(_root_path, "openpypeline", "app", "maya", "core", "ops_loader.py").replace("\\", "/")
-    sub_folder = os.path.join(_root_path, "openpypeline").replace("\\", "/")
-
-    if not os.path.isfile(py_loader_file):
-        return False
-    if not os.path.isdir(sub_folder):
-        return False
-
-    return True
-
-
-def is_valid_project_file_path(folder):
-    """
-    Checks if the given folder is a valid project path (i.e., it exists).
-
-    Args:
-        folder (str): The path to be checked.
-
-    Returns:
-        bool: True if the path is valid, False otherwise.
-    """
-    return isinstance(folder, str) and os.path.isdir(folder)
-
-
-class OpsSetupDialog(QtWidgets.QDialog):
-    """PySide6 dialog for initializing openPypeline Studio paths."""
-    def __init__(self, project_path, parent=None):
-        """Initialize the setup dialog and prefill any configured project path."""
-        super().__init__(parent)
-        self.setWindowTitle("openPypeline Studio Setup")
-        self.setMinimumSize(405, 200)
-        self.project_path_initial = project_path
-        self._build_ui()
-        
-        # Post-init setup
-        default_proj_path = os.path.join(_root_path, "openpypeline/").replace("\\", "/")
-        if self.project_path_initial and self.project_path_initial != default_proj_path:
-            self.toggle_project_path_field(force_custom=True, path=self.project_path_initial)
-
-    def _build_ui(self):
-        """Build the project-path editor, browse control, and accept/cancel buttons."""
-        layout = QtWidgets.QVBoxLayout(self)
-        
-        # Project File Setup
-        proj_label = QtWidgets.QLabel("Project File Setup:")
-        proj_label.setStyleSheet("font-weight: bold;")
-        layout.addWidget(proj_label)
-        
-        proj_desc = QtWidgets.QLabel('By default, the Project File will be located in the "openpypeline" folder.\nYou may set a different location for the Project File here.')
-        proj_desc.setWordWrap(True)
-        layout.addWidget(proj_desc)
-        
-        proj_layout = QtWidgets.QHBoxLayout()
-        self.proj_field = QtWidgets.QLineEdit("[Default]")
-        self.proj_field.setReadOnly(True)
-        self.proj_toggle_btn = QtWidgets.QPushButton("Edit")
-        self.proj_toggle_btn.clicked.connect(self.toggle_project_path_field)
-        self.proj_browse_btn = QtWidgets.QPushButton("Browse...")
-        self.proj_browse_btn.setEnabled(False)
-        self.proj_browse_btn.clicked.connect(self.browse_proj_path)
-        
-        proj_layout.addWidget(self.proj_field)
-        proj_layout.addWidget(self.proj_toggle_btn)
-        proj_layout.addWidget(self.proj_browse_btn)
-        layout.addLayout(proj_layout)
-        
-        layout.addStretch()
-        
-        # Buttons
-        btn_layout = QtWidgets.QHBoxLayout()
-        accept_btn = QtWidgets.QPushButton("Accept")
-        accept_btn.clicked.connect(self.setup_exec)
-        cancel_btn = QtWidgets.QPushButton("Cancel")
-        cancel_btn.clicked.connect(self.reject)
-        
-        btn_layout.addWidget(accept_btn)
-        btn_layout.addWidget(cancel_btn)
-        layout.addLayout(btn_layout)
-
-    def browse_proj_path(self):
-        """Choose a directory and populate the project-path field."""
-        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
-        if dir_path:
-            self.proj_field.setText(os.path.join(dir_path, "").replace("\\", "/"))
-
-    def toggle_project_path_field(self, *args, force_custom=False, path=""):
-        """Switch between the default project path and an editable custom path."""
-        if not self.proj_field.isReadOnly() and not force_custom:
-            self.proj_field.setReadOnly(True)
-            self.proj_field.setText("[Default]")
-            self.proj_toggle_btn.setText("Edit")
-            self.proj_browse_btn.setEnabled(False)
-        else:
-            project_path = path if force_custom else prefs.get_pref(PROJECT_PATH_PREF, "")
-            self.proj_field.setReadOnly(False)
-            self.proj_field.setText(project_path)
-            self.proj_toggle_btn.setText("Default")
-            self.proj_browse_btn.setEnabled(True)
-
-    def setup_exec(self):
-        """Validate paths, save a valid project location, and launch the app."""
-        if not self.proj_field.isReadOnly():
-            proj_file_path = self.proj_field.text()
-        else:
-            proj_file_path = os.path.join(_root_path, "openpypeline/").replace("\\", "/")
-
-        proj_file_path = os.path.join(proj_file_path, "").replace("\\", "/")
-
-        error = ""
-        if not is_valid_script_path():
-            error += f'Core framework path not valid. Missing essential files in "{_root_path}".\n'
-        elif not is_valid_project_file_path(proj_file_path):
-            error += f'Project File path not valid. Make sure path "{proj_file_path}" exists.\n'
-
-        if not error:
-            prefs.set_pref(PROJECT_PATH_PREF, proj_file_path)
-            self.accept()
-            openPypeline()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "openPypeline Studio - Project Setup Error",
-                "Could not complete openPypeline Studio setup:\n" + error
-            )
-
-
-def openPypelineSetup():
-    """
-    Creates and shows the openPypeline Studio Setup UI.
-
-    Returns:
-        None
+    Migrates legacy Maya ``optionVar`` preferences via
+    :func:`_migrate_legacy_prefs`, reads :data:`PROJECT_PATH_PREF`, and
+    displays a non-modal :class:`~openpypeline.ui.ops_setup_dialog.OpsSetupDialog`
+    configured to call :func:`openPypeline` upon acceptance.
     """
     global _setup_dialog
-    # --- Backward Compatibility Migration ---
     _migrate_legacy_prefs()
 
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
-
-    _setup_dialog = OpsSetupDialog(project_path)
+    _setup_dialog = OpsSetupDialog(project_path, on_success=openPypeline)
     _setup_dialog.show()
 
 
-def openPypeline():
-    """
-    Main entry point for openPypeline Studio.
+def openPypeline() -> None:
+    """Main entry point for launching openPypeline Studio in Maya.
 
-    Retrieves stored path configurations, validates them, sources all required modules, and launches the main UI.
-
-    Returns:
-        None
+    Migrates legacy Maya preferences via :func:`_migrate_legacy_prefs`,
+    validates script and project paths, sources optional Maya ``addons/`` and
+    ``custom/`` modules, installs synchronized file-use scene callbacks via
+    :func:`~openpypeline.app.maya.core.file_use.install_callbacks`, and launches
+    :class:`~openpypeline.app.maya.ui.ops_main_controller.OpsMainController`.
+    Falls back to :func:`openPypelineSetup` if required paths are missing or
+    invalid.
     """
-    # --- Backward Compatibility Migration ---
     _migrate_legacy_prefs()
 
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
 
     error = ""
-
     if not is_valid_script_path():
         error += "Core script path is not valid. Essential files missing.\n"
     if not is_valid_project_file_path(project_path):
@@ -263,26 +116,42 @@ def openPypeline():
 
         source_python_module(addons_path)
         source_python_module(custom_path)
-        
+
         if _root_path not in sys.path:
             sys.path.insert(0, _root_path)
 
         try:
             from openpypeline.app.maya.core import file_use
+
             file_use.install_callbacks()
         except Exception as e:
-            logger.error(f"Failed to install synchronized file-use notices: {e}")
+            logger.error("Failed to install synchronized file-use notices: %s", e)
 
         try:
-            from openpypeline.app.maya.ui import ui_objects as UIObjects
-            from openpypeline.app.maya.ui import ops_main_controller as opsMainController
+            from openpypeline.app.maya.ui import (
+                ops_main_controller as opsMainController,
+            )
+            from openpypeline.ui import ui_objects as UIObjects
+
             controller = opsMainController.OpsMainController()
             UIObjects.UIObjects().opsMainController = controller
             UIObjects.UIObjects().opsMainUI = controller.view
             controller.showWindow()
         except Exception as e:
-            logger.error(f"Failed to launch openPypelineUI: {e}")
-
+            logger.error("Failed to launch openPypelineUI: %s", e)
     else:
         logger.warning("Paths are invalid or not set. Launching setup...")
         openPypelineSetup()
+
+
+__all__ = [
+    "OpsSetupDialog",
+    "PROJECT_PATH_PREF",
+    "_root_path",
+    "core_loader",
+    "is_valid_project_file_path",
+    "is_valid_script_path",
+    "openPypeline",
+    "openPypelineSetup",
+    "source_python_module",
+]

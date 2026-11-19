@@ -1,24 +1,24 @@
-"""
-File: loader.py
-Description: Main initialization and setup entry point for openPypeline Studio in Autodesk Maya.
-Exposes standard loader functions matching the DCC adapter pattern.
+"""Main initialization and setup entry point for openPypeline Studio in Autodesk Maya.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+Exposes the standard host loader symbols (:func:`openPypeline`, :func:`openPypelineSetup`, path validators, and :class:`~openpypeline.ui.ops_setup_dialog.OpsSetupDialog`) matching the cross-DCC adapter pattern used across host integrations.
+
+:File: loader.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
 from .core.ops_loader import (
-    openPypeline,
-    openPypelineSetup,
+    OpsSetupDialog,
     is_valid_project_file_path,
     is_valid_script_path,
-    OpsSetupDialog,
+    openPypeline,
+    openPypelineSetup,
 )
 
 __all__ = [
-    "openPypeline",
-    "openPypelineSetup",
+    "OpsSetupDialog",
     "is_valid_project_file_path",
     "is_valid_script_path",
-    "OpsSetupDialog",
+    "openPypeline",
+    "openPypelineSetup",
 ]

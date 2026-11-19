@@ -1,40 +1,55 @@
-"""
-File: ops_dev_launcher.py
-Description: This script provides a developer-focused entry point for launching and testing the openPypeline Studio Maya GUI components. It prompts the user to select the root script directory, adds it to the system path, and then launches a diagnostic UI to manage and view the various GUI windows.
+"""Developer entry point for launching and testing openPypeline Studio Maya GUIs.
 
-    This is primarily intended for development and debugging, not as the main
-    entry point for artists. The main entry point is `ops_loader.py`.
+Prompts the developer to select the root repository directory containing
+``openpypeline/``, prepends it to ``sys.path``, and opens
+:class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI` to manage and
+inspect individual PySide6 windows during development.
 
-Usage:
-    To use this developer tool, execute the following in a Maya Python tab:
+Intended strictly for development and debugging; artist sessions should use
+:mod:`openpypeline.app.maya.core.ops_loader`.
 
-    from openpypeline.app.maya.ui import ops_dev_launcher
+:File: ops_dev_launcher.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
+
+Usage Example::
+
     import importlib
+    from openpypeline.app.maya.ui import ops_dev_launcher
+
     importlib.reload(ops_dev_launcher)
-
     dev_launcher = ops_dev_launcher.OpsDevLauncher()
-
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
 """
 
-import sys
 import importlib
-import os
+import sys
+from typing import Any, Optional
+
 from PySide6 import QtWidgets
 
-# TODO: Remember to run the end-to-end manual test for OpenUSD (.usd, .usda) and Alembic (.abc) project creation and export using this diagnostic launcher!
+# TODO: Run the end-to-end manual test for OpenUSD (.usd, .usda) and Alembic (.abc) project creation and export using this diagnostic launcher.
+
 
 class OpsDevLauncher:
-    """Launch the developer diagnostic window after locating the source tree."""
+    """Launch the developer diagnostic window after locating the source tree.
 
-    def __init__(self):
-        """
-        Initializes the developer launcher.
+    Orchestrates repository directory selection via :meth:`sourceFilesPath`,
+    ``sys.path`` registration via :meth:`appendDir`, and diagnostic window
+    initialization via :meth:`diagnostic`.
 
-        This constructor orchestrates the process of getting the source directory, updating the system path, and launching the diagnostic UI.
-        """
-        self.srcDir = ""
+    :ivar srcDir: Normalized forward-slash path to the selected repository root
+        directory, or ``""`` if selection was canceled.
+    :vartype srcDir: str
+    :ivar diagnosticUI: Active
+        :class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI` window
+        instance when launched.
+    :vartype diagnosticUI: Optional[Any]
+    """
+
+    def __init__(self) -> None:
+        """Prompt for the source directory, update ``sys.path``, and launch the UI."""
+        self.srcDir: str = ""
+        self.diagnosticUI: Optional[Any] = None
         # First, prompt the user to select the root script directory.
         self.sourceFilesPath()
         # If a valid directory was selected, proceed with initialization.
@@ -42,39 +57,31 @@ class OpsDevLauncher:
             self.appendDir()
             self.diagnostic()
 
-    def sourceFilesPath(self):
-        """
-        Opens a PySide6 file dialog to let the user select the source directory.
-
-        The selected path is stored in the instance variable `self.srcDir`.
-        """
+    def sourceFilesPath(self) -> None:
+        """Open a PySide6 folder chooser and store the selected path in :attr:`srcDir`."""
         # Use the modern Qt QFileDialog for directory selection.
-        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-        dir_path = QtWidgets.QFileDialog.getExistingDirectory(None, "Select the folder that contains the 'openpypeline' directory")
-        
+        _app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(
+            None,
+            "Select the folder that contains the 'openpypeline' directory",
+        )
+
         if dir_path:
             self.srcDir = dir_path.replace("\\", "/")
 
-    def diagnostic(self):
-        """
-        Imports and launches the main diagnostic UI window.
-
-        This UI acts as a control panel for showing/hiding the various component GUIs of the openPypeline Studio application.
-        """
+    def diagnostic(self) -> None:
+        """Reload and display :class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI`."""
         # Import the diagnostic UI module.
         from . import diagnostic_ui as diagnosticUI
+
         # Reload the module to ensure the latest code is used during development.
         importlib.reload(diagnosticUI)
         # Instantiate and show the diagnostic window, passing the source directory.
         self.diagnosticUI = diagnosticUI.diagnosticUI(self.srcDir)
         self.diagnosticUI.showWindow()
 
-    def appendDir(self):
-        """
-        Appends the selected source directory to Python's system path.
-
-        This allows Python to find and import the openPypeline modules.
-        """
+    def appendDir(self) -> None:
+        """Prepend :attr:`srcDir` to ``sys.path`` if it is not already registered."""
         # Check if the directory is not already in the path to avoid duplicates.
         if self.srcDir not in sys.path:
             # Insert at the beginning of the list to ensure it's checked first.

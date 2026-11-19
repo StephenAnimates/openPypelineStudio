@@ -1,7 +1,6 @@
 """Core Localization Manager for openPypeline Studio.
 
-Handles loading JSON language files from the package's ``resources/lang``
-directory and retrieving localized UI strings via :class:`LocalizationManager`.
+Handles loading JSON language files from the package's ``resources/lang`` directory and retrieving localized UI strings via :class:`LocalizationManager`.
 
 :File: localization.py
 :License: Common Public License 1.0 (CPL-1.0)
@@ -28,8 +27,7 @@ logger = logging.getLogger("openPypeline.localization")
 class LocalizationManager:
     """Load localized UI strings and provide keyed lookups.
 
-    Reads JSON translation dictionaries from ``../resources/lang/<lang_code>.json``
-    and resolves UI string keys with optional caller fallbacks.
+    Reads JSON translation dictionaries from ``../resources/lang/<lang_code>.json`` and resolves UI string keys with optional caller fallbacks.
 
     :ivar strings: Active mapping of translation keys to localized strings.
     :vartype strings: dict[str, str]
@@ -45,9 +43,7 @@ class LocalizationManager:
     def load_language(self, lang_code: Optional[str] = None) -> None:
         """Load the specified language JSON file into :attr:`strings`.
 
-        When ``lang_code`` is omitted, reads the ``ops_language`` user
-        preference (defaulting to ``"en"``). Resets :attr:`strings` to an empty
-        dictionary if the target JSON file does not exist on disk.
+        When ``lang_code`` is omitted, reads the ``ops_language`` user preference (defaulting to ``"en"``). Resets :attr:`strings` to an empty dictionary if the target JSON file does not exist on disk.
 
         :param lang_code: Optional language code matching a JSON filename in
             ``resources/lang`` (for example, ``"en"`` or ``"es"``).
@@ -75,8 +71,7 @@ class LocalizationManager:
         """Return a translated string, caller fallback, or visible key marker.
 
         :param key: Translation lookup key inside :attr:`strings`.
-        :param default: Optional fallback string returned when ``key`` is not
-            found. If omitted, returns ``"[<key>]"``.
+        :param default: Optional fallback string returned when ``key`` is not found. If omitted, returns ``"[<key>]"``.
         :returns: The localized string, ``default``, or ``"[<key>]"``.
         """
         return self.strings.get(key, default or f"[{key}]")

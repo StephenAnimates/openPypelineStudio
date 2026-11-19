@@ -1,7 +1,6 @@
 """Core version control management for openPypeline Studio.
 
-Handles parsing, incrementing, and verifying file versions using a copy-based numbering scheme, with extensible subclasses for external revision control
-systems such as Subversion, Git, CVS, and Perforce.
+Handles parsing, incrementing, and verifying file versions using a copy-based numbering scheme, with extensible subclasses for external revision control systems such as Subversion, Git, CVS, and Perforce.
 
 :File: Version.py
 :Original Framework: openPipeline by Kickstand

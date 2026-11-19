@@ -1,4 +1,5 @@
 """Tests for shared project actions.
+
 :File: test_ops_actions.py
 :Original Framework: openPipeline by Kickstand
 :License: Common Public License 1.0 (CPL-1.0)
@@ -6,6 +7,8 @@
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+
+import pytest
 
 from openpypeline.core import ops_actions
 from openpypeline.core.models import ItemContext
@@ -76,6 +79,56 @@ def test_save_master_saves_next_wip_before_master_and_reopens_it(
     assert set_pref.call_args_list[1].args == (
         "ops_currOpenVersion",
         2,
+    )
+
+
+@pytest.mark.parametrize(
+    ("file_ext", "expected_file_type"),
+    [
+        ("usd", "USD Export"),
+        ("usda", "USD Export"),
+        ("abc", "Alembic"),
+    ],
+)
+def test_save_master_file_export_formats(
+    monkeypatch,
+    tmp_path,
+    file_ext: str,
+    expected_file_type: str,
+) -> None:
+    """Verify OpenUSD and Alembic formats call ``export_file`` during master save."""
+    master_path = tmp_path / f"master.{file_ext}"
+    next_wip_path = tmp_path / f"asset_v002.{file_ext}"
+
+    mock_file_handler = MagicMock()
+    mock_file_handler.get_file_type.return_value = None
+    mock_file_handler.export_file.return_value = True
+    mock_file_handler.open.return_value = True
+
+    mock_engine = MagicMock()
+    mock_engine.file_handler = mock_file_handler
+
+    monkeypatch.setattr(ops_actions, "OpsEngine", lambda: mock_engine)
+    monkeypatch.setattr(
+        ops_actions.ops_info,
+        "get_file_name",
+        lambda _ctx, kind: str(master_path if kind == "master" else next_wip_path),
+    )
+    monkeypatch.setattr(ops_actions.ops_info, "get_version_from_file", lambda _p: 2)
+    monkeypatch.setattr(ops_actions.prefs, "get_pref", lambda _k, default="": default)
+    monkeypatch.setattr(ops_actions.prefs, "set_pref", lambda _k, _v: None)
+
+    result = ops_actions.save_master_file(
+        ItemContext(tab=2, level1="characters", level2="asset"),
+        {"comment": "Publish export", "after": 1},
+    )
+
+    assert result is True
+    mock_file_handler.export_file.assert_any_call(
+        str(next_wip_path), expected_file_type, selected=False
+    )
+    mock_file_handler.export_file.assert_any_call(
+        str(master_path), expected_file_type, selected=False
     )
 
 

@@ -1,57 +1,48 @@
-"""
-File: loader.py
-Description: Main initialization and setup script for openPypeline Studio in Foundry Nuke.
-Provides the entry points to configure project paths, source modules, and register menus.
+"""Main initialization and setup script for openPypeline Studio in Foundry Nuke.
 
-Original Framework: openPipeline by Kickstand
-License: Common Public License 1.0 (CPL-1.0)
+Configures ``sys.path`` for the repository root and provides entry points to
+register a top-level Nuke menu, launch the cross-DCC path setup dialog, and
+start :class:`~openpypeline.ops_engine.OpsEngine`.
+
+:File: loader.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
 """
 
+import logging
 import os
 import sys
-import logging
 
 # Ensure root openpypeline package is in sys.path
-_root_path = os.path.abspath(
+_root_path: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..")
 ).replace("\\", "/")
 if _root_path not in sys.path:
     sys.path.insert(0, _root_path)
 
-from openpypeline.core.util import prefs
+from openpypeline.core.ops_loader import (  # noqa: E402
+    PROJECT_PATH_PREF,
+    is_valid_project_file_path,
+)
+from openpypeline.core.util import prefs  # noqa: E402
 
+#: Module logger for Nuke startup and menu registration.
 logger = logging.getLogger("openPypeline.nuke.loader")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("[%(name)s] %(levelname)s: %(message)s"))
+    handler.setFormatter(
+        logging.Formatter("[%(name)s] %(levelname)s: %(message)s")
+    )
     logger.addHandler(handler)
 
-PROJECT_PATH_PREF = "ops_projectFilePath"
 
+def install_menu(menu_name: str = "openPypeline") -> bool:
+    """Create or register an openPypeline menu on Nuke's main window menu bar.
 
-def is_valid_project_file_path(folder):
-    """
-    Checks if the given folder is a valid directory.
-
-    Args:
-        folder (str): Directory path to validate.
-
-    Returns:
-        bool: True if folder exists and is a directory.
-    """
-    return isinstance(folder, str) and os.path.isdir(folder)
-
-
-def install_menu(menu_name="openPypeline"):
-    """
-    Creates or registers an openPypeline menu on Nuke's main window menu bar.
-
-    Args:
-        menu_name (str): Name of the top-level menu.
-
-    Returns:
-        bool: True if menu items registered, False if nuke is unavailable.
+    :param menu_name: Top-level menu label added to ``nuke.menu("Nuke")``.
+    :returns: ``True`` if menu commands were registered, ``False`` if ``nuke``
+        is unavailable or registration fails.
     """
     try:
         import nuke
@@ -73,21 +64,30 @@ def install_menu(menu_name="openPypeline"):
             "Configure Setup...",
             "import openpypeline.app.nuke.loader as loader; loader.openPypelineSetup()",
         )
-        logger.info(f"Registered openPypeline commands in Nuke menu '{menu_name}'.")
+        logger.info(
+            "Registered openPypeline commands in Nuke menu '%s'.", menu_name
+        )
         return True
     except Exception as e:
-        logger.error(f"Failed to register Nuke menu items: {e}")
+        logger.error("Failed to register Nuke menu items: %s", e)
         return False
 
 
-def openPypelineSetup():
-    """
-    Launches the openPypeline Studio Setup dialog in Nuke.
+def openPypelineSetup() -> None:
+    """Launch the openPypeline Studio path setup dialog in Nuke.
+
+    Supports both Nuke builds bundled with ``PySide6`` (Nuke 15+) and older
+    builds bundled with ``PySide2``, parenting
+    :class:`~openpypeline.ui.ops_setup_dialog.OpsSetupDialog` to the active Qt
+    window when available and invoking :func:`openPypeline` upon confirmation.
     """
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
-    logger.info(f"Configuring openPypeline Studio paths (current: '{project_path}')...")
+    logger.info(
+        "Configuring openPypeline Studio paths (current: '%s')...",
+        project_path,
+    )
 
-    # In Nuke with PySide2/PySide6, launch the setup dialog
+    # Support both PySide6 (Nuke 15+) and PySide2 (older Nuke releases)
     try:
         from PySide6 import QtWidgets
     except ImportError:
@@ -97,21 +97,26 @@ def openPypelineSetup():
             QtWidgets = None
 
     if QtWidgets:
-        from openpypeline.app.maya.core.ops_loader import OpsSetupDialog
-        import nuke
-        # Parent to QApplication active window or Nuke's main window
+        from openpypeline.ui.ops_setup_dialog import OpsSetupDialog
+
         app = QtWidgets.QApplication.instance()
         parent = app.activeWindow() if app else None
-        dialog = OpsSetupDialog(project_path, parent=parent)
-        dialog.exec_()
+
+        dialog = OpsSetupDialog(
+            project_path, parent=parent, on_success=openPypeline
+        )
+        exec_fn = getattr(dialog, "exec", None) or dialog.exec_
+        exec_fn()
     else:
         logger.warning("Qt/PySide is not available in this Nuke session.")
 
 
-def openPypeline():
-    """
-    Main entry point for openPypeline Studio in Nuke.
-    Validates paths, initializes the engine, and launches the UI or diagnostic console.
+def openPypeline() -> None:
+    """Main entry point for launching openPypeline Studio in Nuke.
+
+    Validates :data:`~openpypeline.core.ops_loader.PROJECT_PATH_PREF` (opening
+    :func:`openPypelineSetup` if unconfigured), initializes
+    :class:`~openpypeline.ops_engine.OpsEngine`, and launches the host UI.
     """
     project_path = prefs.get_pref(PROJECT_PATH_PREF, "")
     if not is_valid_project_file_path(project_path):
@@ -121,6 +126,7 @@ def openPypeline():
 
     logger.info("Initializing openPypeline Studio in Nuke...")
     from openpypeline.ops_engine import OpsEngine
+
     engine = OpsEngine()
-    logger.info(f"Engine initialized with host: {engine.host_app}")
+    logger.info("Engine initialized with host: %s", engine.host_app)
     engine.ui()

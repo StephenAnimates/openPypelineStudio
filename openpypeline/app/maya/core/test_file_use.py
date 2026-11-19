@@ -1,4 +1,9 @@
-"""Focused tests for Maya file-use callback lifecycle behavior."""
+"""Focused tests for Maya file-use callback lifecycle behavior.
+
+:File: test_file_use.py
+:Original Framework: openPipeline by Kickstand
+:License: Common Public License 1.0 (CPL-1.0)
+"""
 
 import importlib.util
 from pathlib import Path
