@@ -6,7 +6,7 @@ logic, replacing the legacy wrapper dialogs from ``openPipelineUI.mel``.
 
 :File: ops_ui_wrappers.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 :Status: Fully migrated to PySide6. UI components are native Qt widgets.
 """
 

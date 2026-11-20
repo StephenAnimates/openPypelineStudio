@@ -3,7 +3,7 @@
 Replaces Maya's ``optionVars`` by storing configurations in a centralized JSON file in the user's home directory so preferences persist across host applications.
 
 :File: prefs.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

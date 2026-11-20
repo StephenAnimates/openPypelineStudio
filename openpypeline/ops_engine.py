@@ -4,7 +4,7 @@ This module orchestrates the core data flow, detects the host application dynami
 
 :File: ops_engine.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example (Testing)::
 

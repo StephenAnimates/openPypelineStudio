@@ -4,7 +4,7 @@ Preserves legacy import paths under :mod:`openpypeline.app.maya.core.ops_utils` 
 
 :File: ops_utils.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 from openpypeline.core.ops_utils import *  # noqa: F401, F403

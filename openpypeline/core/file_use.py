@@ -3,7 +3,7 @@
 Provides :class:`FileUseRegistry`, :class:`FileUseNotice`, and :func:`get_file_state` to coordinate advisory file-use markers and detect external overwrites inside cloud-synchronized project directories.
 
 :File: file_use.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

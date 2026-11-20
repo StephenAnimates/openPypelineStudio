@@ -4,7 +4,7 @@ Provides the Maya UI package with access to :class:`~openpypeline.core.localizat
 
 :File: localization.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 from typing import Optional

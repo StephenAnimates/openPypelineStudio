@@ -3,7 +3,7 @@
 Extends :class:`~openpypeline.ui.ops_main_controller.OpsMainController` with the Maya workspace-dockable :class:`~openpypeline.app.maya.ui.ops_main_ui.opsMainUI` view, Maya add-on discovery, Maya Scene Inventory integration, and Maya ``workspaceControl`` sizing.
 
 :File: ops_main_controller.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 import importlib

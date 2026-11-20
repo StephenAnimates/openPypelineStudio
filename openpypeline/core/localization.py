@@ -3,7 +3,7 @@
 Handles loading JSON language files from the package's ``resources/lang`` directory and retrieving localized UI strings via :class:`LocalizationManager`.
 
 :File: localization.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

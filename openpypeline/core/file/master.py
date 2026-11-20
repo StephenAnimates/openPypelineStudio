@@ -4,7 +4,7 @@ Defines the :class:`Master` interface for resolving, opening, processing, and ma
 
 :File: master.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

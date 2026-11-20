@@ -4,7 +4,7 @@ Implements the DCC file adapter interface dynamically loaded by ``OpsEngine`` wh
 
 :File: file.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 import logging

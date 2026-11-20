@@ -3,7 +3,7 @@
 Provides a lightweight XML pickling and unpickling utility for primitive types, collections (``list``, ``tuple``, ``dict``), and custom classes inheriting from :class:`xmlserialize`.
 
 :File: XML.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

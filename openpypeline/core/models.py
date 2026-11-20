@@ -3,7 +3,7 @@
 Encapsulates pipeline hierarchy coordinates, browser tab identifiers, and project configuration settings into structured models to replace long argument lists and magic numbers throughout the framework.
 
 :File: models.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

@@ -1,7 +1,7 @@
 """Provide a base class that caches one instance per subclass.
 
 :File: singleton.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

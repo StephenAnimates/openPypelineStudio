@@ -4,7 +4,7 @@ Dynamically resolves tracker configuration from user preferences (or explicit
 arguments) and instantiates the matching production tracking backend.
 
 :File: tracker_factory.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 
 Usage Example::
 

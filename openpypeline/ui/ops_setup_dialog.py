@@ -4,7 +4,7 @@ Provides :class:`OpsSetupDialog` for selecting and validating the project regist
 
 :File: ops_setup_dialog.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 import os

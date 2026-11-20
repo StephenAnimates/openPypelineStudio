@@ -4,7 +4,7 @@ Maintains references to active Qt windows and dock controls to prevent garbage c
 
 :File: ui_objects.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 from typing import Any, Optional

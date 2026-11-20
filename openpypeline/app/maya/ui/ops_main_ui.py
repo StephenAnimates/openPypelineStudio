@@ -3,7 +3,7 @@
 Defines :class:`opsMainUI`, a Maya workspace-dockable subclass of :class:`~openpypeline.ui.ops_main_ui.OpsMainUI` that integrates Maya's ``workspaceControl`` docking lifecycle and Maya-specific Tools menu items.
 
 :File: ops_main_ui.py
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 from typing import Optional

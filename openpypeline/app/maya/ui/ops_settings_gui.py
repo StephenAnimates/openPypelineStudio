@@ -4,7 +4,7 @@ Provides :class:`opsSettingsGUI`, a Maya-parented subclass of :class:`~openpypel
 
 :File: ops_settings_gui.py
 :Original Framework: openPipeline by Kickstand
-:License: Common Public License 1.0 (CPL-1.0)
+:License: Apache License 2.0 (Apache-2.0)
 """
 
 from typing import Optional
