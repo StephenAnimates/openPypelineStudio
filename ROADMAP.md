@@ -32,7 +32,7 @@ File-use notifications or locks should operate on project metadata within the us
 - [x] Remove excessive `sys.path` injection from entry scripts (`ops_loader.py`, `ops_dev_launcher.py`).
 - [x] Enforce standard PEP 8 Pythonic naming conventions across all files and directories (`opsActions.py` -> `ops_actions.py`, `camelCase` to `snake_case`).
 
-## <span title="In Progress">🟡</span> Phase 2: UI Modernization & MVC Architecture (In Progress)
+## <span title="Completed">🟢</span> Phase 2: UI Modernization & MVC Architecture (Completed)
 - [x] Port all legacy UIs to PySide6.
 - [x] Implement MVC for `ops_main_ui` (formerly `opsMainUI`) (Separating View from Controller).
 - [x] Implement MVC for `ops_proj_dialog_gui` (formerly `opsProjDialogGUI`).
@@ -44,6 +44,7 @@ File-use notifications or locks should operate on project metadata within the us
 - [x] Consolidate Main UI menus (Added `File`, `Project`, and `Create` menus, reorganized `Tools`).
 - [x] Implement an automatic dynamic Add-on discovery system for drop-in Python tools.
 - [x] Create legacy XML to JSON migration Add-ons (`ops_migrate_legacy_data`, `ops_migrate_legacy_notes`).
+- [x] Extract host-agnostic PySide views and controllers into `/openpypeline/ui/` with lightweight DCC subclasses under `/openpypeline/app/<host>/ui/`.
 
 ## <span title="In Progress">🟡</span> Phase 3: Core Contracts & Host Adapter Architecture (In Progress)
 - [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
@@ -53,6 +54,8 @@ File-use notifications or locks should operate on project metadata within the us
 - [x] Standardize Add-on System (Split Core-agnostic Add-ons vs DCC-specific Add-ons).
 - [ ] Author an Add-on Developer Guide for studio TDs writing custom Python tools for the Add-ons menu.
 - [ ] Define a host adapter contract for common operations (for example open/save, publish, and supported exports), with explicit optional capabilities.
+- [x] Define host discovery and standalone behavior, including unsupported operation handling.
+- [x] Add adapter contract tests using lightweight test doubles (verified via `tests/test_host_adapters.py` and `tests/test_ops_engine.py`).
 - [ ] Route host-specific operations through adapters without importing application SDKs from the shared core.
 - [ ] Define host discovery and standalone behavior, including a clear result when an operation is unsupported by the active host.
 - [ ] Add adapter contract tests using lightweight test doubles so core behavior can be tested without installing DCC applications.
@@ -79,6 +82,7 @@ File-use notifications or locks should operate on project metadata within the us
 - [x] Configure automated Sphinx HTML documentation deployment to GitHub Pages via GitHub Actions (`.github/workflows/docs.yml`).
 - [x] Implement interactive image lightbox, custom CSS styling, and official vector logo branding in documentation.
 - [x] Document non-destructive deletion (`deleted/` folder), archiving, and Master publishing lifecycle rules.
+- [x] Create a development environment for testing the shared core independently of any DCC (verified via `python3 -m unittest discover -s tests -v` and documented in `docs/tests.rst`).
 - [ ] Add visual UI walkthrough screenshots for the Main Browser (Asset and Shot tabs) and Save Master dialog.
 - [ ] Create a "Troubleshooting & FAQ" documentation page for common Maya path, permission, and cloud-sync questions.
 - [ ] Create a development environment for testing the shared core independently of any DCC.

@@ -12,11 +12,11 @@ Originally developed as a MEL-based Autodesk Maya plug-in by Kickstand called Op
 * **Revision Control:** Built-in system for managing `Work-in-Progress` (formerly Workshop) and `Master` (approved) files.
 * **Asset & Shot Browsers:** Dedicated UI tabs for managing Assets, Sequences, Shots, and their respective components.
 * **Playblast & Notes Management:** Integrated tools for taking snapshots, recording playblasts, and leaving notes for artists.
-* **Dynamic Add-on System:** Drop custom Python scripts into the `addons` folder to automatically expose them in the UI without modifying core code.
+* **Dynamic Add-on System:** Drop custom Python scripts into openpypeline/core/addons/ (shared) or openpypeline/app/<host>/core/addons/ (host-specific) to automatically expose them in the UI without modifying core code.
 * **Modern Python API:** Extensible and fully accessible via Python 3.
 
 ## 🗺️ Project Direction & Roadmap
-The project is evolving from a Maya-first tool into a modular pipeline framework for multiple creative applications and remote teams. The intended architecture keeps shared pipeline concepts in the core and puts host-specific operations behind separate integrations. openPypeline runs locally and works with project folders that teams keep synchronized through services such as Google Drive, iCloud Drive, OneDrive, or Dropbox.
+The project is evolving from a Maya-first tool into a modular pipeline framework for multiple creative applications and remote teams. The intended architecture keeps shared pipeline concepts in openpypeline/core/ and reusable PySide interfaces in openpypeline/ui/, while host-specific operations and window bindings live in openpypeline/app/<host>/. OpenPypeline runs locally and works with project folders that teams keep synchronized through services such as Google Drive, iCloud Drive, OneDrive, or Dropbox.
 
 Maya is the initial integration; support for other applications is planned and should not be assumed complete until documented and tested. The initial Maya file-use feature writes advisory notices under `.openpypeline/file_use` in the active project folder, warns when a scene has another session's notice, and asks for confirmation before saving when a notice exists or the on-disk file size or modification time changed. The sync client remains responsible for synchronization. Since its updates may be delayed or preserve file timestamps, these notices and checks cannot guarantee that simultaneous edits or overwrites are prevented. For a detailed, step-by-step checklist of progress, see the [Project Roadmap](ROADMAP.md).
 
@@ -77,6 +77,9 @@ If you are upgrading from the original **openPipeline 1.0** or an earlier alpha 
 2. Navigate to the top menu: **Tools** > **Add-ons**.
 3. Click **Migrate Legacy XML Data** to convert your `openPipeline_projects.xml` and user databases.
 4. Click **Migrate Legacy Notes** to safely translate all of your item history and custom notes into the modern format.
+
+## 🧪 Running Tests
+Core engine routing and host-adapter protocol contracts can be validated headlessly using Python's built-in `unittest` runner from the repository root:
 
 ## ⚖️ License & Attribution
 **Original Framework:** openPipeline by Kickstand  
