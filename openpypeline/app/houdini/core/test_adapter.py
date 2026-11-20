@@ -1,6 +1,8 @@
 """Unit tests for the SideFX Houdini host adapter and file operations.
 
 :File: test_adapter.py
+:Host: SideFX Houdini
+:Status: In Progress
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """

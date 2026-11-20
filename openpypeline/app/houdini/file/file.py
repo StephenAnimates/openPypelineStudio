@@ -3,6 +3,8 @@
 Implements the DCC file adapter interface dynamically loaded by ``OpsEngine`` when SideFX Houdini (``hou``) is detected, covering scene loading, saving, merging, workspace resolution, and unsaved-change queries.
 
 :File: file.py
+:Host: SideFX Houdini
+:Status: In Progress
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """

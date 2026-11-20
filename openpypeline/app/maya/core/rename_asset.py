@@ -3,6 +3,8 @@
 Preserves legacy import paths under :mod:`openpypeline.app.maya.core.rename_asset` while delegating asset renaming utilities to :mod:`openpypeline.core.rename_asset`.
 
 :File: rename_asset.py
+:Host: Autodesk Maya
+:Status: Stub
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """

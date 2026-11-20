@@ -5,6 +5,8 @@ register a top-level Nuke menu, launch the cross-DCC path setup dialog, and
 start :class:`~openpypeline.ops_engine.OpsEngine`.
 
 :File: loader.py
+:Host: Foundry Nuke
+:Status: In Progress
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """

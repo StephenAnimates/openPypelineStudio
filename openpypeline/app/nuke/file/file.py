@@ -3,6 +3,8 @@
 Implements the DCC file adapter interface dynamically loaded by ``OpsEngine`` when Foundry Nuke (``nuke``) is detected, covering script loading, saving, node-tree importing, workspace resolution, and unsaved-change queries.
 
 :File: file.py
+:Host: Foundry Nuke
+:Status: In Progress
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """

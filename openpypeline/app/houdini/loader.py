@@ -1,10 +1,10 @@
 """Main initialization and setup script for openPypeline Studio in SideFX Houdini.
 
-Configures ``sys.path`` for the repository root and provides entry points to
-validate project paths, register a Houdini shelf tool, launch the setup
-dialog, and start :class:`~openpypeline.ops_engine.OpsEngine`.
+Configures ``sys.path`` for the repository root and provides entry points to validate project paths, register a Houdini shelf tool, launch the setup dialog, and start :class:`~openpypeline.ops_engine.OpsEngine`.
 
 :File: loader.py
+:Host: SideFX Houdini
+:Status: In Progress
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """

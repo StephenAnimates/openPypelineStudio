@@ -3,6 +3,8 @@
 Preserves legacy import paths under :mod:`openpypeline.app.maya.core.ops_utils` while delegating filesystem and path helpers to :mod:`openpypeline.core.ops_utils`.
 
 :File: ops_utils.py
+:Host: Autodesk Maya
+:Status: Stub
 :Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """
