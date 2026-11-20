@@ -1,9 +1,6 @@
 """Scene and Asset Inventory functions for openPypeline Studio in Maya.
 
-Handles querying active Maya scene references, tracking loaded assets and
-shot components, and providing PySide6 dialogs for reference inspection and
-replacement. Refactored from ``openPipelineSceneInv.mel`` to Python 3 and
-PySide6.
+Handles querying active Maya scene references, tracking loaded assets and shot components, and providing PySide6 dialogs for reference inspection and replacement. Refactored from ``openPipelineSceneInv.mel`` to Python 3 and PySide6.
 
 :File: ops_scene_inv.py
 :Original Framework: openPipeline by Kickstand

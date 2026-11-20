@@ -1,9 +1,6 @@
 """Maya scene callbacks for synchronized-folder file-use notices.
 
-Registers :class:`maya.api.OpenMaya.MSceneMessage` lifecycle hooks and a
-periodic :class:`PySide6.QtCore.QTimer` heartbeat to acquire, refresh, and
-release advisory file-use notices via
-:class:`~openpypeline.core.file_use.FileUseRegistry`.
+Registers :class:`maya.api.OpenMaya.MSceneMessage` lifecycle hooks and a periodic :class:`PySide6.QtCore.QTimer` heartbeat to acquire, refresh, and release advisory file-use notices via :class:`~openpypeline.core.file_use.FileUseRegistry`.
 
 :File: file_use.py
 :Original Framework: openPipeline by Kickstand
@@ -58,8 +55,7 @@ _session_id: str = uuid.uuid5(
 def _configured_user() -> str:
     """Return the configured user name, falling back to the operating-system user.
 
-    Reads ``ops_currentUser`` from :mod:`~openpypeline.core.util.prefs` and
-    falls back to :func:`getpass.getuser` when unset or left at ``"default"``.
+    Reads ``ops_currentUser`` from :mod:`~openpypeline.core.util.prefs` and falls back to :func:`getpass.getuser` when unset or left at ``"default"``.
 
     :returns: Non-empty artist display name for advisory lock notices.
     """

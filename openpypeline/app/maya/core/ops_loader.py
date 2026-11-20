@@ -1,9 +1,6 @@
 """Main initialization and setup script for openPypeline Studio in Maya.
 
-Migrates legacy Maya ``optionVar`` entries, validates paths via
-:mod:`openpypeline.core.ops_loader`, sources Maya ``addons/`` and ``custom/``
-modules, registers :mod:`openpypeline.app.maya.core.file_use` scene callbacks,
-and launches :class:`~openpypeline.app.maya.ui.ops_main_controller.OpsMainController`.
+Migrates legacy Maya ``optionVar`` entries, validates paths via :mod:`openpypeline.core.ops_loader`, sources Maya ``addons/`` and ``custom/`` modules, registers :mod:`openpypeline.app.maya.core.file_use` scene callbacks, and launches :class:`~openpypeline.app.maya.ui.ops_main_controller.OpsMainController`.
 
 :File: ops_loader.py
 :Original Framework: openPipeline by Kickstand
@@ -51,10 +48,7 @@ _setup_dialog: Optional[QtWidgets.QDialog] = None
 def _migrate_legacy_prefs() -> None:
     """Migrate legacy Maya ``optionVar`` entries to the DCC-agnostic prefs system.
 
-    Copies ``openPipeline_projectFilePath`` and ``ops_projectFilePath`` from
-    ``maya.cmds.optionVar`` into :mod:`~openpypeline.core.util.prefs` under
-    :data:`PROJECT_PATH_PREF` and removes the legacy ``optionVar`` keys. Safely
-    no-ops when executed outside Autodesk Maya.
+    Copies ``openPipeline_projectFilePath`` and ``ops_projectFilePath`` from ``maya.cmds.optionVar`` into :mod:`~openpypeline.core.util.prefs` under :data:`PROJECT_PATH_PREF` and removes the legacy ``optionVar`` keys. Safely no-ops when executed outside Autodesk Maya.
     """
     try:
         import maya.cmds as cmds
@@ -87,13 +81,7 @@ def openPypelineSetup() -> None:
 def openPypeline() -> None:
     """Main entry point for launching openPypeline Studio in Maya.
 
-    Migrates legacy Maya preferences via :func:`_migrate_legacy_prefs`,
-    validates script and project paths, sources optional Maya ``addons/`` and
-    ``custom/`` modules, installs synchronized file-use scene callbacks via
-    :func:`~openpypeline.app.maya.core.file_use.install_callbacks`, and launches
-    :class:`~openpypeline.app.maya.ui.ops_main_controller.OpsMainController`.
-    Falls back to :func:`openPypelineSetup` if required paths are missing or
-    invalid.
+    Migrates legacy Maya preferences via :func:`_migrate_legacy_prefs`, validates script and project paths, sources optional Maya ``addons/`` and ``custom/`` modules, installs synchronized file-use scene callbacks via :func:`~openpypeline.app.maya.core.file_use.install_callbacks`, and launches :class:`~openpypeline.app.maya.ui.ops_main_controller.OpsMainController`. Falls back to :func:`openPypelineSetup` if required paths are missing or invalid.
     """
     _migrate_legacy_prefs()
 

@@ -27,11 +27,9 @@ from . import ui_objects as UIObjects
 def _get_resource(folder: str, filename: str) -> str:
     """Resolve the absolute POSIX path to an asset inside ``resources/``.
 
-    Traverses three directory levels up from ``app/maya/core/`` to the
-    ``openpypeline/resources/`` directory.
+    Traverses three directory levels up from ``app/maya/core/`` to the ``openpypeline/resources/`` directory.
 
-    :param folder: Subfolder name inside ``resources/`` (for example,
-        ``"icons"`` or ``"images"``).
+    :param folder: Subfolder name inside ``resources/`` (for example, ``"icons"`` or ``"images"``).
     :param filename: Target asset filename inside ``folder``.
     :returns: Normalized forward-slash absolute path to the resource file.
     """
@@ -47,8 +45,7 @@ def _get_ui() -> Optional[QtWidgets.QWidget]:
 
     Queries the :class:`~openpypeline.maya.ui.ui_objects.UIObjects` singleton and verifies that the underlying C++ ``QWidget`` has not been deleted.
 
-    :returns: Live main window widget instance, or ``None`` if closed or
-        uninitialized.
+    :returns: Live main window widget instance, or ``None`` if closed or uninitialized.
     """
     ui_obj = UIObjects.UIObjects()
     ui = ui_obj.opsMainUI if hasattr(ui_obj, "opsMainUI") else None
@@ -63,11 +60,9 @@ def _get_ui() -> Optional[QtWidgets.QWidget]:
 def refresh_ui(*args: Any) -> None:
     """Invoke UI update helpers to reflect the latest scene and project state.
 
-    Calls :func:`update_currently_open`, :func:`update_asset_type_list`, and
-    :func:`update_sequence_list`.
+    Calls :func:`update_currently_open`, :func:`update_asset_type_list`, and :func:`update_sequence_list`.
 
-    :param args: Optional variadic arguments passed by Qt signals or host
-        callbacks (ignored).
+    :param args: Optional variadic arguments passed by Qt signals or host callbacks (ignored).
     """
     try:
         update_currently_open()
@@ -101,12 +96,7 @@ def close_ui(*args: Any) -> None:
 def update_currently_open(*args: Any) -> None:
     """Refresh the currently-open item panel from preferences and file state.
 
-    Reads active session preferences (``ops_currOpenType``,
-    ``ops_currOpenCategory``, ``ops_currOpenVersion``, and hierarchy level
-    keys), updates preview thumbnails, notes, event history, status badges,
-    and action button states, or closes the active file via
-    :func:`~openpypeline.core.ops_actions.close_file` if its directory no
-    longer exists on disk.
+    Reads active session preferences (``ops_currOpenType``, ``ops_currOpenCategory``, ``ops_currOpenVersion``, and hierarchy level keys), updates preview thumbnails, notes, event history, status badges, and action button states, or closes the active file via :func:`~openpypeline.core.ops_actions.close_file` if its directory no longer exists on disk.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -231,9 +221,7 @@ def update_currently_open(*args: Any) -> None:
 def update_working_tab(index: int = 0, *args: Any) -> None:
     """Store the selected tab index and refresh the corresponding inventory panel.
 
-    Persists ``ops_currTab`` (1-based) and triggers :func:`update_asset_type_list`
-    (``index == 0``), :func:`update_sequence_list` (``index == 1``), or
-    :func:`update_currently_open` (``index == 2``).
+    Persists ``ops_currTab`` (1-based) and triggers :func:`update_asset_type_list` (``index == 0``), :func:`update_sequence_list` (``index == 1``), or :func:`update_currently_open` (``index == 2``).
 
     :param index: Zero-based index of the newly selected tab widget page.
     :param args: Optional variadic arguments passed by Qt signals (ignored).
@@ -251,10 +239,7 @@ def update_working_tab(index: int = 0, *args: Any) -> None:
 def update_asset_type_list(*args: Any) -> None:
     """Reload asset types, restore the current selection, and update assets.
 
-    Queries asset-type directories via
-    :func:`~openpypeline.core.ops_info.get_children`, updates
-    ``ops_assetTypes`` in user preferences, restores the active selection in
-    ``ops_assetType_txtScrollList``, and calls :func:`update_asset_list`.
+    Queries asset-type directories via :func:`~openpypeline.core.ops_info.get_children`, updates ``ops_assetTypes`` in user preferences, restores the active selection in ``ops_assetType_txtScrollList``, and calls :func:`update_asset_list`.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -349,8 +334,7 @@ def update_asset_list(preserve_selection: Any = 1, *args: Any) -> None:
 def asset_selected(preserve_selection: Any = 1, *args: Any) -> None:
     """Populate components for the selected asset and update related controls.
 
-    Populates ``ops_componentScrollList`` with status icons and colors for each component under the selected asset, persists ``ops_components`` in preferences, updates action button enabled states, and calls
-    :func:`component_selected`.
+    Populates ``ops_componentScrollList`` with status icons and colors for each component under the selected asset, persists ``ops_components`` in preferences, updates action button enabled states, and calls :func:`component_selected`.
 
     :param preserve_selection: Flag (or Qt signal payload coercible to ``int``) indicating whether to re-select the previously active component.
     :param args: Optional variadic arguments passed by Qt signals (ignored).
@@ -450,10 +434,7 @@ def component_selected(*args: Any) -> None:
 def update_sequence_list(*args: Any) -> None:
     """Reload sequences, restore the current selection, and update shots.
 
-    Queries sequence directories via
-    :func:`~openpypeline.core.ops_info.get_children`, updates
-    ``ops_sequences`` in user preferences, restores the active selection in
-    ``ops_sequenceScrollList``, and calls :func:`update_shot_list`.
+    Queries sequence directories via :func:`~openpypeline.core.ops_info.get_children`, updates ``ops_sequences`` in user preferences, restores the active selection in ``ops_sequenceScrollList``, and calls :func:`update_shot_list`.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -627,8 +608,7 @@ def shot_selected(preserve_selection: Any = 1, *args: Any) -> None:
 def shot_component_selected(*args: Any) -> None:
     """Update shot-component controls, details, and history for the selection.
 
-    Enables or disables ``ops_shotComponentRemoveButton`` based on the active shot component selection and triggers :func:`shot_information` and
-    :func:`load_shot_history`.
+    Enables or disables ``ops_shotComponentRemoveButton`` based on the active shot component selection and triggers :func:`shot_information` and :func:`load_shot_history`.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -646,11 +626,7 @@ def shot_component_selected(*args: Any) -> None:
 def asset_information(*args: Any) -> None:
     """Display the selected asset's folder, notes, and preview image.
 
-    Resolves the active :class:`~openpypeline.core.models.ItemContext` under
-    ``Tab.ASSET``, loads its thumbnail (falling back to
-    ``ops_no_preview.png`` or ``ops_default_preview.png``), populates
-    ``ops_assetLocationField`` and ``ops_assetNoteField``, and toggles
-    ``ops_assetViewPlayblastAssetButton``.
+    Resolves the active :class:`~openpypeline.core.models.ItemContext` under ``Tab.ASSET``, loads its thumbnail (falling back to ``ops_no_preview.png`` or ``ops_default_preview.png``), populates ``ops_assetLocationField`` and ``ops_assetNoteField``, and toggles ``ops_assetViewPlayblastAssetButton``.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -682,11 +658,7 @@ def asset_information(*args: Any) -> None:
 def shot_information(*args: Any) -> None:
     """Display the selected shot's folder, notes, preview, and playblast state.
 
-    Resolves the active :class:`~openpypeline.core.models.ItemContext` under
-    ``Tab.SHOT``, loads its thumbnail (falling back to
-    ``ops_no_preview.png`` or ``ops_default_preview.png``), populates
-    ``ops_shotLocationField`` and ``ops_shotInfoField``, and toggles
-    ``ops_shotViewPlayblastButton``.
+    Resolves the active :class:`~openpypeline.core.models.ItemContext` under ``Tab.SHOT``, loads its thumbnail (falling back to ``ops_no_preview.png`` or ``ops_default_preview.png``), populates ``ops_shotLocationField`` and ``ops_shotInfoField``, and toggles ``ops_shotViewPlayblastButton``.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -1086,8 +1058,7 @@ def prompt_new_sequence(*args: Any) -> None:
 def prompt_new_asset(*args: Any) -> None:
     """Prompt for an asset name and whether to export scene content into it.
 
-    Opens :class:`ItemCreationDialog` under the currently selected asset type and delegates creation to
-    :func:`~openpypeline.core.ops_actions.create_new_item`.
+    Opens :class:`ItemCreationDialog` under the currently selected asset type and delegates creation to :func:`~openpypeline.core.ops_actions.create_new_item`.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -1202,9 +1173,7 @@ def prompt_new_shot_component(*args: Any) -> None:
 def prompt_rename_asset(*args: Any) -> None:
     """Prompt for a replacement asset name and apply the rename.
 
-    Prompts for a new asset name, delegates renaming to
-    :func:`~openpypeline.app.maya.core.rename_asset.renameAsset`, and calls
-    :func:`refresh_ui`.
+    Prompts for a new asset name, delegates renaming to :func:`~openpypeline.app.maya.core.rename_asset.renameAsset`, and calls :func:`refresh_ui`.
 
     :param args: Optional variadic arguments passed by Qt signals (ignored).
     """
@@ -1259,8 +1228,7 @@ class ReviveDialog(QtWidgets.QDialog):
         :param parent: Parent widget for modal dialog centering.
         :param w_name: Display label for WIP files (for example, ``"WIP"``).
         :param workshops: Ordered list of existing WIP file paths, sorted newest-first so index ``0`` is the latest version.
-        :param context: Target :class:`~openpypeline.core.models.ItemContext`
-            whose version history is being restored.
+        :param context: Target :class:`~openpypeline.core.models.ItemContext` whose version history is being restored.
         """
         super().__init__(parent)
         self.setWindowTitle(f"Revive {w_name}")
@@ -1336,10 +1304,7 @@ def prompt_revive(*args: Any) -> None:
 class ArchiveDialog(QtWidgets.QDialog):
     """Modal dialog for archiving, retrieving, and deleting old item versions.
 
-    Provides controls to move older WIP and master versions into the project's
-    archive directory while retaining a configurable number of recent versions,
-    restore archived files back to working folders, or move archived files to
-    the deleted-items directory.
+    Provides controls to move older WIP and master versions into the project's archive directory while retaining a configurable number of recent versions, restore archived files back to working folders, or move archived files to the deleted-items directory.
 
     :ivar context: Hierarchy coordinates of the target item (see :class:`~openpypeline.core.models.ItemContext`).
     :vartype context: ItemContext
@@ -1363,8 +1328,7 @@ class ArchiveDialog(QtWidgets.QDialog):
         """Build controls for archiving, retrieving, and deleting old versions.
 
         :param parent: Parent widget for modal dialog centering.
-        :param context: Target :class:`~openpypeline.core.models.ItemContext`
-            whose archive operations are being configured.
+        :param context: Target :class:`~openpypeline.core.models.ItemContext` whose archive operations are being configured.
         """
         super().__init__(parent)
         self.context = context

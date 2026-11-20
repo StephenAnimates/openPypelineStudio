@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   openpypeline.app.houdini.core
    openpypeline.app.houdini.file
    openpypeline.app.houdini.ui
 

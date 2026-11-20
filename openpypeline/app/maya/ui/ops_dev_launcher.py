@@ -1,12 +1,8 @@
 """Developer entry point for launching and testing openPypeline Studio Maya GUIs.
 
-Prompts the developer to select the root repository directory containing
-``openpypeline/``, prepends it to ``sys.path``, and opens
-:class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI` to manage and
-inspect individual PySide6 windows during development.
+Prompts the developer to select the root repository directory containing ``openpypeline/``, prepends it to ``sys.path``, and opens :class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI` to manage and inspect individual PySide6 windows during development.
 
-Intended strictly for development and debugging; artist sessions should use
-:mod:`openpypeline.app.maya.core.ops_loader`.
+Intended strictly for development and debugging; artist sessions should use :mod:`openpypeline.app.maya.core.ops_loader`.
 
 :File: ops_dev_launcher.py
 :Original Framework: openPipeline by Kickstand
@@ -33,16 +29,11 @@ from PySide6 import QtWidgets
 class OpsDevLauncher:
     """Launch the developer diagnostic window after locating the source tree.
 
-    Orchestrates repository directory selection via :meth:`sourceFilesPath`,
-    ``sys.path`` registration via :meth:`appendDir`, and diagnostic window
-    initialization via :meth:`diagnostic`.
+    Orchestrates repository directory selection via :meth:`sourceFilesPath`, ``sys.path`` registration via :meth:`appendDir`, and diagnostic window initialization via :meth:`diagnostic`.
 
-    :ivar srcDir: Normalized forward-slash path to the selected repository root
-        directory, or ``""`` if selection was canceled.
+    :ivar srcDir: Normalized forward-slash path to the selected repository root directory, or ``""`` if selection was canceled.
     :vartype srcDir: str
-    :ivar diagnosticUI: Active
-        :class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI` window
-        instance when launched.
+    :ivar diagnosticUI: Active :class:`~openpypeline.app.maya.ui.diagnostic_ui.diagnosticUI` window instance when launched.
     :vartype diagnosticUI: Optional[Any]
     """
 

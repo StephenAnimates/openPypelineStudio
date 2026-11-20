@@ -65,6 +65,14 @@ openpypeline.core.ops\_init module
    :show-inheritance:
    :undoc-members:
 
+openpypeline.core.ops\_loader module
+------------------------------------
+
+.. automodule:: openpypeline.core.ops_loader
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 openpypeline.core.ops\_notes module
 -----------------------------------
 
@@ -77,6 +85,14 @@ openpypeline.core.ops\_project module
 -------------------------------------
 
 .. automodule:: openpypeline.core.ops_project
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+openpypeline.core.ops\_utils module
+-----------------------------------
+
+.. automodule:: openpypeline.core.ops_utils
    :members:
    :show-inheritance:
    :undoc-members:

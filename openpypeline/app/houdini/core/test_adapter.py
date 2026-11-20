@@ -8,7 +8,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from openpypeline.test_host_adapters import (
+from tests.test_host_adapters import (
     REQUIRED_FILE_PROTOCOL,
     REQUIRED_LOADER_PROTOCOL,
 )

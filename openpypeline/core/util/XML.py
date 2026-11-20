@@ -1,8 +1,6 @@
 """Serialize and deserialize supported Python objects as XML.
 
-Provides a lightweight XML pickling and unpickling utility for primitive types,
-collections (``list``, ``tuple``, ``dict``), and custom classes inheriting
-from :class:`xmlserialize`.
+Provides a lightweight XML pickling and unpickling utility for primitive types, collections (``list``, ``tuple``, ``dict``), and custom classes inheriting from :class:`xmlserialize`.
 
 :File: XML.py
 :License: Common Public License 1.0 (CPL-1.0)
@@ -33,9 +31,7 @@ logger = logging.getLogger("openPypeline.xml")
 class xmlserialize:
     """Marker base class for objects encoded by the XML serializer.
 
-    Subclasses can optionally define a ``__pickle_to_xml__`` list of attribute
-    names to restrict which attributes are serialized, or implement custom
-    ``_xml_encode_<attr>`` and ``_xml_decode_<attr>`` hooks.
+    Subclasses can optionally define a ``__pickle_to_xml__`` list of attribute names to restrict which attributes are serialized, or implement custom ``_xml_encode_<attr>`` and ``_xml_decode_<attr>`` hooks.
     """
 
 class xmlunpicklingException(Exception):
@@ -79,8 +75,7 @@ class xmlfile:
     def getMod(self, cls: str) -> Optional[Any]:
         """Resolve and instantiate a class from a dotted module path string.
 
-        Searches ``sys.modules`` and ``__main__`` to locate the target module
-        and instantiate the requested class.
+        Searches ``sys.modules`` and ``__main__`` to locate the target module and instantiate the requested class.
 
         :param cls: Dotted class path (for example, ``"module1.module2.MyClass"``).
         :returns: A new instance of the resolved class, or ``None`` if not found.
@@ -178,10 +173,7 @@ class xmlfile:
     ) -> xml.dom.minidom.Element:
         """Serialize a supported Python value into an XML element tree.
 
-        Dispatches serialization based on whether ``root`` is an
-        :class:`xmlserialize` instance, a primitive type listed in
-        :attr:`_easyToPickle`, a ``dict``, ``list``, or ``tuple``, falling back
-        to ``repr(root)`` for unsupported types.
+        Dispatches serialization based on whether ``root`` is an :class:`xmlserialize` instance, a primitive type listed in :attr:`_easyToPickle`, a ``dict``, ``list``, or ``tuple``, falling back to ``repr(root)`` for unsupported types.
 
         :param root: Python value or :class:`xmlserialize` instance to encode.
         :param fabric: Active DOM document used to create XML nodes.
@@ -216,10 +208,7 @@ class xmlfile:
     ) -> xml.dom.minidom.Element:
         """Pickle object members, prioritizing custom encoding if present.
 
-        Serializes either the attributes listed in ``root.__pickle_to_xml__``
-        or all non-dunder, non-callable attributes on ``root``. If a
-        ``_xml_encode_<name>`` hook exists on ``root``, its string output is
-        stored under a ``type="custom"`` child element.
+        Serializes either the attributes listed in ``root.__pickle_to_xml__`` or all non-dunder, non-callable attributes on ``root``. If a ``_xml_encode_<name>`` hook exists on ``root``, its string output is stored under a ``type="custom"`` child element.
 
         :param node: Target XML element representing the serialized object.
         :param root: :class:`xmlserialize` instance whose attributes are encoded.
@@ -293,14 +282,10 @@ class xmlfile:
     ) -> Any:
         """Deserialize a DOM element back into its original Python object.
 
-        Inspects ``node.attributes["type"]`` to reconstruct primitives listed in
-        :attr:`_easyToPickle`, collections (``tuple``, ``list``, ``dict``),
-        custom ``_xml_decode_<tag>`` fields, or class instances resolved from
-        ``__main__`` or :meth:`getMod`.
+        Inspects ``node.attributes["type"]`` to reconstruct primitives listed in :attr:`_easyToPickle`, collections (``tuple``, ``list``, ``dict``), custom ``_xml_decode_<tag>`` fields, or class instances resolved from ``__main__`` or :meth:`getMod`.
 
         :param node: XML DOM element with a ``type`` attribute.
-        :param obj: Optional parent object instance used when invoking custom
-            ``_xml_decode_<tag>`` handlers.
+        :param obj: Optional parent object instance used when invoking custom ``_xml_decode_<tag>`` handlers.
         :returns: Reconstructed primitive, collection, or class instance.
         :raises xmlunpicklingException: If a container element is malformed.
         """
@@ -371,8 +356,7 @@ class xmlfile:
 
         :param node: XML element representing a serialized ``dict``.
         :returns: Reconstructed Python dictionary.
-        :raises xmlunpicklingException: If an entry is not an ``item`` or does not
-            contain exactly two child elements (``key`` and ``value``).
+        :raises xmlunpicklingException: If an entry is not an ``item`` or does not contain exactly two child elements (``key`` and ``value``).
         """
         dd = dict()
         for name, element in self._getElementChilds(node):

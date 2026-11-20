@@ -5,7 +5,7 @@ Welcome to openPypeline Studio
 
 Animation Teams using openPypeline Studio are able to keep project folders in cloud storage and sync services they already use, such as *Google Drive*, *iCloud Drive*, *OneDrive*, or *Dropbox*, and work with those folders through their local OPS installation.
 
-Project direction and planned work are tracked in the `project roadmap <https://github.com/StephenAnimates/OpenPipeline/blob/master/ROADMAP.md>`_.
+Project direction and planned work are tracked in the `project roadmap <https://github.com/StephenAnimates/openPypelineStudio/blob/master/ROADMAP.md>`_.
 
 Current Scope
 -------------
@@ -57,6 +57,7 @@ The API reference is generated from the Python package during the documentation 
    authoring_host_integrations
    architecture_migration
    modules
+   tests
 
 Indices and tables
 ------------------

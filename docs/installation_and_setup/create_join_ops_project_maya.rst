@@ -16,7 +16,7 @@ When openPypeline Studio launches, it checks the local project registry. If no p
    The openPypeline Studio prompt to create a new project or join an existing one.
 
 To Create a New OPS Project
-----------------------------------
+---------------------------
 
 The first artist in a team (or solo artist) creates the project by configuring the current Maya workspace as an openPypeline project. The project manifest (``.openpypeline/project.json``) and configured pipeline folders are created in that directory.
 
@@ -47,6 +47,17 @@ The path cannot be edited directly. Use **Override...** only if you intentionall
 * **Optional project details:** Set dates and configure custom users if needed.
 
 3. Click the :guilabel:`Accept` button. openPypeline writes its project manifest and creates the configured pipeline folders under the Maya project directory. This does not change Maya's current project/workspace.
+
+.. warning::
+
+   If you click the Accept button, and the project already exists, you will see the following warning. Click the **OK** button, and either create a new porject, or cancel the new project creation to join one that already exists.
+
+.. figure:: /images/warning_existing_project.png
+   :alt: The openPypeline Studio error that indicates a project with the same name and location already exists.
+   :width: 40%
+   :align: center
+
+   The openPypeline Studio error that indicates a project with the same name and location already exists.
 
 Confirm the project appears in openPypeline's Project Manager and, if marked active, in the main project selector.
 

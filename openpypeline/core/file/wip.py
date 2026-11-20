@@ -48,10 +48,8 @@ class WIP(base_file.File):
 
         :param path: Base directory path of the pipeline asset or component.
         :param item: Base name of the pipeline item.
-        :param version: Integer version number to resolve (zero-padded to four
-            digits).
-        :returns: The normalized forward-slash path to the WIP file if found,
-            otherwise ``None``.
+        :param version: Integer version number to resolve (zero-padded to four digits).
+        :returns: The normalized forward-slash path to the WIP file if found, otherwise ``None``.
         """
         # Fetch nomenclature and format dynamically from preferences
         w_name = prefs.get_pref("ops_wip", "wip")

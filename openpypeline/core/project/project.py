@@ -1,7 +1,6 @@
 """Manage project configuration and project-list persistence.
 
-Defines the :class:`Project` interface and base methods for locating,
-validating, and managing openPypeline project registries.
+Defines the :class:`Project` interface and base methods for locating, validating, and managing openPypeline project registries.
 
 :File: project.py
 :Original Framework: openPipeline by Kickstand
@@ -31,8 +30,7 @@ class Project:
     Provides base attributes and extension hooks for creating, listing,
     validating, and selecting studio projects.
 
-    :ivar openPipeline_projectFilePath: Directory path containing the project
-        configuration file.
+    :ivar openPipeline_projectFilePath: Directory path containing the project configuration file.
     :vartype openPipeline_projectFilePath: str
     :ivar openPipeline_projList: Filename of the project registry list.
     :vartype openPipeline_projList: str
@@ -47,8 +45,7 @@ class Project:
         """Provide the extension point for creating a new project.
 
         .. note::
-           Intended to be overridden by host-specific or subclassed project
-           managers.
+           Intended to be overridden by host-specific or subclassed project managers.
         """
         pass
 
@@ -56,8 +53,7 @@ class Project:
         """Provide the extension point for removing an existing project.
 
         .. note::
-           Intended to be overridden by host-specific or subclassed project
-           managers.
+           Intended to be overridden by host-specific or subclassed project managers.
         """
         pass
 
@@ -65,8 +61,7 @@ class Project:
         """Provide the extension point for listing configured projects.
 
         .. note::
-           Intended to be overridden by host-specific or subclassed project
-           managers.
+           Intended to be overridden by host-specific or subclassed project managers.
         """
         pass
 
@@ -74,8 +69,7 @@ class Project:
         """Provide the extension point for selecting the active project.
 
         .. note::
-           May require host-application-specific implementation when setting
-           active workspace paths.
+           May require host-application-specific implementation when setting active workspace paths.
         """
         # app specific?
         pass
@@ -91,8 +85,7 @@ class Project:
     def path(self) -> str:
         """Return the full path of the project configuration file.
 
-        Joins :attr:`openPipeline_projectFilePath` and
-        :attr:`openPipeline_projList` into a single file system path.
+        Joins :attr:`openPipeline_projectFilePath` and :attr:`openPipeline_projList` into a single file system path.
 
         :returns: The full path to the project file.
         """

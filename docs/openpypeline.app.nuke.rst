@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   openpypeline.app.nuke.core
    openpypeline.app.nuke.file
    openpypeline.app.nuke.ui
 

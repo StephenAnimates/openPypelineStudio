@@ -1,8 +1,6 @@
 """Create and query XML notes associated with pipeline items.
 
-Defines the :class:`Notes` base interface for checking, creating, reading,
-and writing revision history and custom note files attached to studio assets
-and shots.
+Defines the :class:`Notes` base interface for checking, creating, reading, and writing revision history and custom note files attached to studio assets and shots.
 
 :File: notes.py
 :Original Framework: openPipeline by Kickstand
@@ -33,8 +31,7 @@ class Notes:
         """Provide the extension point for creating an item's notes file.
 
         .. note::
-           Intended to be overridden by host-specific or subclassed note
-           handlers.
+           Intended to be overridden by host-specific or subclassed note handlers.
         """
         pass
 
@@ -57,8 +54,7 @@ class Notes:
         """Provide the extension point for reading an item's notes.
 
         .. note::
-           Intended to be overridden by host-specific or subclassed note
-           handlers.
+           Intended to be overridden by host-specific or subclassed note handlers.
         """
         pass
 
@@ -66,7 +62,6 @@ class Notes:
         """Provide the extension point for writing an item's notes.
 
         .. note::
-           Intended to be overridden by host-specific or subclassed note
-           handlers.
+           Intended to be overridden by host-specific or subclassed note handlers.
         """
         pass

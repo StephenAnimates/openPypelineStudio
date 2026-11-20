@@ -44,11 +44,9 @@ class OpsSetupDialog(QtWidgets.QDialog):
     ) -> None:
         """Initialize the setup dialog and prefill any configured project path.
 
-        :param project_path: Existing project registry path from user
-            preferences, or an empty string if unset.
+        :param project_path: Existing project registry path from user preferences, or an empty string if unset.
         :param parent: Optional parent widget for modal dialog centering.
-        :param on_success: Optional callback executed after setup succeeds
-            (for example, launching the host's main entry point).
+        :param on_success: Optional callback executed after setup succeeds (for example, launching the host's main entry point).
         """
         super().__init__(parent)
         self.setWindowTitle("openPypeline Studio Setup")
@@ -125,10 +123,8 @@ class OpsSetupDialog(QtWidgets.QDialog):
         """Switch between the default project path and an editable custom path.
 
         :param args: Optional variadic arguments passed by Qt signals (ignored).
-        :param force_custom: When ``True``, forces :attr:`proj_field` into
-            editable custom-path mode using ``path``.
-        :param path: Custom directory path to populate when ``force_custom`` is
-            ``True``.
+        :param force_custom: When ``True``, forces :attr:`proj_field` into editable custom-path mode using ``path``.
+        :param path: Custom directory path to populate when ``force_custom`` is ``True``.
         """
         del args
         if not self.proj_field.isReadOnly() and not force_custom:

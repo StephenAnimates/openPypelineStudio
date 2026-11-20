@@ -20,8 +20,7 @@ from typing import Any
 class singleton:
     """Base class implementing the Singleton design pattern.
 
-    Subclasses of :class:`singleton` instantiate only once. Any subsequent
-    instantiation calls return the cached instance stored on the subclass.
+    Subclasses of :class:`singleton` instantiate only once. Any subsequent instantiation calls return the cached instance stored on the subclass.
 
     :cvar _inst: Cached singleton instance stored per subclass.
     """

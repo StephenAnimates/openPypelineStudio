@@ -44,7 +44,12 @@ def _headless_dcc_modules() -> dict[str, object]:
 
     mock_maya = ModuleType("maya")
     mock_cmds = MagicMock()
+    mock_mel = MagicMock()
+    mock_utils = MagicMock()
+    mock_mixin = MagicMock()
     mock_maya.cmds = mock_cmds
+    mock_maya.mel = mock_mel
+    mock_maya.utils = mock_utils
 
     return {
         "PySide6": mock_pyside,
@@ -52,6 +57,11 @@ def _headless_dcc_modules() -> dict[str, object]:
         "PySide6.QtCore": mock_core,
         "maya": mock_maya,
         "maya.cmds": mock_cmds,
+        "maya.mel": mock_mel,
+        "maya.utils": mock_utils,
+        "maya.app": MagicMock(),
+        "maya.app.general": MagicMock(),
+        "maya.app.general.mayaMixin": mock_mixin,
     }
 
 
