@@ -2,6 +2,16 @@
 
 Verifies that :class:`~openpypeline.ops_engine.OpsEngine` detects active DCC hosts, imports and assigns the matching host file adapter, resolves workspace roots, executes headless UI diagnostics safely, and delegates scene operations to its active file handler.
 
+Run from the repository root with Python's built-in ``unittest`` runner:
+
+.. code-block:: bash
+
+   # Run only the pipeline engine tests
+   python3 -m unittest tests/test_ops_engine.py -v
+
+   # Or run the full headless test suite
+   python3 -m unittest discover -s tests -v
+
 :File: test_ops_engine.py
 :Original Framework: openPipeline by Kickstand
 :License: Common Public License 1.0 (CPL-1.0)

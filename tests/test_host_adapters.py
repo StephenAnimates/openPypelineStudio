@@ -2,10 +2,21 @@
 
 Defines the standardized file-handler and loader interfaces required across all host integrations and dynamically verifies that every app package under :mod:`openpypeline.app` implements them.
 
+Run from the repository root with Python's built-in ``unittest`` runner:
+
+.. code-block:: bash
+
+   # Run only the host-adapter protocol contract tests
+   python3 -m unittest tests/test_host_adapters.py -v
+
+   # Or run the full headless test suite
+   python3 -m unittest discover -s tests -v
+
 :File: test_host_adapters.py
 :Original Framework: openPipeline by Kickstand
 :License: Common Public License 1.0 (CPL-1.0)
 """
+
 
 import importlib
 import pkgutil

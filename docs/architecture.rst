@@ -16,52 +16,52 @@ OpenPypeline Studio is organized into five distinct architectural layers. Depend
 
 .. code-block:: text
 
-   +-------------------------------------------------------------------------+
-   |                        1. PRESENTATION LAYER                            |
-   |   Host-Specific UI (app/maya/ui/)      |  UI Resources & Localization   |
-   |   (Views, Controllers, Dialogs)         |  (resources/lang/, icons)      |
-   +------------------------------------+------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |                   2. HOST INTEGRATION & ADAPTER LAYER                   |
-   |   app/maya/core/ops_loader.py      |  app/maya/core/ops_ui_wrappers.py  |
-   |   app/maya/file/file.py            |  app/houdini/file/file.py          |
-   |   app/nuke/file/file.py            |  (Planned: Substance Painter,      |
-   |                                    |   ZBrush, Unity, Blender, Unreal)  |
-   +------------------------------------+------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |                     3. ENGINE & DISPATCHER LAYER                        |
-   |                       openpypeline/ops_engine.py                        |
-   |   - Environment sensing (inspects sys.modules for DCC APIs)             |
-   |   - Dynamic binding and dispatch to active host file handler            |
-   +------------------------------------+------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |                     4. CORE DOMAIN & ACTIONS LAYER                      |
-   |                       openpypeline/core/                                |
-   |   - Actions & Workflow Orchestration:  ops_actions.py                   |
-   |   - Unified Data Models & Enums:       models.py (ItemContext, Config)  |
-   |   - Path & Version Resolvers:          ops_info.py                      |
-   |   - File & Inventory Logic:            file/ (wip, master, inventory)   |
-   |   - Advisory Concurrency:              file_use.py (heartbeat notices)  |
-   |   - Version Control Subsystem:         version/ (SVN, Perforce, Git)    |
-   |   - Metadata & Notes:                  notes/ (ops_notes.py)            |
-   |   - System Preferences & Utilities:    util/prefs.py, localization.py   |
-   +------------------------------------+------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |                   5. PERSISTENCE & STORAGE LAYER                        |
-   |   - User Preferences:      ~/.openpypeline/user_prefs.json              |
-   |   - Machine Registry:      <configured_path>/openpypeline_projects.json |
-   |   - Shared Manifest:       <project_root>/.openpypeline/project.json    |
-   |   - Concurrency Registry:  <project_root>/.openpypeline/file_use/      |
-   |   - Production Asset Tree: <project_root>/scenes/, textures/, etc.      |
-   +-------------------------------------------------------------------------+
+  +-------------------------------------------------------------------------+
+  |                        1. PRESENTATION LAYER                            |
+  |   Shared UI (openpypeline/ui/)        |  UI Resources & Localization    |
+  |   Host Wrappers (app/<host>/ui/)      |  (resources/lang/, icons)       |
+  +------------------------------------+------------------------------------+
+                                      |
+                                      v
+  +-------------------------------------------------------------------------+
+  |                   2. HOST INTEGRATION & ADAPTER LAYER                   |
+  |   app/maya/core/ops_loader.py      |  app/maya/core/ops_ui_wrappers.py  |
+  |   app/maya/file/file.py            |  app/houdini/file/file.py          |
+  |   app/nuke/file/file.py            |  (Planned: Substance Painter,      |
+  |                                    |   ZBrush, Unity, Blender, Unreal)  |
+  +------------------------------------+------------------------------------+
+                                      |
+                                      v
+  +-------------------------------------------------------------------------+
+  |                     3. ENGINE & DISPATCHER LAYER                        |
+  |                       openpypeline/ops_engine.py                        |
+  |   - Environment sensing (inspects sys.modules for DCC APIs)             |
+  |   - Dynamic binding and dispatch to active host file handler            |
+  +------------------------------------+------------------------------------+
+                                      |
+                                      v
+  +-------------------------------------------------------------------------+
+  |                     4. CORE DOMAIN & ACTIONS LAYER                      |
+  |                       openpypeline/core/                                |
+  |   - Actions & Workflow Orchestration:  ops_actions.py                   |
+  |   - Unified Data Models & Enums:       models.py (ItemContext, Config)  |
+  |   - Path & Version Resolvers:          ops_info.py                      |
+  |   - File & Inventory Logic:            file/ (wip, master, inventory)   |
+  |   - Advisory Concurrency:              file_use.py (heartbeat notices)  |
+  |   - Version Control Subsystem:         version/ (SVN, Perforce, Git)    |
+  |   - Metadata & Notes:                  notes/ (ops_notes.py)            |
+  |   - System Preferences & Utilities:    util/prefs.py, localization.py   |
+  +------------------------------------+------------------------------------+
+                                      |
+                                      v
+  +-------------------------------------------------------------------------+
+  |                   5. PERSISTENCE & STORAGE LAYER                        |
+  |   - User Preferences:      ~/.openpypeline/user_prefs.json              |
+  |   - Machine Registry:      <configured_path>/openpypeline_projects.json |
+  |   - Shared Manifest:       <project_root>/.openpypeline/project.json    |
+  |   - Concurrency Registry:  <project_root>/.openpypeline/file_use/      |
+  |   - Production Asset Tree: <project_root>/scenes/, textures/, etc.      |
+  +-------------------------------------------------------------------------+
 
 Layer Responsibilities
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -284,24 +284,25 @@ The ``openpypeline/core/version/`` package provides abstraction adapters for pro
 * **Perforce (Helix Core):** Interfaces with Perforce client workspaces via `p4` CLI commands for automated checkouts, revisions, and changelist submission. See :doc:`perforce_setup` for workspace setup instructions.
 * **Git:** Basic support for local checkout validation and repository tagging.
 
-Target Architecture & Technical Debt
-------------------------------------
+Target Architecture & Evolution
+-------------------------------
 
-As openPypeline Studio transitions from its historical MEL roots to a unified Python architecture, several legacy coupling points are scheduled for refactoring:
+As openPypeline Studio transitions from its historical MEL roots to a unified Python architecture, shared PySide views and controllers have already been extracted into ``openpypeline/ui/`` with thin DCC subclasses in ``openpypeline/app/<host>/ui/``. Several remaining coupling points are scheduled for refactoring:
 
-Current Technical Debt
-~~~~~~~~~~~~~~~~~~~~~~
+Ongoing Refactoring Areas
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * **Qt Coupling in Core:** ``openpypeline/core/ops_project.py`` currently imports ``PySide6`` and Maya utility wrappers. This prevents running project operations headlessly in environments without Qt libraries installed.
 * **Implicit File Handler Protocol:** The host file handler contract in ``openpypeline/app/<host>/file/file.py`` is currently structural (duck-typed) rather than enforced via Python type checking.
-* **Monolithic Controllers:** Maya UI controllers manage both data transformation and dialog life-cycles.
+* **UI Wrapper Coupling:** Shared UI actions in ``openpypeline/ui/ops_ui_wrappers.py`` still coordinate dialog prompts directly rather than returning structured results to controllers.
+
 
 Target Architecture (Roadmap Alignment)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-According to the project `Roadmap <https://github.com/StephenAnimates/OpenPipeline/blob/master/ROADMAP.md>`_, the architecture is evolving toward:
+According to the project `Roadmap <https://github.com/StephenAnimates/openPypelineStudio/blob/master/ROADMAP.md>`_, the architecture is evolving toward:
 
-1. **Strictly Headless Core:** Decoupling all Qt and host dependencies from ``openpypeline/core/``. The core will be importable in pure Python 3.9+ environments for automated tests, CLI utilities, and render farm automation.
+1. **Strictly Headless Core:** Decoupling all Qt and host dependencies from ``openpypeline/core/``. The core will be importable in pure Python 3.11+ environments for automated tests, CLI utilities, and render farm automation.
 2. **Formal HostFileHandlerBase Protocol:** Introducing an explicit Python ``Protocol`` or ``ABC`` with type annotations defining the exact contract for DCC adapters.
 3. **Decoupled Event Bus:** Implementing an observer/event pattern so host callbacks (scene opened, before save, selection changed) publish events rather than directly calling UI controller methods.
 4. **Standalone App Launcher:** Enabling openPypeline's Qt UI to run as a standalone asset browser outside any DCC, with the ability to launch scenes into Maya, Houdini, or Nuke on demand.
@@ -316,9 +317,10 @@ When contributing new features or host integrations:
   1. Create ``openpypeline/app/<host>/loader.py`` exposing ``openPypeline()`` and ``openPypelineSetup()`` (plus host shelf/menu installers).
   2. Create ``openpypeline/app/<host>/file/file.py`` implementing the standard File Handler Protocol (``open``, ``save``, ``save_as``, ``import_file``, ``reference_file``, ``new_file``, ``export_file``, ``is_modified``, ``get_file_type``, and ``get_workspace_root``).
   3. Register host signature detection in ``OpsEngine._detect_host_app()``.
-  4. Add corresponding mock-based unit tests in ``openpypeline/test_host_adapters.py``.
+  4. Add corresponding mock-based unit tests in ``tests/test_host_adapters.py``.
 
   For a complete step-by-step developer walkthrough, code scaffolds, and host execution models, see :doc:`authoring_host_integrations`.
 * **Unit Testing with Test Doubles:** Core logic should have 100% test coverage using standard Python ``unittest`` or ``pytest``. Host SDK calls should be mocked using ``unittest.mock`` to ensure tests run swiftly without requiring proprietary DCC licenses.
 
-For a detailed historical mapping of original MEL procedures to the modern Python modules, see :doc:`architecture_migration`. For generated API reference documentation, see :doc:`modules`.
+For a detailed historical mapping of original MEL procedures to the modern Python modules, see :doc:`architecture_migration`. For generated API reference documentation, see :doc:`modules` and :doc:`tests`.
+
