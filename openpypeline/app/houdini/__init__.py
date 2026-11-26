@@ -3,7 +3,6 @@
 Provides Houdini-specific file adapters, core utilities, and PySide6 user interface components for the openPypeline Studio framework.
 
 :File: __init__.py
-:Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """
 

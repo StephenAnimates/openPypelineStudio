@@ -3,7 +3,6 @@
 Provides DCC-agnostic preference storage, logging configuration, filesystem helpers, and common utility routines used across the openPypeline Studio framework.
 
 :File: __init__.py
-:Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """
 

@@ -7,8 +7,9 @@ Handles signal routing, menu actions, context menus, and event coordination betw
 :License: Apache License 2.0 (Apache-2.0)
 """
 
-import importlib
+import importlib.util
 import os
+import sys
 from typing import Any
 
 try:
@@ -282,6 +283,7 @@ class OpsMainController:
 
     def _populate_initial_data(self) -> None:
         """Initialize the main window with project data and available add-ons."""
+
         self.refresh_project_selector()
         self._load_addons()
 
@@ -328,13 +330,54 @@ class OpsMainController:
             prefs.get_pref("ops_currProjectPath", "")
         )
 
+    def _import_addon_module(
+        self, addon_dir: str, filename: str, package_path: str | None
+    ) -> Any:
+        """Import (or reload) an add-on Python module from a package or directory.
+
+        Uses standard package imports when ``package_path`` is provided, and falls back to file-path loading via :mod:`importlib.util` for external studio directories defined in ``OPENPYPELINE_ADDONS_PATH``.
+
+        :param addon_dir: Absolute directory containing the add-on script.
+        :param filename: Python filename ending in ``.py``.
+        :param package_path: Dotted package path (e.g. ``"openpypeline.core.addons"``), or ``None`` when loading from an external filesystem folder.
+        :returns: Loaded Python module object.
+        :raises ImportError: If a module spec cannot be created for an external file.
+        """
+        stem = filename[:-3]
+        if package_path:
+            mod = importlib.import_module(f"{package_path}.{stem}")
+            return importlib.reload(mod)
+
+        # Load external studio add-ons directly by path without requiring sys.path edits
+        filepath = os.path.join(addon_dir, filename)
+        mod_name = f"openpypeline_ext_addon_{stem}"
+        spec = importlib.util.spec_from_file_location(mod_name, filepath)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Could not create module spec for {filepath}")
+
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[mod_name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+
     def _load_addons(self) -> None:
-        """Dynamically discover and register core and host-specific add-ons."""
+        """Discover and register core, host-specific, and external studio add-ons.
+
+        Scans three sources in order and populates sections in ``menu_tools``:
+
+        1. Built-in host-agnostic add-ons under ``openpypeline/core/addons/``.
+        2. Active DCC host add-ons returned by :meth:`_get_dcc_addon_specs`.
+        3. External studio directories listed in ``OPENPYPELINE_ADDONS_PATH``.
+
+        Each discovered module must expose a callable ``run()`` entry point and may optionally define ``ADDON_NAME``, ``ADDON_ENABLED``, and
+        ``ADDON_TOOLTIP``.
+        """
+
         core_addons_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "core", "addons")
         ).replace("\\", "/")
 
-        addon_paths: list[tuple[str, str, str]] = [
+        addon_paths: list[tuple[str, str, str | None]] = [
             (
                 core_addons_dir,
                 localization.get_string("menu_coreAddons"),
@@ -343,31 +386,66 @@ class OpsMainController:
             *self._get_dcc_addon_specs(),
         ]
 
+        # Append optional studio-external directories from OPENPYPELINE_ADDONS_PATH
+        extra_dirs = os.environ.get("OPENPYPELINE_ADDONS_PATH", "")
+        for idx, extra_dir in enumerate(
+            d.strip() for d in extra_dirs.split(os.pathsep) if d.strip()
+        ):
+            addon_paths.append(
+                (
+                    os.path.abspath(extra_dir).replace("\\", "/"),
+                    localization.get_string("menu_studioAddons")
+                    if idx == 0
+                    else f"{localization.get_string('menu_studioAddons')} ({idx + 1})",
+                    None,
+                )
+            )
+
         for addon_dir, menu_title, package_path in addon_paths:
-            if not os.path.exists(addon_dir):
+            if not os.path.isdir(addon_dir):
+                continue
+
+            # Skip dunder modules (such as __init__.py) and non-Python files
+            py_files = [
+                f
+                for f in sorted(os.listdir(addon_dir))
+                if f.endswith(".py") and not f.startswith("__")
+            ]
+            if not py_files:
                 continue
 
             self.view.menu_tools.addSection(menu_title)
-            for filename in sorted(os.listdir(addon_dir)):
-                if filename.endswith(".py") and not filename.startswith("__"):
-                    mod_name = f"{package_path}.{filename[:-3]}"
-                    try:
-                        mod = importlib.import_module(mod_name)
-                        importlib.reload(mod)
-                        if hasattr(mod, "run"):
-                            addon_name = getattr(
-                                mod,
-                                "ADDON_NAME",
-                                filename[:-3].replace("_", " ").title(),
-                            )
-                            action = self.view.menu_tools.addAction(addon_name)
-                            action.triggered.connect(mod.run)
-                    except Exception as e:
-                        print(
-                            localization.get_string("msg_failedAddonLoad").format(
-                                filename, e
-                            )
+            for filename in py_files:
+                try:
+                    mod = self._import_addon_module(addon_dir, filename, package_path)
+                    # Allow authors to disable work-in-progress add-ons via ADDON_ENABLED = False
+                    if not getattr(mod, "ADDON_ENABLED", True):
+                        continue
+                    if not hasattr(mod, "run"):
+                        continue
+
+                    addon_name = getattr(
+                        mod,
+                        "ADDON_NAME",
+                        filename[:-3].replace("_", " ").title(),
+                    )
+                    action = self.view.menu_tools.addAction(addon_name)
+
+                    tooltip = getattr(mod, "ADDON_TOOLTIP", "")
+                    if tooltip:
+                        action.setToolTip(tooltip)
+                        action.setStatusTip(tooltip)
+
+                    # Swallow QAction.triggered's bool argument so zero-arg run() functions work cleanly
+                    action.triggered.connect(
+                        lambda _checked=False, fn=mod.run: fn()
+                    )
+                except Exception as e:
+                    print(
+                        localization.get_string("msg_failedAddonLoad").format(
+                            filename, e
                         )
+                    )
 
         self.view.menu_tools.addSeparator()
         self.view.menu_tools.addAction(

@@ -3,7 +3,6 @@
 Provides DCC-agnostic data models, persistence helpers, and query interfaces for reading, appending, and managing artist notes and version comments across openPypeline Studio assets and shots.
 
 :File: __init__.py
-:Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """
 

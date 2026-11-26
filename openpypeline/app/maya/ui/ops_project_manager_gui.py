@@ -1,9 +1,6 @@
 """Maya-specific Project Manager UI view subclass for openPypeline Studio.
 
-Extends :class:`~openpypeline.ui.ops_project_manager_gui.OpsProjectManagerGUI`
-with Maya window parenting, ``workspaceControl`` cleanup/restoration, and
-Maya's :func:`~openpypeline.app.maya.core.ops_loader.openPypelineSetup`
-launcher.
+Extends :class:`~openpypeline.ui.ops_project_manager_gui.OpsProjectManagerGUI` with Maya window parenting, ``workspaceControl`` cleanup/restoration, and Maya's :func:`~openpypeline.app.maya.core.ops_loader.openPypelineSetup` launcher.
 
 :File: ops_project_manager_gui.py
 :Original Framework: openPipeline by Kickstand

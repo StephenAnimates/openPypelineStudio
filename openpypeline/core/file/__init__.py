@@ -3,7 +3,6 @@
 Provides DCC-agnostic base interfaces and concrete handlers for querying, versioning, bundling, archiving, and managing WIP and master pipeline assets and shots across the openPypeline Studio framework.
 
 :File: __init__.py
-:Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """
 

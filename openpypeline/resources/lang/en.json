@@ -312,5 +312,6 @@
     "win_welcome": "Welcome to openPypeline Studio",
     "msg_noProjectsPrompt": "No registered projects were found.\n\nWould you like to create a new project or join an existing one?",
     "btn_newProject": "Create New Project",
-    "btn_joinProject": "Join Existing Project"
+    "btn_joinProject": "Join Existing Project",
+    "menu_studioAddons": "Studio Add-ons"
 }

@@ -1,9 +1,6 @@
 """Maya-specific controller subclass for the openPypeline Studio Project Dialog.
 
-Extends :class:`~openpypeline.ui.ops_proj_dialog_controller.OpsProjDialogController`
-with the Maya-parented :class:`~openpypeline.app.maya.ui.ops_proj_dialog_gui.opsProjDialogGUI`
-view and automatic population of project paths and subfolder rules from the
-active Maya workspace.
+Extends :class:`~openpypeline.ui.ops_proj_dialog_controller.OpsProjDialogController` with the Maya-parented :class:`~openpypeline.app.maya.ui.ops_proj_dialog_gui.opsProjDialogGUI` view and automatic population of project paths and subfolder rules from the active Maya workspace.
 
 :File: ops_proj_dialog_controller.py
 :Original Framework: openPipeline by Kickstand

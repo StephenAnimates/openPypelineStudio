@@ -3,7 +3,6 @@
 Provides Maya-parented and workspace-dockable PySide6 windows, dialogs, and UI controllers for the openPypeline Studio framework.
 
 :File: __init__.py
-:Original Framework: openPipeline by Kickstand
 :License: Apache License 2.0 (Apache-2.0)
 """
 

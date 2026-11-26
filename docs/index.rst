@@ -55,6 +55,7 @@ The API reference is generated from the Python package during the documentation 
 
    architecture
    authoring_host_integrations
+   addon_developer_guide
    architecture_migration
    modules
    tests

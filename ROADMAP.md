@@ -3,6 +3,7 @@
 This document tracks openPypeline Studio's evolution from a Maya-first tool into a modular Python pipeline framework for multiple creative applications.
 
 ## Project Principles
+
 - The application runs locally and works with project folders that users synchronize through services such as Google Drive, iCloud Drive, OneDrive, or Dropbox.
 - Be aware that synchronized project files may be temporarily unavailable, out of date, or in conflict while a sync client propagates changes.
 - Keep shared pipeline concepts and data models in `openpypeline/core/`; keep application APIs, UI bindings, and host-specific behavior in that application's integration.
@@ -15,6 +16,7 @@ An application integration should document the host and version tested, its inst
 File-use notifications or locks should operate on project metadata within the user-managed synchronized folder, not attempt to implement synchronization. Because sync clients may propagate updates asynchronously and may create conflict copies, a lock file in that folder is advisory rather than a guaranteed distributed lock. The UI should communicate this limitation and avoid claiming that concurrent edits are impossible.
 
 ## 📌 Status Legend
+
 | Status | Indicator | Description |
 | :--- | :---: | :--- |
 | **Completed** | <span title="Completed">🟢</span> | Fully implemented, validated, and documented |
@@ -24,6 +26,7 @@ File-use notifications or locks should operate on project metadata within the us
 *(Hover over any status icon to view its tooltip description).*
 
 ## <span title="Completed">🟢</span> Phase 1: Structural Foundation & Packaging (Completed)
+
 - [x] Isolate DCC-specific code (Move Maya scripts to `/openpypeline/app/maya/`).
 - [x] Rename and reorganize the legacy `/openpypeline/app/maya/core/openPypelineStudio` directory and its contents.
 - [x] Establish a pure agnostic `/openpypeline/core/` directory.
@@ -33,6 +36,7 @@ File-use notifications or locks should operate on project metadata within the us
 - [x] Enforce standard PEP 8 Pythonic naming conventions across all files and directories (`opsActions.py` -> `ops_actions.py`, `camelCase` to `snake_case`).
 
 ## <span title="Completed">🟢</span> Phase 2: UI Modernization & MVC Architecture (Completed)
+
 - [x] Port all legacy UIs to PySide6.
 - [x] Implement MVC for `ops_main_ui` (formerly `opsMainUI`) (Separating View from Controller).
 - [x] Implement MVC for `ops_proj_dialog_gui` (formerly `opsProjDialogGUI`).
@@ -47,12 +51,13 @@ File-use notifications or locks should operate on project metadata within the us
 - [x] Extract host-agnostic PySide views and controllers into `/openpypeline/ui/` with lightweight DCC subclasses under `/openpypeline/app/<host>/ui/`.
 
 ## <span title="In Progress">🟡</span> Phase 3: Core Contracts & Host Adapter Architecture (In Progress)
+
 - [x] Audit `ops_actions` and `ops_ui_wrappers` (formerly `opsActions` and `opsUIWrappers`) to ensure absolutely NO Maya commands (`import maya.cmds`) are used in the core logic.
 - [x] Relocate Agnostic Core Files (`ops_actions.py`, `ops_info.py`, `ops_project.py`, `ops_notes.py`) to the `/openpypeline/core/` directory.
 - [x] Upgrade legacy XML-based project tracking to JSON.
 - [x] Upgrade legacy XML-based history notes to JSON.
 - [x] Standardize Add-on System (Split Core-agnostic Add-ons vs DCC-specific Add-ons).
-- [ ] Author an Add-on Developer Guide for studio TDs writing custom Python tools for the Add-ons menu.
+- [x] Author an Add-on Developer Guide for studio TDs writing custom Python tools for the Add-ons menu.
 - [ ] Define a host adapter contract for common operations (for example open/save, publish, and supported exports), with explicit optional capabilities.
 - [x] Define host discovery and standalone behavior, including unsupported operation handling.
 - [x] Add adapter contract tests using lightweight test doubles (verified via `tests/test_host_adapters.py` and `tests/test_ops_engine.py`).
@@ -65,6 +70,7 @@ File-use notifications or locks should operate on project metadata within the us
 - [ ] Transition cross-platform path handling to `pathlib`.
 
 ## <span title="In Progress">🟡</span> Phase 4: Localization & Polish (In Progress)
+
 - [x] Create a core localization manager (`localization.py`).
 - [x] Apply localization to `ops_main_ui` (formerly `opsMainUI`) tooltips.
 - [ ] Extract all hardcoded UI text strings across all View files into localization dictionary files.
@@ -77,6 +83,7 @@ File-use notifications or locks should operate on project metadata within the us
 - [ ] Evaluate supporting regional dialects for localization (e.g., `en_us.json` vs `en_uk.json`).
 
 ## <span title="In Progress">🟡</span> Phase 5: Quality Assurance, Documentation & Integration Validation (In Progress)
+
 - [x] Set up Sphinx documentation generation for the core Python API (`docs/conf.py`).
 - [x] Author narrative user guides (Getting Started, Maya Project Setup, Production Workflows, Architecture Migration).
 - [x] Configure automated Sphinx HTML documentation deployment to GitHub Pages via GitHub Actions (`.github/workflows/docs.yml`).
@@ -94,7 +101,9 @@ File-use notifications or locks should operate on project metadata within the us
 - [ ] Require core tests and the relevant host smoke tests before marking an integration supported.
 
 ## <span title="Waiting to Start">⚪</span> Phase 6: Application Integrations (Waiting to Start)
+
 Integrations are developed and validated incrementally against the host adapter contract. The sequence below preserves the project's current priority order; existing application directories are starting points, not proof of complete or supported integrations.
+
 - [ ] Develop Substance 3D Painter integration (`/openpypeline/app/substance_painter/`).
 - [ ] Develop a ZBrush integration (`/openpypeline/app/zbrush/`).
 - [ ] Develop a Unity integration (`/openpypeline/app/unity/`).
@@ -107,7 +116,9 @@ Integrations are developed and validated incrementally against the host adapter 
 - [ ] Develop a standalone/headless mode for workflows that do not require a DCC.
 
 ## <span title="In Progress">🟡</span> Phase 7: Production Services & External Integrations (In Progress)
+
 Keep service integrations such as version control and production tracking separate from DCC adapters so they can be reused across hosts. Projects remain local; users may place them in folders synchronized by a service they already use. Git, SVN, and Perforce handlers are available in the codebase, but self-hosted VCS setup is not the default workflow.
+
 - [x] Implement core VCS base and subprocess handlers (Git, SVN, Perforce) in `Version.py`.
 - [x] Hook VCS `publish()` method into `ops_actions.py` for mastering workflows.
 - [x] Author cloud deployment guide for Perforce (Helix Core) free tier on AWS/GCP/Azure (`docs/perforce_setup.rst`).

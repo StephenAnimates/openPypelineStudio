@@ -8,7 +8,7 @@ Converts legacy ``openPipeline_projects.xml`` and ``openPipeline_users.xml`` fil
 
 Usage Example::
 
-    from openpypeline.addons import ops_migrate_legacy_data
+    from openpypeline.core.addons import ops_migrate_legacy_data
 
     ops_migrate_legacy_data.run()
 """
@@ -143,7 +143,7 @@ def run() -> None:
 
     # Refresh the UI if it is currently open
     try:
-        from openpypeline.app.maya.ui import ui_objects as UIObjects
+        from openpypeline.ui.ui_objects import ui_objects as UIObjects
 
         ui_mgr = UIObjects.UIObjects()
         if hasattr(ui_mgr, "opsProjectManagerController"):
