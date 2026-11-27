@@ -19,9 +19,10 @@ from openpypeline.core.models import ItemContext, Tab, Level
 logger = logging.getLogger("openPypeline.info")
 
 
-
 def _ensure_context(func):
-    """Decorator to support both ItemContext objects and legacy (tab, level1, level2, level3) arguments."""
+    """Decorator to support both ItemContext objects and legacy (tab, level1, level2, level3) arguments.
+
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         """Convert legacy positional context arguments before delegating."""
@@ -35,7 +36,8 @@ def _ensure_context(func):
 
 
 def get_project_list():
-    """Returns the names of all existing projects."""
+    """Returns the names of all existing projects.
+    """
     try:
         from . import ops_project as opsProject
         proj_data = opsProject.get_projects_data() or []
@@ -46,7 +48,8 @@ def get_project_list():
 
 @_ensure_context
 def get_custom_notes(context):
-    """Get an item's custom notes."""
+    """Get an item's custom notes.
+    """
     notes_file = get_file_name(context, "notesFile")
     if not os.path.isfile(notes_file):
         try:
@@ -90,11 +93,86 @@ def has_master(context):
     return bool(master and os.path.isfile(master))
 
 
+#: Supported single-file movie extensions produced by playblasts across OSes.
+PLAYBLAST_MOVIE_EXTS: tuple[str, ...] = ("mp4", "mov", "webm", "avi", "mkv")
+
+#: Supported image-sequence extensions produced by playblasts across OSes.
+PLAYBLAST_IMAGE_EXTS: tuple[str, ...] = (
+    "png",
+    "jpg",
+    "jpeg",
+    "exr",
+    "tif",
+    "tiff",
+    "iff",
+    "tga",
+    "dpx",
+)
+
+
 @_ensure_context
-def has_playblast(context):
-    """Returns whether an item has a playblast."""
-    pb_file = get_file_name(context, "playblastFile")
-    return bool(pb_file and os.path.isfile(pb_file))
+def get_playblast_file(context: ItemContext) -> str:
+    """Return the newest existing playblast movie or image sequence for an item.
+
+    Scans the item's root folder (and ``playblast/`` subdirectory) for single-file movies (``.mp4``, ``.mov``, ``.webm``, ``.avi``, ``.mkv``) and
+    numbered image sequences (``playblast.####.<ext>`` or ``playblast_####.<ext>``), returning the most recently modified match. Image sequences are formatted as RV-compatible ``#`` frame masks (for example, ``.../playblast.####.png``).
+
+    :param context: Target :class:`~openpypeline.core.models.ItemContext`.
+    :returns: Normalized path or ``#`` sequence mask, or an empty string if no playblast exists on disk.
+    """
+    folder = get_file_name(context, "folder")
+    if not folder or not os.path.isdir(folder):
+        return ""
+
+    candidates: list[tuple[float, str]] = []
+
+    for ext in PLAYBLAST_MOVIE_EXTS:
+        movie_path = os.path.join(folder, f"playblast.{ext}").replace("\\", "/")
+        if os.path.isfile(movie_path):
+            candidates.append((os.path.getmtime(movie_path), movie_path))
+
+    search_dirs = [folder]
+    pb_subdir = os.path.join(folder, "playblast")
+    if os.path.isdir(pb_subdir):
+        search_dirs.append(pb_subdir)
+
+    seq_pattern = re.compile(r"^(playblast[._])(\d+)\.([a-zA-Z0-9]+)$", re.IGNORECASE)
+    for search_dir in search_dirs:
+        grouped: dict[tuple[str, int, str], list[str]] = {}
+        for entry in os.listdir(search_dir):
+            match = seq_pattern.match(entry)
+            if not match:
+                continue
+            prefix, digits, ext = match.groups()
+            if ext.lower() not in PLAYBLAST_IMAGE_EXTS:
+                continue
+            full_path = os.path.join(search_dir, entry).replace("\\", "/")
+            if os.path.isfile(full_path):
+                grouped.setdefault((prefix, len(digits), ext), []).append(full_path)
+
+        for (prefix, pad, ext), frames in grouped.items():
+            frames.sort()
+            newest_mtime = max(os.path.getmtime(f) for f in frames)
+            mask_path = os.path.join(
+                search_dir, f"{prefix}{'#' * pad}.{ext}"
+            ).replace("\\", "/")
+            candidates.append((newest_mtime, mask_path))
+
+    if not candidates:
+        return ""
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return candidates[0][1]
+
+
+@_ensure_context
+def has_playblast(context: ItemContext) -> bool:
+    """Return ``True`` when an item has a playblast movie or image sequence.
+
+    :param context: Target :class:`~openpypeline.core.models.ItemContext`.
+    :returns: ``True`` if :func:`get_playblast_file` finds an existing movie or image sequence, otherwise ``False``.
+    """
+    return bool(get_playblast_file(context))
 
 
 @_ensure_context
@@ -200,8 +278,13 @@ def get_file_name(context, mode, offset=0, archive=0):
             elif mode == "noteFolder":
                 file_name = os.path.join(file_name, "notes", "").replace("\\", "/")
             elif mode == "playblastFile":
-                ext = "mov" if sys.platform == "darwin" else "avi"
-                file_name = os.path.join(file_name, f"playblast.{ext}").replace("\\", "/")
+                existing = get_playblast_file(context)
+                file_name = (
+                    existing
+                    if existing
+                    else os.path.join(file_name, "playblast").replace("\\", "/")
+                )
+
             elif mode == "previewFile":
                 file_name = os.path.join(file_name, "preview.jpg").replace("\\", "/")
             elif mode == "notesFile":

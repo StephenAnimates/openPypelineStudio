@@ -20,6 +20,14 @@ openpypeline.core.util.prefs module
    :show-inheritance:
    :undoc-members:
 
+openpypeline.core.util.review\_player module
+--------------------------------------------
+
+.. automodule:: openpypeline.core.util.review_player
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 openpypeline.core.util.singleton module
 ---------------------------------------
 

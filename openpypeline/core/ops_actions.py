@@ -69,17 +69,11 @@ class ProjectActionError(Exception):
 def _project_config_data(config: ProjectConfig) -> dict[str, Any]:
     """Convert project configuration to a validated, local-root-aware mapping.
 
-    Normalizes :attr:`~openpypeline.core.models.ProjectConfig.path` to an
-    expanded absolute path and verifies that all configured project subfolders
-    are safe relative paths contained within the project root.
+    Normalizes :attr:`~openpypeline.core.models.ProjectConfig.path` to an expanded absolute path and verifies that all configured project subfolders are safe relative paths contained within the project root.
 
-    :param config: Structured :class:`~openpypeline.core.models.ProjectConfig`
-        instance containing project settings and folder names.
-    :returns: Validated dictionary mapping project configuration keys to
-        normalized string values.
-    :raises ProjectActionError: If ``config`` is invalid, required fields
-        (``name`` or ``path``) are empty, ``status`` is not ``"0"`` or ``"1"``,
-        or any configured subfolder path is absolute or escapes the project root.
+    :param config: Structured :class:`~openpypeline.core.models.ProjectConfig` instance containing project settings and folder names.
+    :returns: Validated dictionary mapping project configuration keys to normalized string values.
+    :raises ProjectActionError: If ``config`` is invalid, required fields (``name`` or ``path``) are empty, ``status`` is not ``"0"`` or ``"1"``, or any configured subfolder path is absolute or escapes the project root.
     """
     from . import ops_project
 
@@ -121,13 +115,10 @@ def _project_config_data(config: ProjectConfig) -> dict[str, Any]:
 def _get_project_store() -> Any:
     """Return the project registry module after checking local setup.
 
-    Verifies that the local project registry file path preference is configured
-    via :func:`~openpypeline.core.ops_project.get_proj_file`.
+    Verifies that the local project registry file path preference is configured via :func:`~openpypeline.core.ops_project.get_proj_file`.
 
-    :returns: The :mod:`openpypeline.core.ops_project` module ready for
-        registry read/write operations.
-    :raises ProjectActionError: If the local project registry location has not
-        been configured in user preferences.
+    :returns: The :mod:`openpypeline.core.ops_project` module ready for registry read/write operations.
+    :raises ProjectActionError: If the local project registry location has not been configured in user preferences.
     """
     from . import ops_project
 
@@ -141,11 +132,9 @@ def _get_project_store() -> Any:
 def _read_registered_projects(ops_project: Any) -> list[dict[str, Any]]:
     """Read the local registry without turning corruption into an empty registry.
 
-    :param ops_project: Project registry module returned by
-        :func:`_get_project_store`.
+    :param ops_project: Project registry module returned by :func:`_get_project_store`.
     :returns: List of registered project configuration dictionaries.
-    :raises ProjectActionError: If reading or parsing the local project
-        registry file raises an ``OSError`` or ``ValueError``.
+    :raises ProjectActionError: If reading or parsing the local project registry file raises an ``OSError`` or ``ValueError``.
     """
     try:
         return ops_project.read_projects_data()
@@ -156,15 +145,11 @@ def _read_registered_projects(ops_project: Any) -> list[dict[str, Any]]:
 def _activate_registered_project(project_data: dict[str, Any]) -> bool:
     """Set local preferences to use one registered, active project.
 
-    Validates that the project is active (``status != "0"``) and that its root
-    directory exists on disk, then writes all resolved project directory paths
-    and naming/format tokens into user preferences.
+    Validates that the project is active (``status != "0"``) and that its root directory exists on disk, then writes all resolved project directory paths and naming/format tokens into user preferences.
 
-    :param project_data: Validated project dictionary containing ``name``,
-        ``path``, folder mappings, and WIP/master naming settings.
+    :param project_data: Validated project dictionary containing ``name``, ``path``, folder mappings, and WIP/master naming settings.
     :returns: ``True`` once all active project preferences have been updated.
-    :raises ProjectActionError: If the project is marked inactive or its root
-        directory does not exist on disk.
+    :raises ProjectActionError: If the project is marked inactive or its root directory does not exist on disk.
     """
     if str(project_data.get("status", "1")) == "0":
         raise ProjectActionError("This project is inactive and cannot be selected.")
@@ -186,14 +171,11 @@ def _activate_registered_project(project_data: dict[str, Any]) -> bool:
 def activate_project(project_name: str) -> bool:
     """Activate a registered project using this artist's local project path.
 
-    Looks up ``project_name`` in the local project registry and delegates to
-    :func:`_activate_registered_project`.
+    Looks up ``project_name`` in the local project registry and delegates to :func:`_activate_registered_project`.
 
     :param project_name: Display name of the registered project to activate.
-    :returns: ``True`` once the project's paths and settings have been written
-        to user preferences.
-    :raises ProjectActionError: If ``project_name`` is not registered locally,
-        is marked inactive, or its project folder is missing on disk.
+    :returns: ``True`` once the project's paths and settings have been written to user preferences.
+    :raises ProjectActionError: If ``project_name`` is not registered locally, is marked inactive, or its project folder is missing on disk.
     """
     ops_project = _get_project_store()
     for project_data in _read_registered_projects(ops_project):
@@ -205,8 +187,7 @@ def activate_project(project_name: str) -> bool:
 def deactivate_project() -> None:
     """Clear local project preferences when no registered project is active.
 
-    Resets ``ops_currProjectName`` and all active project directory path
-    preferences to empty strings.
+    Resets ``ops_currProjectName`` and all active project directory path preferences to empty strings.
     """
     for key in ("ops_currProjectName", *PROJECT_PATH_PREFS.keys()):
         prefs.set_pref(key, "")
@@ -215,20 +196,13 @@ def deactivate_project() -> None:
 def create_or_edit_project(mode: int, old_name: str, config: ProjectConfig) -> int:
     """Create or edit a project, its shared manifest, and this artist's registry.
 
-    Validates ``config`` via :func:`_project_config_data`, ensures the directory
-    hierarchy exists on disk, writes the shared project manifest, updates the
-    local project registry, and activates (or deactivates) the project in user
-    preferences based on its status.
+    Validates ``config`` via :func:`_project_config_data`, ensures the directory hierarchy exists on disk, writes the shared project manifest, updates the local project registry, and activates (or deactivates) the project in user preferences based on its status.
 
-    :param mode: Operation mode flag (``0`` to create a new project, ``1`` to
-        edit an existing registered project).
+    :param mode: Operation mode flag (``0`` to create a new project, ``1`` to edit an existing registered project).
     :param old_name: Existing project name to locate when ``mode == 1``.
-    :param config: Validated :class:`~openpypeline.core.models.ProjectConfig`
-        containing the target project settings and relative subfolders.
+    :param config: Validated :class:`~openpypeline.core.models.ProjectConfig` containing the target project settings and relative subfolders.
     :returns: ``1`` upon successfully creating or updating the project.
-    :raises ProjectActionError: If ``mode`` is unsupported, validation fails,
-        a duplicate project name or existing manifest conflicts with the
-        operation, or filesystem/registry writes fail.
+    :raises ProjectActionError: If ``mode`` is unsupported, validation fails, a duplicate project name or existing manifest conflicts with the operation, or filesystem/registry writes fail.
     """
     if mode not in (0, 1):
         raise ProjectActionError(f"Unsupported project operation mode: {mode}")
@@ -299,17 +273,11 @@ def create_or_edit_project(mode: int, old_name: str, config: ProjectConfig) -> i
 def join_existing_project(project_root: str) -> int:
     """Register a shared project locally without creating or changing its files.
 
-    Reads the existing project manifest from ``project_root``, validates the
-    resolved configuration via :func:`_project_config_data`, registers or
-    updates the entry in this artist's local project registry, and activates
-    the project in user preferences if its status is active.
+    Reads the existing project manifest from ``project_root``, validates the resolved configuration via :func:`_project_config_data`, registers or updates the entry in this artist's local project registry, and activates the project in user preferences if its status is active.
 
-    :param project_root: Filesystem path to an existing shared project folder
-        containing an openPypeline project manifest.
+    :param project_root: Filesystem path to an existing shared project folder containing an openPypeline project manifest.
     :returns: ``1`` upon successfully registering or updating the project.
-    :raises ProjectActionError: If ``project_root`` is blank or missing, the
-        manifest cannot be read, or a conflicting project name or path is
-        already registered locally.
+    :raises ProjectActionError: If ``project_root`` is blank or missing, the manifest cannot be read, or a conflicting project name or path is already registered locally.
     """
     ops_project = _get_project_store()
     selected_root = str(project_root).strip()
@@ -371,15 +339,11 @@ def join_existing_project(project_root: str) -> int:
 def _save_scene_file(dcc: Any, filepath: str) -> bool:
     """Save or export a scene using the active DCC's supported file operation.
 
-    Resolves the target file type via ``dcc.get_file_type``, ``dcc.FILE_TYPES``,
-    or built-in extension fallbacks (``.ma``, ``.mb``, ``.usd``, ``.usda``,
-    ``.abc``), and delegates to ``dcc.export_file`` for interchange formats or
-    ``dcc.save_as`` for native scene formats.
+    Resolves the target file type via ``dcc.get_file_type``, ``dcc.FILE_TYPES``, or built-in extension fallbacks (``.ma``, ``.mb``, ``.usd``, ``.usda``, ``.abc``), and delegates to ``dcc.export_file`` for interchange formats or ``dcc.save_as`` for native scene formats.
 
     :param dcc: Active host file-operation adapter module or object.
     :param filepath: Target destination path for the saved or exported file.
-    :returns: ``True`` if the DCC save or export operation succeeded, ``False``
-        otherwise.
+    :returns: ``True`` if the DCC save or export operation succeeded, ``False`` otherwise.
     """
     extension = os.path.splitext(filepath)[1].lower()
 
@@ -421,29 +385,17 @@ def _save_scene_file(dcc: Any, filepath: str) -> bool:
 def save_master_file(context: ItemContext, options: dict[str, Any]) -> bool:
     """Execute the full master publishing workflow for a pipeline item.
 
-    Saves a new incremental WIP snapshot first, applies optional scene cleanup
-    steps (flattening references, deleting display layers, running a custom
-    command), saves the published master file, optionally commits to the
-    project's configured VCS backend, and executes the requested post-master
-    scene action.
+    Saves a new incremental WIP snapshot first, applies optional scene cleanup steps (flattening references, deleting display layers, running a custom command), saves the published master file, optionally commits to the project's configured VCS backend, and executes the requested post-master scene action.
 
-    :param context: Hierarchy coordinates of the item being mastered (see
-        :class:`~openpypeline.core.models.ItemContext`).
-    :param options: Switchboard options dictionary controlling master behavior.
-        Supported keys include:
+    :param context: Hierarchy coordinates of the item being mastered (see :class:`~openpypeline.core.models.ItemContext`).
+    :param options: Switchboard options dictionary controlling master behavior. Supported keys include:
 
         * ``"comment"`` (*str*): Publish commit message.
-        * ``"import_references"`` (*bool*): Flatten scene references before
-          saving the master file.
-        * ``"delete_display_layers"`` (*bool*): Remove display layers before
-          saving the master file.
-        * ``"custom_command"`` (*str*): Host command string to execute prior to
-          saving.
-        * ``"after"`` (*int*): Post-master action (``1`` to reopen the new WIP,
-          ``2`` to open the published master, or ``3`` to start a new empty
-          scene).
-    :returns: ``True`` if the master file was saved successfully, ``False`` if
-        validation, pre-save hooks, or file operations failed.
+        * ``"import_references"`` (*bool*): Flatten scene references before saving the master file.
+        * ``"delete_display_layers"`` (*bool*): Remove display layers before saving the master file.
+        * ``"custom_command"`` (*str*): Host command string to execute prior to saving.
+        * ``"after"`` (*int*): Post-master action (``1`` to reopen the new WIP, ``2`` to open the published master, or ``3`` to start a new empty scene).
+    :returns: ``True`` if the master file was saved successfully, ``False`` if validation, pre-save hooks, or file operations failed.
     """
     logger.info(f"Beginning master process for {context.item_name}...")
 
@@ -645,3 +597,43 @@ def save_master(
             )
 
     return True
+
+
+def record_playblast(context: ItemContext) -> bool:
+    """Record a playblast for ``context`` using the active DCC file handler.
+
+    Resolves the item's directory via :func:`~openpypeline.core.ops_info.get_file_name` and passes an extensionless ``<item_folder>/playblast`` base path to
+    ``OpsEngine().file_handler.record_playblast`` so the host writes its configured container or image sequence format.
+
+    :param context: Hierarchy coordinates of the target pipeline item.
+    :returns: ``True`` if playblast recording succeeded, ``False`` if no compatible DCC handler is active or recording failed.
+    """
+    dcc = OpsEngine().file_handler
+    if dcc is None or not callable(getattr(dcc, "record_playblast", None)):
+        logger.error("The active DCC does not support recording playblasts.")
+        return False
+
+    folder = ops_info.get_file_name(context, "folder")
+    if not folder:
+        logger.error("Could not determine target folder for playblast.")
+        return False
+
+    base_path = os.path.join(folder, "playblast").replace("\\", "/")
+    return bool(dcc.record_playblast(base_path))
+
+
+def view_playblast(context: ItemContext) -> bool:
+    """Open an item's playblast in Open RV / RV or the OS default player.
+
+    Locates the newest playblast movie or image sequence via :func:`~openpypeline.core.ops_info.get_playblast_file` and launches playback through :func:`~openpypeline.core.util.review_player.launch_review_player`.
+
+    :param context: Hierarchy coordinates of the target pipeline item.
+    :returns: ``True`` if a playblast was found and launched, ``False`` otherwise.
+    """
+    from .util.review_player import launch_review_player
+
+    playblast_path = ops_info.get_playblast_file(context)
+    if not playblast_path:
+        logger.warning("No playblast file found for %s.", context.item_name)
+        return False
+    return launch_review_player([playblast_path])

@@ -33,10 +33,8 @@ FILE_TYPES: dict[str, str] = {
 def get_file_type(extension: Optional[str]) -> Optional[str]:
     """Return Maya's internal file type identifier for the given extension.
 
-    :param extension: File extension including leading dot (for example,
-        ``".ma"`` or ``".abc"``).
-    :returns: Maya file type string from :data:`FILE_TYPES`, or ``None`` if
-        ``extension`` is empty or unsupported.
+    :param extension: File extension including leading dot (for example, ``".ma"`` or ``".abc"``).
+    :returns: Maya file type string from :data:`FILE_TYPES`, or ``None`` if ``extension`` is empty or unsupported.
     """
     return FILE_TYPES.get(extension.lower()) if extension else None
 
@@ -61,13 +59,10 @@ def _ensure_plugins_loaded(
 ) -> None:
     """Ensure required Maya plugins are loaded based on file extension or type.
 
-    Loads ``mayaUsdPlugin`` for USD formats (``.usd``, ``.usda``, ``.usdc``)
-    and ``AbcImport`` / ``AbcExport`` for Alembic (``.abc``) when not already
-    loaded.
+    Loads ``mayaUsdPlugin`` for USD formats (``.usd``, ``.usda``, ``.usdc``) and ``AbcImport`` / ``AbcExport`` for Alembic (``.abc``) when not already loaded.
 
     :param filepath: Optional target file path used to inspect the extension.
-    :param file_type: Optional Maya file type string (for example,
-        ``"USD Export"`` or ``"Alembic"``).
+    :param file_type: Optional Maya file type string (for example, ``"USD Export"`` or ``"Alembic"``).
     """
     ext = os.path.splitext(filepath)[-1].lower() if filepath else ""
 
@@ -90,14 +85,11 @@ def _ensure_plugins_loaded(
 def open(filepath: str) -> bool:
     """Open a Maya scene file or supported interchange container.
 
-    Verifies that ``filepath`` exists on disk, loads required USD/Alembic
-    plugins via :func:`_ensure_plugins_loaded`, and calls
+    Verifies that ``filepath`` exists on disk, loads required USD/Alembic plugins via :func:`_ensure_plugins_loaded`, and calls
     ``cmds.file(filepath, force=True, open=True)``.
 
-    :param filepath: Full path to the Maya scene (``.ma``, ``.mb``) or
-        supported container file to open.
-    :returns: ``True`` if the file opened successfully, ``False`` if the file
-        does not exist or ``cmds.file`` raises an error.
+    :param filepath: Full path to the Maya scene (``.ma``, ``.mb``) or supported container file to open.
+    :returns: ``True`` if the file opened successfully, ``False`` if the file does not exist or ``cmds.file`` raises an error.
     """
     if not os.path.exists(filepath):
         cmds.warning(f"openPypeline Studio: File does not exist: {filepath}")
@@ -112,11 +104,12 @@ def open(filepath: str) -> bool:
     except Exception as e:
         cmds.warning(f"openPypeline Studio: Failed to open {filepath}. Error: {e}")
         return False
+
+
 def save() -> bool:
     """Save the current Maya scene.
 
-    :returns: ``True`` if ``cmds.file(save=True)`` succeeded, ``False`` if an
-        exception occurred.
+    :returns: ``True`` if ``cmds.file(save=True)`` succeeded, ``False`` if an exception occurred.
     """
     try:
         cmds.file(save=True)
@@ -150,9 +143,7 @@ def import_file(filepath: str) -> bool:
 def reference_file(filepath: str) -> bool:
     """Reference a file into the current Maya scene.
 
-    Ensures required USD or Alembic plugins are loaded via
-    :func:`_ensure_plugins_loaded` before calling
-    ``cmds.file(filepath, reference=True)``.
+    Ensures required USD or Alembic plugins are loaded via :func:`_ensure_plugins_loaded` before calling ``cmds.file(filepath, reference=True)``.
 
     :param filepath: Full path to the scene or interchange file to reference.
     :returns: ``True`` if the file was referenced successfully, ``False``
@@ -231,10 +222,8 @@ def export_file(
     ``"mayaBinary"``, or ``None``.
 
     :param filepath: Destination file path for the exported asset.
-    :param file_type: Optional Maya file type identifier (for example,
-        ``"mayaAscii"``, ``"USD Export"``, or ``"Alembic"``).
-    :param selected: When ``True``, exports only selected objects; when
-        ``False``, exports the entire scene.
+    :param file_type: Optional Maya file type identifier (for example, ``"mayaAscii"``, ``"USD Export"``, or ``"Alembic"``).
+    :param selected: When ``True``, exports only selected objects; when ``False``, exports the entire scene.
     :returns: ``True`` if ``cmds.file`` export succeeded, ``False`` otherwise.
     """
     _ensure_plugins_loaded(filepath=filepath, file_type=file_type)
@@ -272,10 +261,8 @@ def flatten_references(master_name: str, workshop_name: str) -> None:
     (deferred) references before importing active references into the master
     scene.
 
-    :param master_name: Display name of the target master file shown in the
-        unloaded-reference prompt.
-    :param workshop_name: Display name of the source workshop file shown in
-        the unloaded-reference prompt.
+    :param master_name: Display name of the target master file shown in the unloaded-reference prompt.
+    :param workshop_name: Display name of the source workshop file shown in the unloaded-reference prompt.
     """
     referenced_files = cmds.file(query=True, reference=True) or []
     if not referenced_files:
@@ -313,8 +300,7 @@ def set_workspace(proj_path: str, rules: dict[str, str]) -> bool:
     """Configure Maya file rules and activate the project workspace.
 
     :param proj_path: Root directory path of the Maya workspace to open.
-    :param rules: Mapping of Maya workspace file rule names (such as
-        ``"scene"`` or ``"sourceImages"``) to relative directory paths.
+    :param rules: Mapping of Maya workspace file rule names (such as ``"scene"`` or ``"sourceImages"``) to relative directory paths.
     :returns: ``True`` if the workspace rules and active project were set
         successfully, ``False`` otherwise.
     """
@@ -328,6 +314,8 @@ def set_workspace(proj_path: str, rules: dict[str, str]) -> bool:
     except Exception as e:
         logger.error(f"Failed to set workspace: {e}")
         return False
+
+
 def is_modified() -> bool:
     """Return ``True`` if the current Maya scene has unsaved changes.
 
@@ -338,20 +326,41 @@ def is_modified() -> bool:
 
 
 def record_playblast(filepath: str) -> bool:
-    """Record a movie playblast of the current viewport to ``filepath``.
+    """Record a viewport playblast using Maya's configured playblast settings.
 
-    :param filepath: Destination file path for the recorded movie playblast.
-    :returns: ``True`` if ``cmds.playblast`` succeeded, ``False`` otherwise.
+    Queries Maya's ``playblastFormat`` and ``playblastCompression`` ``optionVar`` preferences so artists can record ``avfoundation`` (``.mp4``/``.mov``), ``avi``, ``webm``, or ``image`` sequences directly from Maya's Playblast Options dialog. Strips any trailing file extension from ``filepath`` so Maya appends the appropriate container extension or frame numbering.
+
+    :param filepath: Destination path (with or without file extension) for the recorded playblast.
+    :returns: ``True`` if ``cmds.playblast`` completed without errors, ``False`` otherwise.
     """
     try:
-        cmds.playblast(
-            filename=filepath,
-            forceOverwrite=True,
-            format="movie",
-            viewer=False,
-            showOrnaments=False,
+        base_path = os.path.splitext(filepath)[0]
+        os.makedirs(os.path.dirname(base_path), exist_ok=True)
+
+        pb_format = ""
+        if cmds.optionVar(exists="playblastFormat"):
+            pb_format = str(cmds.optionVar(q="playblastFormat") or "").strip()
+
+        kwargs: dict[str, Any] = {
+            "filename": base_path,
+            "forceOverwrite": True,
+            "viewer": False,
+            "showOrnaments": False,
+        }
+        if pb_format:
+            kwargs["format"] = pb_format
+
+        if cmds.optionVar(exists="playblastCompression"):
+            pb_compression = str(
+                cmds.optionVar(q="playblastCompression") or ""
+            ).strip()
+            if pb_compression and pb_compression != "none":
+                kwargs["compression"] = pb_compression
+
+        cmds.playblast(**kwargs)
+        logger.info(
+            f"Playblast recorded to {base_path} (format={pb_format or 'default'})"
         )
-        logger.info(f"Playblast recorded to {filepath}")
         return True
     except Exception as e:
         logger.error(f"Failed to record playblast: {e}")

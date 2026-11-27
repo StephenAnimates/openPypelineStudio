@@ -54,6 +54,15 @@ class OpsSettingsGUI(QtWidgets.QWidget):
     :vartype save_btn: QtWidgets.QPushButton
     :ivar cancel_btn: Button discarding changes and closing the window.
     :vartype cancel_btn: QtWidgets.QPushButton
+    :ivar review_player_field: Line edit holding the Open RV or RV executable path.
+    :vartype review_player_field: QtWidgets.QLineEdit
+    :ivar browse_review_player_btn: Button opening a file browser to pick a review player binary.
+    :vartype browse_review_player_btn: QtWidgets.QPushButton
+    :ivar detect_review_player_btn: Button auto-detecting an installed Open RV or RV binary.
+    :vartype detect_review_player_btn: QtWidgets.QPushButton
+    :ivar reuse_rv_session_chk: Checkbox toggling ``rvpush merge`` session reuse when launching RV.
+    :vartype reuse_rv_session_chk: QtWidgets.QCheckBox
+
     """
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:

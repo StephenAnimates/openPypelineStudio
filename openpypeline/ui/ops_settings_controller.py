@@ -140,3 +140,34 @@ class OpsSettingsController(QtCore.QObject):
 
         self.view.close()
         opsUIWrappers.refresh_ui()
+
+    def on_browse_review_player(self, *args: Any) -> None:
+        """Open a file dialog to choose an Open RV or Autodesk RV executable.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
+        del args
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self.view,
+            "Select Open RV / RV Executable",
+            self.view.review_player_field.text().strip(),
+        )
+        if path:
+            self.view.review_player_field.setText(path.replace("\\", "/"))
+
+    def on_detect_review_player(self, *args: Any) -> None:
+        """Populate :attr:`view.review_player_field` by scanning for an RV binary.
+
+        :param args: Optional variadic arguments passed by Qt signals (ignored).
+        """
+        del args
+        detected = review_player.detect_rv_executable()
+        if detected:
+            self.view.review_player_field.setText(detected)
+        else:
+            QtWidgets.QMessageBox.information(
+                self.view,
+                "Review Player Not Found",
+                "Could not find Open RV or RV on your PATH or in /Applications.\n"
+                "Use Browse... to select the executable manually, or leave blank to use your OS default player.",
+            )
